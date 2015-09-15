@@ -47,6 +47,7 @@ using std::pair;
 #include <math.h>
 #include <errno.h>
 
+#include "HfstExceptionDefs.h"
 #include "hfst-commandline.h"
 #include "hfst-program-options.h"
 #include "hfst-tool-metadata.h"
@@ -251,10 +252,20 @@ int main(int argc, char ** argv)
         std::cerr << "Could not open file " << pmatch_filename << std::endl;
         return EXIT_FAILURE;
     }
-    hfst_ol::PmatchContainer container(instream);
-    container.set_verbose(verbose);
-    container.set_extract_tags_mode(extract_tags);
-    container.set_profile(profile);
+    try {
+        hfst_ol::PmatchContainer container(instream);
+        container.set_verbose(verbose);
+        container.set_extract_tags_mode(extract_tags);
+        container.set_profile(profile);
+#ifdef _MSC_VER
+        hfst::print_output_to_console(true);
+#endif
+    return process_input(container, std::cout);
+    } catch(HfstException & e) {
+        std::cerr << "The archive in " << pmatch_filename << " doesn't look right."
+            "\nDid you make it with hfst-pmatch2fst or make sure it's in weighted optimized-lookup format?\n";
+        return 1;
+    }
 //     if (outfile != stdout) {
 //         std::filebuf fb;
 // fb.open(outfilename, std::ios::out);
@@ -263,9 +274,4 @@ int main(int argc, char ** argv)
 // fb.close();
 //     } else {
 
-#ifdef _MSC_VER
-    hfst::print_output_to_console(true);
-#endif
-
-    return process_input(container, std::cout);
 }

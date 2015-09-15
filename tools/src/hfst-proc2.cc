@@ -44,6 +44,7 @@ using std::pair;
 #include "hfst-program-options.h"
 #include "hfst-tool-metadata.h"
 #include "implementations/optimized-lookup/pmatch.h"
+#include "HfstExceptionDefs.h"
 
 #include "inc/globals-common.h"
 #include "inc/globals-unary.h"
@@ -367,8 +368,15 @@ int main(int argc, char ** argv)
         std::cerr << "Could not open file " << tokenizer_filename << std::endl;
         return EXIT_FAILURE;
     }
-    hfst_ol::PmatchContainer container(instream);
-    container.set_verbose(verbose);
+    try {
+        hfst_ol::PmatchContainer container(instream);
+        container.set_verbose(verbose);
+        return process_input(container, std::cout);
+    } catch(HfstException & e) {
+        std::cerr << "The archive in " << tokenizer_filename << " doesn't look right."
+            "\nDid you make it with hfst-pmatch2fst or make sure it's in weighted optimized-lookup format?\n";
+        return 1;
+    }
 //     if (outfile != stdout) {
 //         std::filebuf fb;
 // fb.open(outfilename, std::ios::out);
@@ -376,5 +384,5 @@ int main(int argc, char ** argv)
 // return process_input(container, outstream);
 // fb.close();
 //     } else {
-    return process_input(container, std::cout);
+
 }
