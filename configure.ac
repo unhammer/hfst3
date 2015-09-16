@@ -832,8 +832,9 @@ EOF
 dnl stick important warnings to bottom
 dnl important licensing information
 dnl according to GNU GPLv2 strict (not plus) is incompatible with Apache
-AS_IF([test "x$with_foma" != "xno" -a "x$with_openfst" != "xno"],
-      [AC_MSG_WARN([foma licensing exception is limited to HFST team’s redistribution; if you consider GPLv2 strict and Apache licence conflicting you may not _redistribute_ your binaries])])
+# No more relevant with the new version of foma
+#AS_IF([test "x$with_foma" != "xno" -a "x$with_openfst" != "xno"],
+#      [AC_MSG_WARN([foma licensing exception is limited to HFST team’s redistribution; if you consider GPLv2 strict and Apache licence conflicting you may not _redistribute_ your binaries])])
 dnl hope end users never disable ofst 
 AS_IF([test "x$with_openfst" == "xno"],
       [AC_MSG_WARN([Disabling openfst backend will severely cripple libhfst])])
