@@ -212,11 +212,6 @@ BRACED      [{]([^}]|[\300-\337].|[\340-\357]..|[\360-\367]...)+[}]
 "(" { CR; return LEFT_PARENTHESIS; }
 ")" { CR; return RIGHT_PARENTHESIS; }
 
-
-{LWSP}":"{LWSP} { CR; return PAIR_SEPARATOR_SOLE; }
-^":"$ { CR; return PAIR_SEPARATOR_SOLE; }
-{LWSP}":" { CR; return PAIR_SEPARATOR_WO_LEFT; }
-":"{LWSP} { CR; return PAIR_SEPARATOR_WO_RIGHT; }
 ":" { CR; return PAIR_SEPARATOR; }
 
 "::"{WEIGHT} {

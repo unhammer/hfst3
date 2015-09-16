@@ -155,11 +155,10 @@ int xrelex ( YYSTYPE * , yyscan_t );
 %nonassoc <label> FUNCTION_NAME   // function call
 %token LEFT_BRACKET RIGHT_BRACKET LEFT_PARENTHESIS RIGHT_PARENTHESIS
        LEFT_BRACKET_DOTTED RIGHT_BRACKET_DOTTED SUBVAL
-       PAIR_SEPARATOR_WO_RIGHT PAIR_SEPARATOR_WO_LEFT
 %token EPSILON_TOKEN ANY_TOKEN BOUNDARY_MARKER
 %token LEXER_ERROR
 %token END_OF_EXPRESSION
-%token PAIR_SEPARATOR PAIR_SEPARATOR_SOLE 
+%token PAIR_SEPARATOR 
 %nonassoc <label> QUOTED_LITERAL
 %%
 
@@ -1142,18 +1141,6 @@ LABEL: HALFARC {
      	$$ = hfst::xre::xfst_label_to_transducer($1,$3);
         free($1);
         free($3);
-     }
-     | HALFARC PAIR_SEPARATOR_WO_RIGHT {
-        $$ = hfst::xre::xfst_label_to_transducer($1,hfst::internal_unknown.c_str());
-        /*$$ = new HfstTransducer($1, hfst::internal_unknown, hfst::xre::format);*/
-        free($1);
-     }
-     | PAIR_SEPARATOR_WO_LEFT HALFARC {
-        $$ = hfst::xre::xfst_label_to_transducer(hfst::internal_unknown.c_str(),$2);
-        free($2);
-     }
-     | PAIR_SEPARATOR_SOLE {
-	$$ = hfst::xre::xfst_label_to_transducer(hfst::internal_unknown.c_str(), hfst::internal_unknown.c_str());
      }
      | HALFARC PAIR_SEPARATOR CURLY_BRACKETS {
         $$ = hfst::xre::xfst_label_to_transducer($1,$1);
