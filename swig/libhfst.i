@@ -20,6 +20,49 @@
 #include "hfst_swig_extensions.h"
 #include "HfstExceptionDefs.h"
 #include "implementations/optimized-lookup/pmatch.h"
+
+namespace hfst {
+  class HfstFile {
+    private:
+      FILE * file;
+    public:
+      HfstFile();
+      ~HfstFile();
+      void set_file(FILE * f);
+      FILE * get_file();
+      void close();
+      void write(const char * str);
+      bool is_eof(void);
+  };
+
+  HfstFile::HfstFile(): file(NULL){};
+  HfstFile::~HfstFile() {};
+  void HfstFile::set_file(FILE * f) { file = f; };
+  FILE * HfstFile::get_file() { return file; };
+  void HfstFile::close() { if (file != stdout && file != stderr && file != stdin) { fclose(file); } };
+  void HfstFile::write(const char * str) { fprintf(file, "%s", str); };
+  bool HfstFile::is_eof(void) { return (feof(file) != 0); };
+
+  HfstFile hfst_open(const char * filename, const char * mode) {
+    FILE * f = fopen(filename, mode);
+    HfstFile file;
+    file.set_file(f);
+    return file;
+  };
+
+  HfstFile hfst_stdin() {
+    HfstFile file;
+    file.set_file(stdin);
+    return file;
+  };
+
+  HfstFile hfst_stdout() {
+    HfstFile file;
+    file.set_file(stdout);
+    return file;
+  };
+}
+
 %}
 
 
@@ -97,16 +140,19 @@ std::string hfst_get_exception();
 namespace hfst
 {
 
-class HfstFile;
-
 class HfstFile {
-public:
-  void close();
-  void write(const char * str);
+  public:
+    HfstFile();
+    ~HfstFile();
+    void write(const char * str);
+    void close();
+    bool is_eof(void);
 };
-HfstFile hfst_open(const char * filename, const char * args);
-HfstFile hfst_stdin();
+
 HfstFile hfst_stdout();
+HfstFile hfst_stdin();
+HfstFile hfst_open(const char * filename, const char * mode);
+
 
 /*
  * One of the (apparent) peculiarities of swig is that things break in the
@@ -186,7 +232,7 @@ HfstBasicTransducer (void);
 HfstBasicTransducer (const HfstBasicTransducer &graph);
 HfstBasicTransducer (const hfst::HfstTransducer &transducer);
 HfstBasicTransducer (FILE *file) throw (NotValidAttFormatException);
-HfstBasicTransducer (HfstFile &file) throw (NotValidAttFormatException);
+//HfstBasicTransducer (HfstFile &file) throw (NotValidAttFormatException);
 HfstBasicTransducer & insert_freely (const StringPair &symbol_pair, float weight);
 HfstBasicTransducer & insert_freely (const StringPairSet &symbol_pairs, float weight);
 HfstBasicTransducer & insert_freely (const HfstBasicTransducer &graph);
@@ -213,6 +259,9 @@ void write_in_att_format_number (FILE *file, bool write_weights=true);
     	 static char tmp[1024]; 
     	 $self->write_in_att_format(tmp);
 	 return tmp;    
+    }
+    HfstBasicTransducer(HfstFile &file) throw (NotValidAttFormatException) {
+         return new hfst::implementations::HfstBasicTransducer(file.get_file());                        
     }
     };
 
@@ -287,7 +336,7 @@ public:
     HfstTransducer(const std::string &symbol, ImplementationType type);
     HfstTransducer(const std::string &isymbol, const std::string &osymbol, ImplementationType type);
     HfstTransducer(FILE *ifile, ImplementationType type, const std::string &epsilon_symbol) throw (EndOfStreamException, NotValidAttFormatException);
-    HfstTransducer(HfstFile &ifile, ImplementationType type, const std::string &epsilon_symbol) throw (EndOfStreamException, NotValidAttFormatException);
+    //HfstTransducer(HfstFile &ifile, ImplementationType type, const std::string &epsilon_symbol) throw (EndOfStreamException, NotValidAttFormatException);
     
     // Then everything else, in the (alphabetic) order in the API manual
     bool compare(const HfstTransducer &another) const;
@@ -348,7 +397,7 @@ public:
     HfstTransducer & transform_weights(float(*func)(float));
     void write_in_att_format(const std::string &filename, bool write_weights=true) const;
     void write_in_att_format(FILE *ofile, bool write_weights=true) const;
-    void write_in_att_format(HfstFile &ofile, bool write_weights=true) const;
+    //void write_in_att_format(HfstFile &ofile, bool write_weights=true) const;
     void write_in_att_format(char * buffer, bool write_weights=true) const;
     virtual ~HfstTransducer(void);
     static HfstTransducer read_lexc(const std::string &filename, ImplementationType type, bool );
@@ -362,6 +411,14 @@ public:
     	 static char tmp[1024]; 
     	 $self->write_in_att_format(tmp);
 	 return tmp;    
+    }
+
+    HfstTransducer(HfstFile &ifile, ImplementationType type, const std::string &epsilon_symbol) throw (EndOfStreamException, NotValidAttFormatException) {
+         return new hfst::HfstTransducer(ifile.get_file(), type, epsilon_symbol);
+    }
+
+    void write_in_att_format(HfstFile &ofile, bool write_weights=true) const {
+         return $self->write_in_att_format(ofile.get_file(), write_weights);
     }
 
     HfstTransducer & __add__(const HfstTransducer & another) {

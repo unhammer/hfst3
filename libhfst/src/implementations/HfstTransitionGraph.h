@@ -27,19 +27,6 @@
 
  namespace hfst {
 
-   class HfstFile {
-   private:
-     FILE * file;
-   public:
-     HFSTDLL HfstFile();
-     HFSTDLL ~HfstFile();
-     HFSTDLL void set_file(FILE * f);
-     HFSTDLL FILE * get_file();
-     HFSTDLL void close();
-     HFSTDLL void write(const char * str);
-   };
-
-
    /** @brief A namespace for all code that forms a bridge between
        backend libraries and HFST.
 
@@ -57,6 +44,7 @@
      typedef std::vector<HfstReplacement> HfstReplacements;
      typedef std::map<HfstState, HfstReplacements > HfstReplacementsMap;
 
+     typedef std::vector<std::vector<hfst::implementations::HfstBasicTransition> > HfstBasicStates;
 
      /** @brief A simple transition graph format that consists of
          states and transitions between those states.
@@ -131,9 +119,6 @@
      // --- Datatypes and variables ---
 
        public:
-         /** @brief Datatype for the states of a transition in a graph. */
-         typedef std::vector<HfstTransition<C> > HfstTransitions;
-
      /** @brief Datatype for a symbol in a transition. */
      typedef typename C::SymbolType HfstSymbol;
      /** @brief Datatype for a symbol pair in a transition. */
@@ -148,14 +133,18 @@
      /** @brief Datatype for the alphabet of a graph. */
          typedef std::set<HfstSymbol> HfstTransitionGraphAlphabet;
 
-       protected:
+     /** @brief Datatype for the states of a transition in a graph. */
+     typedef std::vector<HfstTransition<C> > HfstTransitions;
+
      /* Datatype for the states of a graph and their transitions.
         Each index of the vector is a state and the transitions 
         on that index are the transitions of that state. */
-         typedef std::vector<HfstTransitions> HfstStates;
+     typedef std::vector<HfstTransitions> HfstStates;
+
      /* States of the graph and their transitions. */
          HfstStates state_vector;
 
+       protected:
      /* The initial state number. */
          static const HfstState INITIAL_STATE = 0;
 
@@ -196,6 +185,11 @@
            return retval;
          }
 
+         /** @brief The states of the graph and their transitions. */
+         HfstBasicStates states_and_transitions() const {
+           return state_vector;
+         }
+
      // --------------------------------------------------------
      // --- Construction, assignment, copying and conversion ---
      // --------------------------------------------------------
@@ -214,14 +208,6 @@
          state_vector.push_back(tr);
          unsigned int linecount=0;
          this->assign(read_in_att_format(file, "@0@", linecount));
-       }
-
-       HFSTDLL HfstTransitionGraph(HfstFile &file) {
-         initialize_alphabet(alphabet);
-         HfstTransitions tr;
-         state_vector.push_back(tr);
-         unsigned int linecount=0;
-         this->assign(read_in_att_format(file.get_file(), "@0@", linecount));
        }
 
 
@@ -1510,15 +1496,6 @@
               file, linecount);
          }       
 
-         HFSTDLL static HfstTransitionGraph read_in_prolog_format
-           (HfstFile &file, 
-            unsigned int & linecount)
-         {
-           return read_in_att_format(std::cin /* a dummy variable */, file.get_file(),
-                                     linecount);
-         }
-
-
 
          /** @brief Write the graph in xfst text format to FILE \a file.
              \a write_weights defines whether weights are printed (todo). */
@@ -1895,15 +1872,6 @@
              (std::cin /* a dummy variable */,
               file, epsilon_symbol, linecount);
          }       
-
-         HFSTDLL static HfstTransitionGraph read_in_att_format
-           (HfstFile &file, 
-            std::string epsilon_symbol,
-            unsigned int & linecount)
-         {
-           return read_in_att_format(std::cin /* a dummy variable */, file.get_file(),
-                                     epsilon_symbol, linecount);
-         }
 
 
      // ----------------------------------------------
@@ -4464,7 +4432,6 @@
     typedef HfstTransitionGraph <HfstFastTransitionData> 
       HfstFastTransducer;
 
- 
    }
    
  }

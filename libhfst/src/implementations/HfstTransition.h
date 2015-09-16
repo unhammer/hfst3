@@ -63,6 +63,8 @@ namespace hfst {
         target_state(another.target_state), 
           transition_data(another.transition_data) 
             {}
+
+        HFSTDLL ~HfstTransition() {}
         
         /** @brief Whether this transition is less than transition \a
             another. Needed for storing transitions in a set. */
