@@ -35,11 +35,73 @@ namespace hfst {
       return retval;
     }
 
+    void TropicalWeightTransducer::add_to_weights(StdVectorFst * t, float w)
+    {
+      for (fst::StateIterator<StdVectorFst> siter(*t); 
+           ! siter.Done(); siter.Next()) 
+        {
+          StateId s = siter.Value();
+          for (fst::MutableArcIterator<fst::StdVectorFst> aiter(t,s); 
+               !aiter.Done(); aiter.Next())
+            {
+              const StdArc &arc = aiter.Value();
+
+              StdArc new_arc;
+              new_arc.ilabel = arc.ilabel;
+              new_arc.olabel = arc.olabel;
+              new_arc.nextstate = arc.nextstate;
+              new_arc.weight = arc.weight.Value() + w;
+
+              aiter.SetValue(new_arc);
+            }
+          if (t->Final(s) != TropicalWeight::Zero())
+            {
+              float old_weight = t->Final(s).Value();
+              t->SetFinal(s, old_weight + w);
+            }
+        }
+    }
+
+    float TropicalWeightTransducer::get_smallest_weight(StdVectorFst * t)
+    {
+      // in case of an empty transducer, infinity is returned
+      // (empty in the sense of having no transitions or final states)
+      float retval = std::numeric_limits<float>::infinity();
+      bool weight_found;
+      for (fst::StateIterator<StdVectorFst> siter(*t); 
+           ! siter.Done(); siter.Next()) 
+        {
+          StateId s = siter.Value();
+          for (fst::ArcIterator<StdVectorFst> aiter(*t,s); 
+               !aiter.Done(); aiter.Next())
+            {
+              const StdArc &arc = aiter.Value();
+              float w = arc.weight.Value();
+              if (w < retval)
+                retval = w;
+            }
+          if (t->Final(s) != TropicalWeight::Zero())
+            {
+              float w = t->Final(s).Value();
+              if (w < retval)
+                retval = w;
+            }
+        }
+      return retval;
+    }
+
     // This function can be moved to its own file if TropicalWeightTransducer.o
     // yields a 'File too big' error.
     StdVectorFst * TropicalWeightTransducer::minimize(StdVectorFst * t)
     {
       RmEpsilon<StdArc>(t);
+
+      float w = get_smallest_weight(t);
+
+      if (w < 0)
+        {
+          add_to_weights(t, -w);
+        }
 
       EncodeMapper<StdArc> encode_mapper
         (hfst::get_encode_weights() ? (kEncodeLabels|kEncodeWeights) : (kEncodeLabels), ENCODE);
@@ -49,6 +111,12 @@ namespace hfst {
       Determinize<StdArc>(*t, det);
       Minimize<StdArc>(det);
       Decode(det, encode_mapper);
+
+      if (w < 0) 
+        {
+          add_to_weights(det, w);
+        }
+
       return det;
     }
 

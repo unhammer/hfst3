@@ -245,6 +245,9 @@ namespace implementations
 
       static FdTable<int64>* get_flag_diacritics(StdVectorFst * t);
 
+      static void add_to_weights(StdVectorFst * t, float w);
+      static float get_smallest_weight(StdVectorFst * t);
+
       static void print_alphabet(const StdVectorFst *t);
 
       // string versions
