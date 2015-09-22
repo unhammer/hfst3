@@ -15,4 +15,7 @@ write att
 echo --
 regex [ {CVCVCV} .<m. [k t b]::1 ] .<m. [a+ i]::3 ;
 write att
+echo --
+regex [ {CVCVCV} .<m. [k t b]::-1 ] .<m. [a+ i]::3 ;
+write att
 quit

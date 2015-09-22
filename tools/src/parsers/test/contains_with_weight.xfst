@@ -19,4 +19,14 @@ b
 ba
 aba
 abaa
+<ctrl-d>
+echo --
 
+# negative weight
+regex $::-1[a];
+apply up
+foo
+bar
+fooa
+afooa
+abara

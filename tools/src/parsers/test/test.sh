@@ -331,7 +331,8 @@ do
             weighted_parallel_rules_1 weighted_parallel_rules_2 weighted_parallel_rules_3 \
             weighted_parallel_rules_4 weighted_parallel_rules_5 weighted_parallel_rules_6 \
             weighted_parallel_rules_7 weighted_parallel_rules_8 weighted_parallel_rules_9 \
-            weighted_parallel_rules_10 weighted_parallel_rules_11
+            weighted_parallel_rules_10 weighted_parallel_rules_11 weighted_parallel_rules_12 \
+            weighted_parallel_rules_13
         do
             if ! (${LS} $file.xfst 2> /dev/null); then
 	        echo "skipping missing test for "$file"..."
