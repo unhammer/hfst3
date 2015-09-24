@@ -1,36 +1,52 @@
-This is the SWIG binding for using the hfst library with Python.
+This is the SWIG binding for using HFST library with Python.
+
+It is recommended to use python version 3 as it has a better support for
+UTF-8 than version 2. All examples are tested with python3.
+
 
 Building and installation is done using the standard Python module distutils.
 Once you've successfully built libhfst, use the script setup.py to build the
 Python extension eg. like so:
 
-    python setup.py build_ext --inplace
+    python3 setup.py build_ext --inplace
 
-If you are using Python3 ( =< 3.2), you can execute
+
+If you wish to install the extension, run
+
+    python3 setup.py install
+
+
+To test the Python bindings after installation, go to directory 'test' and
+run there
+
+    ./test.sh (--python python3.X)
+
+
+For further information, consult
+
+    python3 setup.py --help
+    python3 setup.py --help-commands
+
+and the distutils documentation.
+
+
+Some version combinations of SWIG and Python make HFST exception classes
+subclasses of Python's _object instead of Exception. Then you will get an
+error like
+
+    TypeError: catching classes that do not inherit from BaseException is not allowed
+
+If this is the case, run
 
     sed -i 's/class HfstException(_object):/class HfstException(Exception):/' libhfst.py
 
 after build to be able to use HfstException and its subclasses in Python. 
 
-If you wish to install the extension, run
-
-    python setup.py install
-
-
-To test the SWIG bindings after installation, run
-
-    ./test/test.sh (--python PYTHON)
-
-For further information, consult
-
-    python setup.py --help
-    python setup.py --help-commands
-
-and the distutils documentation.
 
 If you are using SWIG bindings locally, or want to run ./test/test.sh before
 installation, add path/to/hfst-top-dir/swig/ to PYTHONPATH and 
 path/to/hfst-top-dir/libhfst/src/.libs/ to LD_LIBRARY_PATH.
+
 
 Demonstration utilities:
 	      omor_query.py, lookup and basic usage (needs omorfi installed)
