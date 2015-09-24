@@ -14,7 +14,7 @@
 # The previous is useful for converting between transducer formats and storing transducersin an implementation-independent format. The latter is used for fast lookup
 # of strings in a transducer.
 #
-# All implementations work according to the same interface, so it is possible to compile the same piece of code using different backend libraries.
+# All back-end implementations (SFST, OpenFst and foma) work according to the same interface, so it is possible to compile the same piece of code using different back-end libraries.
 #
 # For a quick start to the HFST interface with examples, see <a href="QuickStart.html">here</a>.
 #
@@ -43,8 +43,7 @@
 #
 # \section download_hfst Download
 #
-#   - <a href="http://sourceforge.net/projects/hfst/files/hfst">Download</a> and 
-#   <a href="InstallHfst.html">install</a> the HFST interface and command line tools
+#   - <a href="https://kitwiki.csc.fi/twiki/bin/view/KitWiki/HfstDownloads">Download and install</a> the HFST interface and command line tools
 #
 #
 #\section links Links
@@ -55,14 +54,6 @@
 #
 #   <br>
 
-
-
-## A class that represents a path in a transducer
-# 
-# Has members weight, input and output.
-#
-class HfstPath:
-    pass
 
 ## Base class for HfstExceptions. Holds its own name and the file and line number where it was thrown.
 class HfstException:
@@ -408,17 +399,55 @@ TO_FINAL_STATE = _libhfst.TO_FINAL_STATE
 
 ## A wrapper for file, possibly needed in Windows
 class HfstFile:
-  ## Close the file
-  def close():
-      pass
-  ## Write \a string to the file
-  def write(string):
-      pass
+    def close():
+        pass
+    def write(str):
+        pass
+    def is_eof():
+        pass
 
-## Opens the file \a filename with arguments \a args
-# @return HfstFile
-def hfst_open(filename, args):
+def hfst_open(filename, mode):
     pass
+def hfst_stdin():
+    pass
+def hfst_stdout():
+    pass
+def hfst_stderr():
+    pass
+
+def set_default_fst_type():
+    pass
+def get_default_fst_type():
+    pass
+def fst_type_to_string():
+    pass
+
+EPSILON='@_EPSILON_SYMBOL_@'
+UNKNOWN='@_UNKNOWN_SYMBOL_@'
+IDENTITY='@_IDENTITY_SYMBOL_@'
+
+def fst(symbol):
+    pass
+def fst(isymbol, osymbol):
+    pass
+def word(str, weight=0):
+    pass
+def word_pair(istr, ostr, weight=0):
+    pass
+def word_list(l):
+    pass
+def word_pair_list(l):
+    pass
+
+def regex(regexp):
+    pass
+def compile_lexc_file(filename):
+    pass
+def read_att(f, epsilonstr="@_EPSILON_SYMBOL_@"):
+    pass
+def read_prolog(f):
+    pass
+
 
 
 ## A simple transducer class with tropical weights.
@@ -1687,7 +1716,13 @@ class HfstInputStream:
     # transducer that has a different type than the previous ones.
     def get_type():
         pass
-    
+
+    ## Return next transducer.
+    #
+    # throws EndOfStreamException
+    def read():
+        pass
+
 ## A stream for writing binary transducers. 
 #
 #  An example:
@@ -1713,12 +1748,18 @@ class HfstOutputStream:
     def __init__(filename, type, hfst_format=True):
         pass
 
+    ## Flush the stream.
+    def flush():
+        pass
+
     ##  Write the transducer \a transducer in binary format to the stream. 
     #
     # All transducers must have the same type as the stream, else a TransducerTypeMismatchException is thrown. 
     #
+    # (alias: redirect, operator<<)
+    #
     # @throws TransducerTypeMismatchException
-    def redirect(transducer):
+    def write(transducer):
         pass
 
     ##  Close the stream. 
@@ -1726,7 +1767,7 @@ class HfstOutputStream:
     def close():
         pass
 
-## TODO: documentation
+## TODO: documentation ???
 class MultiCharSymbolTrie:
     ## TODO: documentation
     def __init__(self):
@@ -1778,7 +1819,7 @@ class HfstTokenizer:
     # For example if we have a multicharacter symbol 'foo' and a 
     # skip symbol 'bar', the string "fobaro" will be tokenized 
     # 'f' 'o' 'o', not 'foo'. 
-    def add_skip_symbol(symbol):
+    def add_skip_symbol(self, symbol):
         pass
 
     ## Add a multicharacter symbol \a symbol to this tokenizer. 
@@ -1787,17 +1828,17 @@ class HfstTokenizer:
     # not considered a multicharacter symbol. For example if we have 
     # a multicharacter symbol 'foo' and a skip symbol 'bar', the string
     # "fobaro" will be tokenized 'f' 'o' 'o', not 'foo'. 
-    def add_multichar_symbol(symbol):
+    def add_multichar_symbol(self, symbol):
         pass
 
     ## Tokenize the string \a input_string. 
     # @return A tuple of string pairs.
-    def tokenize(input_string):
+    def tokenize(self, input_string):
         pass
 
     ## Tokenize the string \a input_string.
     # @return A tuple of strings.
-    def tokenize_one_level(input_string):
+    def tokenize_one_level(self, input_string):
         pass
 
     ## Tokenize the string pair \a input_string : \a output_string. 
@@ -1807,7 +1848,11 @@ class HfstTokenizer:
     # so that both tokenized strings have the same number of tokens.
     #
     # @return A tuple of string pairs.
-    def tokenize(input_string, output_string):
+    def tokenize(self, input_string, output_string):
+        pass
+
+    ## (todo: document)
+    def tokenize_space_separated(str):
         pass
 
     ## If \a input_string is not valid utf-8, throw an IncorrectUtf8CodingException.
@@ -1828,7 +1873,8 @@ class HfstTokenizer:
     # (For reference: http://en.wikipedia.org/wiki/UTF-8)
     #
     # This function is a static one.
-    check_utf8_correctness(input_string);
+    def check_utf8_correctness(input_string):
+        pass
 
 
 ## A compiler holding information contained in lexc style lexicons.
@@ -1844,6 +1890,10 @@ class LexcCompiler:
   def __init__(self, impl):
       pass
 
+  ## Create a lexc compiler with \a impl as transducer format.
+  def __init__(self, impl, withFlags):
+      pass
+
   ## Compile lexc description from \a infile into current compiler.
   def parse(infile):
       pass
@@ -1856,10 +1906,36 @@ class LexcCompiler:
   def setVerbosity(verbose):
       pass
 
+  ## todo
+  def isQuiet():
+      pass
+  ## todo
+  def setTreatWarningsAsErrors(value):
+      pass
+  ## todo
+  def areWarningsTreatedAsErrors():
+      pass
+  ## todo
+  def setAllowMultipleSublexiconDefinitions(value):
+      pass
+  ## todo
+  def setWithFlags(value):
+      pass
+  ## todo
+  def setMinimizeFlags(value):
+      pass
+  ## todo
+  def setRenameFlags(value):
+      pass
+
   ## Add @a alphabet to multicharacter symbol set.
   # These symbols may be used for regular expression ? for backends that do
   # not support open alphabets.
   def addAlphabet(alphabet):
+      pass
+
+  ## todo
+  def addNoFlag(lexname):
       pass
 
   ## Set current processing lexicon name to @a lexicon_name.
