@@ -162,3 +162,18 @@ print(tr.extract_paths(obey_flags='True', filter_flags='False', max_number=3, fo
 libhfst.dictionary({'FOO':(('BAR',0.5),'BAZ'), 'foo':('bar','baz')})
 
 libhfst.foobar('RGW)T#R"#¤T)"¤TR?B"?¤')
+
+fsm = libhfst.HfstBasicTransducer()
+for state in [0,1,2]:
+    fsm.add_state(state)
+fsm.add_transition(0,1,'foo','bar',1)
+fsm.add_transition(0,1,'foo','BAR',2)
+fsm.add_transition(1,2,'baz','baz',0)
+fsm.set_final_weight(2,0.5)
+
+state_number=0
+for state in fsm:
+    for arc in state:
+        print('%i ' % (state_number), end='')
+        print(arc)
+    state_number += 1

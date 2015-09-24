@@ -448,8 +448,6 @@ def read_att(f, epsilonstr="@_EPSILON_SYMBOL_@"):
 def read_prolog(f):
     pass
 
-
-
 ## A simple transducer class with tropical weights.
 #
 #    An example of creating an HfstBasicTransducer [foo:bar baz:baz] 
@@ -526,6 +524,10 @@ class HfstBasicTransducer:
     # If state \a state does not exist, it is created.
     def add_transition(state, transition, add_symbols_to_alphabet=True):
         pass
+
+    ## todo
+    def add_transition(source, target, input, output, weight=0):
+        pass
     
     ## Disjunct this transducer with a one-path transducer defined by consecutive string pairs in \a spv that has weight \a weight.
     #
@@ -597,11 +599,24 @@ class HfstBasicTransducer:
     def __init__(self, transducer):
         pass
 
-    ## Create a transducer as defined in file \a file in AT&T format.
-    # TODO: An example.
-    # @pre \a file is not at end, otherwise an exception is thrown.
-    # @note Multiple AT&T transducer definitions are separated with the line "--".
-    def __init__(self, file):
+    ## todo
+    def read_in_prolog_format(f, linecount):
+        pass
+
+    ## todo
+    def write_in_prolog_format(self, f, name, write_weights=True):
+        pass
+
+    ## todo
+    def write_in_xfst_format(self, f, write_weights=True):
+        pass
+
+    ## todo
+    def read_in_att_format(f, epsilon_symbol, linecount):
+        pass
+
+    ## todo
+    def write_in_att_format(self, f, write_weights=True):
         pass
 
     ## Insert freely any number of \a symbol_pair in the transducer with weight \a weight.
@@ -1973,7 +1988,7 @@ class LexcCompiler:
       pass
 
 ## A compiler holding information needed to compile XREs.
-class XreCompiler
+class XreCompiler:
 
   ## Construct compiler for unknown format transducers.
   def __init__(self):
@@ -1987,6 +2002,18 @@ class XreCompiler
   def define(name, xre):
       pass
 
+  ## todo
+  def define_list(name, symbol_list):
+      pass
+
+  ## todo
+  def define_function(name, arguments, xre):
+      pass
+
+  ## todo
+  def undefine(name):
+      pass
+
   ## Compile a transducer defined by @a xre.
   # May return a pointer to @e empty transducer on non-fatal error.
   # A None pointer is returned on fatal error, if abort is not called.
@@ -1994,13 +2021,9 @@ class XreCompiler
   def compile(xre):
       pass
 
-class FdOperation:
-    ## TODO: document
-    def __init__(self, fd_operation):
-        pass
-    ## TODO: document
-    def is_diacritic(diacritic_str):
-        pass
+  ## todo
+def is_diacritic(symbol):
+    pass
 
 ## A transducer that obligatorily performs the mappings defined by \a mappings in the context \a context when the alphabet is \a alphabet. 
 # 
