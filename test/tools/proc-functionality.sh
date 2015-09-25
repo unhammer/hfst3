@@ -106,6 +106,17 @@ if ! diff test.strings $srcdir/cat_weight_ambig_W_out.strings ; then
     exit 1
 fi
 
+# NUL flush checks
+if ! printf 'cat.[][\n]\0cat.[][\n]\0' | $TOOLDIR/hfst-proc/hfst-apertium-proc -z cat2dog.hfstol | tr -d '\r' > test.strings ; then
+    echo NUL flush fail:
+    cat test.strings
+    exit 1
+fi
+if ! diff test.strings $srcdir/proc-cat-NUL.strings ; then
+    echo NUL flush diffs
+    exit 1
+fi
+
 
 # compounding / space handling checks
 if ! $TOOLDIR/hfst-proc/hfst-apertium-proc compounds.hfstol < $srcdir/proc-compounds.strings | tr -d '\r' > test.strings ; then

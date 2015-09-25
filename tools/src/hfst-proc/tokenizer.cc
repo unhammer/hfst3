@@ -49,6 +49,7 @@ TokenIOStream::initialize_escaped_chars()
 void
 TokenIOStream::do_null_flush()
 {
+  std::cout << '\0';
   os.flush();
   if(os.bad())
     std::cerr << "Could not flush file" << std::endl;
@@ -190,12 +191,15 @@ Token
 TokenIOStream::make_token()
 {
   SymbolNumber s = symbolizer.extract_symbol(is);
-  if(s == 0) // EOF
+  if(s == 0)
+  {
+    // literal NUL without null-flushing
     return Token();
-  
+  }
+
   if(s != NO_SYMBOL_NUMBER)
     return Token::as_symbol(s);
-  
+
   // the next thing in the stream is not a symbol
   // (extract_symbol moved the stream back to before anything was read)
   std::string ch = read_utf8_char();
@@ -212,7 +216,12 @@ TokenIOStream::read_token()
   int next_char = is.peek();
   if(is.eof())
     return Token();
-  
+
+  if(next_char == 0 && null_flush) {
+    do_null_flush();
+    return Token::as_character(is.get());
+  }
+
   if(escaped_chars.find(next_char) != escaped_chars.end())
   {
     switch(next_char)
@@ -220,11 +229,11 @@ TokenIOStream::read_token()
       case '[':
         superblank_bucket.push_back(read_delimited(']'));
         return Token::as_superblank(superblank_bucket.size()-1);
-      
+
       case '\\':
         next_char = is.get(); // get the peeked char for real
         return Token::as_character(read_escaped());
-      
+
       case '<':
       {
         Token t = make_token();
@@ -232,7 +241,7 @@ TokenIOStream::read_token()
           return t;
         return Token::as_reservedcharacter('<');
       }
-      
+
       default:
         return Token::as_reservedcharacter((char)is.get());
     }
