@@ -3,6 +3,9 @@
 
 ## @mainpage
 #
+# <p><b> <font color="red"> THIS PAGE IS FOR TESTING PURPOSES </font> </b>
+# We are moving from Sourceforge to <a href="http://www.github.com/hfst">Github</a> during autumn 2015.</p>
+#
 # HFST - The Helsinki Finite-State Transducer technology is intended for creating and manipulating weighted or unweighted synchronic transducers implementing regular relations.
 # UTF-8 is chosen as the character encoding used in the HFST software. Currently, HFST has been implemented using the
 # <a href="http://www.ims.uni-stuttgart.de/projekte/gramotron/SOFTWARE/SFST.html">SFST</a>, 
@@ -399,52 +402,90 @@ TO_FINAL_STATE = _libhfst.TO_FINAL_STATE
 
 ## A wrapper for file, possibly needed in Windows
 class HfstFile:
+    # Close the file. 
     def close():
         pass
+    # Write string to the file.
     def write(str):
         pass
+    # Whether the file is at end.
     def is_eof():
         pass
 
+# Open file named \a filename in mode \a mode.
 def hfst_open(filename, mode):
     pass
+# Get file that points to standard input.
 def hfst_stdin():
     pass
+# Get file that points to standard output.
 def hfst_stdout():
     pass
+# Get file that points to standard error stream.
 def hfst_stderr():
     pass
 
+# Set the implementation type (SFST_TYPE, TROPICAL_OPENFST_TYPE, FOMA_TYPE) that is
+# used by default by all operations that create transducers. The default value is
+# TROPICAL_OPENFST_TYPE
 def set_default_fst_type():
     pass
+# Get default transducer implementation type.
 def get_default_fst_type():
     pass
-def fst_type_to_string():
+# Get a string representation of transducer implementation type \a type.
+def fst_type_to_string(type):
     pass
 
+# The string for epsilon symbol.
 EPSILON='@_EPSILON_SYMBOL_@'
+# The string for unknown symbol.
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
+# The string for identity symbol.
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
+# Get a single transition transducer [symbol:symbol].
 def fst(symbol):
     pass
+# Get a single transition transducer [isymbol:osymbol].
 def fst(isymbol, osymbol):
     pass
+# Get a transducer containing one path as defined by \a str with weight \a weight.
+# \a str is a UTF-8 string.
 def word(str, weight=0):
     pass
+# Get a transducer containing one path as defined by input and output strings \a istr and \a ostr with weight \a weight.
+# \a istr and \a ostr are a UTF-8 strings.
+# If the strings do not have the same length, epsilons are used for padding the shorter string.
 def word_pair(istr, ostr, weight=0):
     pass
+# Get a transducer containing all paths defined in list \a l.
+# Each element of \a l must be a string or a tuple of a string and a weight.
+# The strings must be UTF-8.
+# Example: word_list('foo',('bar',2.5),'baz') creates the transducer [[f o o] | [b a r]::2.5 | [b a z]].
 def word_list(l):
     pass
-def word_pair_list(l):
+# Get a transducer containing all paths defined in dictionary \a d.
+# Each key of \a d must be a string.
+# Each value of \a d must either be (1) a string, (2) a tuple of a string and a weight or (3) a list.
+# Each element of the list (3) must be a string or a tuple of a string and a weight.
+# All strings must be UTF-8.
+# Example: word_pair_list( { 'foo':'FOO', 'bar':('BAR',0.5), 'baz':('baz',('BAZ', 1.2)) } )
+def word_pair_list(d):
     pass
-
+# Get a transducer as defined by regular expression \a regexp.
+# \a regexp must follow <a href="http://www.fsmbook.com/">Xerox transducer notation</a>.
 def regex(regexp):
     pass
+# Compile lexc file \a filename into a transducer.
 def compile_lexc_file(filename):
     pass
+# Read next transducer from AT&T file pointed by \a f. \a epsilonstr defines the symbol used for epsilon in the file.
+# If the file contains several transducers, they must be separated by "--" lines.
 def read_att(f, epsilonstr="@_EPSILON_SYMBOL_@"):
     pass
+# Read next transducer from prolog file pointed by \a f.
+# If the file contains several transducers, they must be separated by empty lines.
 def read_prolog(f):
     pass
 
