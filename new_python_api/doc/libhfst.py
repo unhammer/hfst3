@@ -402,70 +402,76 @@ TO_FINAL_STATE = _libhfst.TO_FINAL_STATE
 
 ## A wrapper for file, possibly needed in Windows
 class HfstFile:
-    # Close the file. 
+    ## Close the file. 
     def close():
         pass
-    # Write string to the file.
+    ## Write string to the file.
     def write(str):
         pass
-    # Whether the file is at end.
+    ## Whether the file is at end.
     def is_eof():
         pass
 
-# Open file named \a filename in mode \a mode.
+## Open file named \a filename in mode \a mode.
 def hfst_open(filename, mode):
     pass
-# Get file that points to standard input.
+## Get file that points to standard input.
 def hfst_stdin():
     pass
-# Get file that points to standard output.
+## Get file that points to standard output.
 def hfst_stdout():
     pass
-# Get file that points to standard error stream.
+## Get file that points to standard error stream.
 def hfst_stderr():
     pass
 
+## Set the default implementation type.
+#
 # Set the implementation type (SFST_TYPE, TROPICAL_OPENFST_TYPE, FOMA_TYPE) that is
 # used by default by all operations that create transducers. The default value is
 # TROPICAL_OPENFST_TYPE
 def set_default_fst_type():
     pass
-# Get default transducer implementation type.
+## Get default transducer implementation type.
 def get_default_fst_type():
     pass
-# Get a string representation of transducer implementation type \a type.
+## Get a string representation of transducer implementation type \a type.
 def fst_type_to_string(type):
     pass
 
-# The string for epsilon symbol.
+## The string for epsilon symbol.
 EPSILON='@_EPSILON_SYMBOL_@'
-# The string for unknown symbol.
+## The string for unknown symbol.
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
-# The string for identity symbol.
+## The string for identity symbol.
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
-# Get a single transition transducer [symbol:symbol].
+## Get a single transition transducer [symbol:symbol].
 def fst(symbol):
     pass
-# Get a single transition transducer [isymbol:osymbol].
+## Get a single transition transducer [isymbol:osymbol].
 def fst(isymbol, osymbol):
     pass
-# Get a transducer containing one path as defined by \a str with weight \a weight.
+## Get a transducer containing one path as defined by \a str with weight \a weight.
+#
 # \a str is a UTF-8 string.
 def word(str, weight=0):
     pass
-# Get a transducer containing one path as defined by input and output strings \a istr and \a ostr with weight \a weight.
+## Get a transducer containing one path as defined by input and output strings \a istr and \a ostr with weight \a weight.
+#
 # \a istr and \a ostr are a UTF-8 strings.
 # If the strings do not have the same length, epsilons are used for padding the shorter string.
 def word_pair(istr, ostr, weight=0):
     pass
-# Get a transducer containing all paths defined in list \a l.
+## Get a transducer containing all paths defined in list \a l.
+#
 # Each element of \a l must be a string or a tuple of a string and a weight.
 # The strings must be UTF-8.
 # Example: word_list('foo',('bar',2.5),'baz') creates the transducer [[f o o] | [b a r]::2.5 | [b a z]].
 def word_list(l):
     pass
-# Get a transducer containing all paths defined in dictionary \a d.
+## Get a transducer containing all paths defined in dictionary \a d.
+#
 # Each key of \a d must be a string.
 # Each value of \a d must either be (1) a string, (2) a tuple of a string and a weight or (3) a list.
 # Each element of the list (3) must be a string or a tuple of a string and a weight.
@@ -473,18 +479,21 @@ def word_list(l):
 # Example: word_pair_list( { 'foo':'FOO', 'bar':('BAR',0.5), 'baz':('baz',('BAZ', 1.2)) } )
 def word_pair_list(d):
     pass
-# Get a transducer as defined by regular expression \a regexp.
+## Get a transducer as defined by regular expression \a regexp.
+#
 # \a regexp must follow <a href="http://www.fsmbook.com/">Xerox transducer notation</a>.
 def regex(regexp):
     pass
-# Compile lexc file \a filename into a transducer.
+## Compile lexc file \a filename into a transducer.
 def compile_lexc_file(filename):
     pass
-# Read next transducer from AT&T file pointed by \a f. \a epsilonstr defines the symbol used for epsilon in the file.
+## Read next transducer from AT&T file pointed by \a f. \a epsilonstr defines the symbol used for epsilon in the file.
+#
 # If the file contains several transducers, they must be separated by "--" lines.
 def read_att(f, epsilonstr="@_EPSILON_SYMBOL_@"):
     pass
-# Read next transducer from prolog file pointed by \a f.
+## Read next transducer from prolog file pointed by \a f.
+#
 # If the file contains several transducers, they must be separated by empty lines.
 def read_prolog(f):
     pass
@@ -529,6 +538,42 @@ def read_prolog(f):
 # @see #libhfst.HfstBasicTransition
 class HfstBasicTransducer:
 
+    # OMIT:
+    # HfstBasicTransducer(FILE *file);
+    # HfstBasicTransducer &operator=(const HfstBasicTransducer &graph);
+    # void add_symbols_to_alphabet(const HfstSymbolPairSet &symbols);
+    # void prune_alphabet_after_substitution(const std::set<unsigned int> &symbols);
+    # const HfstTransitions & operator[](HfstState s) const;
+    # void write_in_xfst_format(std::ostream &os, bool write_weights=true);
+    # void write_in_prolog_format(std::ostream & os, const std::string & name, bool write_weights=true);
+    # static HfstBasicTransducer read_in_prolog_format(std::istream &is, FILE *file, unsigned int & linecount);
+    # static HfstBasicTransducer read_in_prolog_format(std::istream &is, unsigned int & linecount);
+    # void write_in_att_format(std::ostream &os, bool write_weights=true); 
+    # void write_in_att_format_number(FILE *file, bool write_weights=true);
+    # static HfstBasicTransducer read_in_att_format(std::istream &is, FILE *file, std::string epsilon_symbol, unsigned int & linecount);
+    # static HfstBasicTransducer read_in_att_format(std::istream &is, std::string epsilon_symbol, unsigned int & linecount);
+    # HfstBasicTransducer & substitute(bool (*func)(const HfstSymbolPair &sp, HfstSymbolPairSet &sps) );
+    # TODO: ONE FUNCTION
+    # HfstBasicTransducer &substitute(const HfstSymbol &old_symbol, const HfstSymbol  &new_symbol, bool input_side=true, bool output_side=true);
+    # HfstBasicTransducer &substitute_symbols(const HfstSymbolSubstitutions &substitutions);
+    # HfstBasicTransducer &substitute(const HfstSymbolSubstitutions &substitutions);
+    # HfstBasicTransducer &substitute_symbol_pairs(const HfstSymbolPairSubstitutions &substitutions);
+    # HfstBasicTransducer &substitute(const HfstSymbolPairSubstitutions &substitutions);
+    # HfstBasicTransducer &substitute(const HfstSymbolPair &sp, const HfstSymbolPairSet &sps);
+    # HfstBasicTransducer &substitute(const HfstSymbolPair &old_pair, const HfstSymbolPair &new_pair);         
+    # HfstBasicTransducer &substitute(const HfstSymbolPair &sp, const HfstBasicTransducer &graph);
+
+    # TODO:
+    # static HfstBasicTransducer intersect(HfstBasicTransducer & graph1, HfstBasicTransducer & graph2);
+    # HfstBasicTransducer &complete();
+    # std::vector<std::set<HfstState> > topsort(SortDistance dist) const;
+    # int longest_path_size();
+    # std::vector<unsigned int> path_sizes();         
+    # bool is_infinitely_ambiguous();
+    # bool is_lookup_infinitely_ambiguous(const HfstOneLevelPath & s);
+    # bool is_lookup_infinitely_ambiguous(const StringVector & s);         
+    # void lookup_fd(const StringVector &lookup_path, HfstTwoLevelPaths &results, size_t infinite_cutoff, float * max_weight = NULL);
+    # void insert_transducer(HfstState state1, HfstState state2, const HfstBasicTransducer & graph);
 
     ## Add a new state to this transducer and return its number.      
     #  @return The next (smallest) free state number.
@@ -546,6 +591,11 @@ class HfstBasicTransducer:
     ## The states of the transducer.
     # @return A tuple of state numbers.
     def states():
+        pass
+
+    ## The states and transitions of the transducer.
+    # @return A tuple of tuples of HfstBasicTransitions. Todo: explain more.
+    def states_and_transitions():
         pass
 
     ## Explicitly add \a symbol to the alphabet of the graph.
@@ -566,9 +616,19 @@ class HfstBasicTransducer:
     def add_transition(state, transition, add_symbols_to_alphabet=True):
         pass
 
-    ## todo
+    ## Add a transition from state \a source to state \a target with input symbol \a input, output symbol \a output and weight \a weight.
+    # If state \a source does not exist, it is created.
     def add_transition(source, target, input, output, weight=0):
         pass
+
+    ## Remove transition \a transition from state \a s.
+    # @param remove_symbols_from_alphabet ?
+    def remove_transition(s, transition, remove_symbols_from_alphabet=False):
+        pass
+
+    ## Remove all transitions whose input and output symbols are as defined by \a sp.
+    # @param A 2-tuple of input and output symbol. 
+    def remove_transitions(sp);
     
     ## Disjunct this transducer with a one-path transducer defined by consecutive string pairs in \a spv that has weight \a weight.
     #
@@ -640,25 +700,28 @@ class HfstBasicTransducer:
     def __init__(self, transducer):
         pass
 
-    ## todo
+    ## Read a transducer from prolog file \a f. \a linecount is incremented as lines are read (is it in python?).
     def read_in_prolog_format(f, linecount):
         pass
 
-    ## todo
+    ## Write transducer in prolog format to file \a f. Name the transducer \a name.
     def write_in_prolog_format(self, f, name, write_weights=True):
         pass
 
-    ## todo
+    ## Write transducer in xfst format to file \a f.
     def write_in_xfst_format(self, f, write_weights=True):
         pass
 
-    ## todo
+    ## Read a transducer in AT&T format from file \a f. \a epsilon_symbol defines the symbol used for epsilon, \a linecount is incremented as lines are read.
     def read_in_att_format(f, epsilon_symbol, linecount):
         pass
 
-    ## todo
+    ## Write this transducer in AT&T format to file \a file, \a write_weights defines whether weights are written.
     def write_in_att_format(self, f, write_weights=True):
         pass
+
+    ## Write transducer in AT&T format to string \a str.
+    def write_in_att_format(self, str, write_weights=True);
 
     ## Insert freely any number of \a symbol_pair in the transducer with weight \a weight.
     # @param symbol_pair A string pair to be inserted.
@@ -672,8 +735,8 @@ class HfstBasicTransducer:
     def insert_freely(symbol_pairs, weight):
         pass
 
-   ## Insert freely any number of \a transducer in this transducer.
-   # param transducer An HfstBasicTransducer to be inserted.
+     ## Insert freely any number of \a transducer in this transducer.
+    # param transducer An HfstBasicTransducer to be inserted.
     def insert_freely(transducer):
         pass
 
@@ -686,17 +749,29 @@ class HfstBasicTransducer:
     def assign(transducer):
         pass
     
-   ## Get the transitions of state \a state in this transducer. 
-   # If the state does not exist, a @a StateIndexOutOfBoundsException is thrown.
-   # @return A tuple of state numbers.
+    ## Get the transitions of state \a state in this transducer. 
+    # If the state does not exist, a @a StateIndexOutOfBoundsException is thrown.
+    # @return A tuple of HfstBasicTransitions.
     def transitions(state):
         pass
 
-   ## Remove all symbols that do not occur in transitions of the transudcer from its alphabet. 
-   #  Epsilon, unknown and identity symbols are always included in the alphabet.
+    ## Remove all symbols that do not occur in transitions of the transducer from its alphabet. 
+    #  Epsilon, unknown and identity symbols are always included in the alphabet.
     def prune_alphabet():
         pass
     
+    ## Get a list of all symbols used in the transitions of this transducer. 
+    def symbols_used():
+        pass
+
+    ## Get a list of all input/output symbol pairs used in the transitions of this transducer. 
+    def get_transition_pairs():
+        pass
+
+    ## Print the alphabet of this transducer to standard output.
+    def print_alphabet():
+        pass
+
     ## Remove symbol \a symbol from the alphabet of the graph. 
     #  @note Use with care, removing symbols that occur in the transitions of the graph can have unexpected results.
     # @param symbol The string to be removed.
@@ -771,9 +846,26 @@ class HfstBasicTransducer:
     # @param transducer The substituting transducer.
     def substitute(sp, transducer):
         pass
-    
-    ## Write this transducer in AT&T format to file \a file, \a write_weights defines whether weights are written.
-    def write_in_att_format(file, write_weights=True):
+
+    def intersect(graph1, graph2):
+        pass
+    def complete():
+        pass
+    def topsort(dist):
+        pass
+    def longest_path_size():
+        pass
+    def path_sizes():
+        pass
+    def is_infinitely_ambiguous():
+        pass
+    def is_lookup_infinitely_ambiguous(s):
+        pass
+    def is_lookup_infinitely_ambiguous(s):
+        pass
+    def lookup_fd(lookup_path, results, infinite_cutoff, max_weight = NULL):
+        pass
+    def insert_transducer(state1, state2, graph):
         pass
 
 
