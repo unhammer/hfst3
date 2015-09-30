@@ -96,11 +96,10 @@ namespace hfst {
     {
       RmEpsilon<StdArc>(t);
 
-      float w = get_smallest_weight(t);
-
-      if (w < 0)
-        {
-          add_to_weights(t, -w);
+      float w = get_smallest_weight(t); 
+      if (w < 0) 
+        { 
+          add_to_weights(t, -w); 
         }
 
       EncodeMapper<StdArc> encode_mapper
@@ -113,8 +112,8 @@ namespace hfst {
       Decode(det, encode_mapper);
 
       if (w < 0) 
-        {
-          add_to_weights(det, w);
+        { 
+          add_to_weights(det, w); 
         }
 
       return det;
@@ -1604,12 +1603,24 @@ namespace hfst {
   {
     RmEpsilon<StdArc>(t);
 
+    float w = get_smallest_weight(t); 
+    if (w < 0) 
+      { 
+        add_to_weights(t, -w); 
+      }
+
     EncodeMapper<StdArc> encode_mapper
       (hfst::get_encode_weights() ? (kEncodeLabels|kEncodeWeights) : (kEncodeLabels), ENCODE);
     Encode(t, &encode_mapper);
     StdVectorFst * det = new StdVectorFst();
     Determinize<StdArc>(*t, det);
     Decode(det, encode_mapper);
+
+    if (w < 0) 
+      { 
+        add_to_weights(det, w); 
+      }
+
     return det;
   }
 
