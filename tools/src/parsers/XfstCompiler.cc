@@ -2678,7 +2678,7 @@ namespace xfst {
   (FILE* outfile, const HfstTwoLevelPaths & paths, const char * level, bool print_size)
   {
     assert(level != NULL);
-    hfst_fprintf(outfile, "%s", level);
+    hfst_fprintf(outfile, "%s: ", level);
     if (print_size)
       {
         hfst_fprintf(outfile, "%i\n", (int)paths.begin()->second.size());

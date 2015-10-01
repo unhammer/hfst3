@@ -462,7 +462,7 @@ LWSP [\t ]*
     return PUSH_DEFINED;
 }
 
-^{LWSP}("quit"|"exit"|"bye") {
+^{LWSP}("quit"|"exit"|"bye"|"stop"|"hyvästi"|"au revoir"|"näkemiin"|"viszlát"|"auf wiedersehen"|"has") {
     hxfstlval.name = strdup("");         
     return QUIT;                         
 }
