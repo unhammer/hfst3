@@ -490,7 +490,7 @@ def compile_lexc_file(filename):
 ## Read next transducer from AT&T file pointed by \a f. \a epsilonstr defines the symbol used for epsilon in the file.
 #
 # If the file contains several transducers, they must be separated by "--" lines.
-def read_att(f, epsilonstr="@_EPSILON_SYMBOL_@"):
+def read_att(f, epsilonstr=libhfst.EPSILON):
     pass
 ## Read next transducer from prolog file pointed by \a f.
 #
@@ -563,17 +563,40 @@ class HfstBasicTransducer:
     # HfstBasicTransducer &substitute(const HfstSymbolPair &old_pair, const HfstSymbolPair &new_pair);         
     # HfstBasicTransducer &substitute(const HfstSymbolPair &sp, const HfstBasicTransducer &graph);
 
-    # TODO:
+    # TODO?:
     # static HfstBasicTransducer intersect(HfstBasicTransducer & graph1, HfstBasicTransducer & graph2);
     # HfstBasicTransducer &complete();
     # std::vector<std::set<HfstState> > topsort(SortDistance dist) const;
-    # int longest_path_size();
     # std::vector<unsigned int> path_sizes();         
-    # bool is_infinitely_ambiguous();
     # bool is_lookup_infinitely_ambiguous(const HfstOneLevelPath & s);
     # bool is_lookup_infinitely_ambiguous(const StringVector & s);         
-    # void lookup_fd(const StringVector &lookup_path, HfstTwoLevelPaths &results, size_t infinite_cutoff, float * max_weight = NULL);
     # void insert_transducer(HfstState state1, HfstState state2, const HfstBasicTransducer & graph);
+
+    ## The length of the longest path in transducer.
+    # 
+    # Length: number of arcs on a given path.
+    def longest_path_size(self):
+        pass
+
+    ## Whether the transducer is infinitely ambiguous.
+    #
+    # Infinitely ambiguous: if there is an input that will yield infinitely many results,
+    # i.e. there are input epsilon loops that are traversed with that input.
+    def is_infinitely_ambiguous(self):
+        pass
+
+    ## Whether the transducer is infinitely ambiguous with input \a str.
+    #
+    # Infinitely ambiguous: if the input yields infinitely many results, i.e. there are
+    # input epsilon loops that are traversed with the input.
+    def is_lookup_infinitely_ambiguous(self, str):
+        pass
+
+    ## Lookup \a str in transducer.
+    # @param str The input string.
+    # @param kvargs infinite_cutoff=-1, max_weight=inf
+    def lookup_fd(str, **kvargs):
+        pass
 
     ## Add a new state to this transducer and return its number.      
     #  @return The next (smallest) free state number.
@@ -588,10 +611,18 @@ class HfstBasicTransducer:
     def add_state(state):
         pass
 
-    ## The states of the transducer.
+    ## The states of the transducer
     # @return A tuple of state numbers.
+    # /verbatim
+    # for state in fsm.states():
+    # for arc in fsm.transitions(state):
+    #     print('%i ' % (state), end='')
+    #     print(arc)
+    # if fsm.is_final_state(state):
+    #    print('%i %f' % (state, fsm.get_final_weight(state)) )
+    # /endverbatim
     def states():
-        pass
+        pass        
 
     ## The states and transitions of the transducer.
     # @return A tuple of tuples of HfstBasicTransitions. Todo: explain more.
@@ -628,7 +659,8 @@ class HfstBasicTransducer:
 
     ## Remove all transitions whose input and output symbols are as defined by \a sp.
     # @param A 2-tuple of input and output symbol. 
-    def remove_transitions(sp);
+    def remove_transitions(sp):
+        pass
     
     ## Disjunct this transducer with a one-path transducer defined by consecutive string pairs in \a spv that has weight \a weight.
     #
@@ -641,7 +673,7 @@ class HfstBasicTransducer:
     # 
     # \verbatim
     # lexicon = libhfst.HfstBasicTransducer()
-    # TOK = libhfst.HfstTokenizer
+    # TOK = libhfst.HfstTokenizer()
     # lexicon.disjunct(TOK.tokenize('dog'), 0.3)
     # lexicon.disjunct(TOK.tokenize('cat'), 0.5)
     # lexicon.disjunct(TOK.tokenize('elephant'), 1.6)
@@ -680,8 +712,8 @@ class HfstBasicTransducer:
     # [ c:d [? | a | b] [?:c| a:c | b:?] ]\endverbatim
     # when harmonized.
     #
-    # The symbol '?' means \@_UNKNOWN_SYMBOL_\@ in either or both sides of a transition
-    # (transitions of type [?:x], [x:?] and [?:?]). The transition [?] means [\@_IDENTITY_SYMBOL_\@].
+    # The symbol '?' means libhfst.UNKNOWN in either or both sides of a transition
+    # (transitions of type [?:x], [x:?] and [?:?]). The transition [?] means libhfst.IDENTITY.
     #
     # @note This function is always called for all transducer arguments of functions
     #       that take two or more graphs as their arguments, unless otherwise said.
@@ -749,12 +781,21 @@ class HfstBasicTransducer:
     def assign(transducer):
         pass
     
-    ## Get the transitions of state \a state in this transducer. 
+    ## Get the transitions of state \a state in this transducer.
     # If the state does not exist, a @a StateIndexOutOfBoundsException is thrown.
     # @return A tuple of HfstBasicTransitions.
+    #
+    # \verbatim
+    # for state in fsm.states():
+    # for arc in fsm.transitions(state):
+    #     print('%i ' % (state), end='')
+    #     print(arc)
+    # if fsm.is_final_state(state):
+    #    print('%i %f' % (state, fsm.get_final_weight(state)) )
+    # \verbatim
     def transitions(state):
         pass
-
+    
     ## Remove all symbols that do not occur in transitions of the transducer from its alphabet. 
     #  Epsilon, unknown and identity symbols are always included in the alphabet.
     def prune_alphabet():
@@ -793,6 +834,29 @@ class HfstBasicTransducer:
     # @return This transducer.
     def sort_arcs():
         pass
+
+    ## Substitute transitions in the transducer with transitions or transducers.
+    #
+    # @param subst A dictionary of substitutions. Key can be string (single symbol) or 2-tuple of strings (symbol pair).
+    #              Value can be string (single symbol), 2-tuple of strings (symbol pair), tuple of strings,
+    #              tuple of 2-tuples of strings or a transducer.
+    # @param kvargs Arguments recognized are \a input_side and \a output_side with values True and False
+    #               if both keys and values of \a subst are single strings.
+    #
+    # Examples of usage:
+    #
+    # \verbatim
+    # fsm.substitute({'foo':'bar'})
+    # fsm.substitute({'foo':'bar'}, input_side=False)
+    # fsm.substitute({'foo':'bar'}, output_side=False)
+    # fsm.substitute({('foo','bar'):('foo','baz')})
+    # fsm.substitute({'foo':('foo','bar','baz')})
+    # fsm.substitute({('foo','bar'):(('FOO','BAR'),('FOO','bar'),('foo','BAR'))})
+    # 
+    # tr = libhfst.HfstBasicTransducer(libhfst.regex('[foo bar+ (baz)]'))
+    # fsm.substitute({('foo','foo'), tr})
+    # \endverbatim
+    def substitute(subst, **kvargs):
 
     ## Substitute \a old_symbol with \a new_symbol in all transitions. \a input_side and \a output_side define whether the substitution is made on input and output sides.
     # @return This transducer.
@@ -847,31 +911,26 @@ class HfstBasicTransducer:
     def substitute(sp, transducer):
         pass
 
-    def intersect(graph1, graph2):
-        pass
-    def complete():
-        pass
-    def topsort(dist):
-        pass
-    def longest_path_size():
-        pass
-    def path_sizes():
-        pass
-    def is_infinitely_ambiguous():
-        pass
-    def is_lookup_infinitely_ambiguous(s):
-        pass
-    def is_lookup_infinitely_ambiguous(s):
-        pass
-    def lookup_fd(lookup_path, results, infinite_cutoff, max_weight = NULL):
-        pass
-    def insert_transducer(state1, state2, graph):
+    ## Return an enumeration of the states and transitions of the transducer.
+    #
+    # \verbatim
+    # for state, arcs in enumerate(fsm):
+    #   for arc in arcs:
+    #     print('%i ' % (state), end='')
+    #     print(arc)
+    #   if fsm.is_final_state(state):
+    #     print('%i %f' % (state, fsm.get_final_weight(state)) )
+    # \endverbatim
+    def __enumerate__(self):
         pass
 
-
-## Print an HfstBasicTransducer
-def print(hfst_basic_transducer):
-    pass
+    ## Return a string representation of the transducer.
+    #
+    # \verbatim
+    # print(fsm)
+    # \endverbatim
+    def __str__(self):
+        pass
 
 ## A transition class that consists of a target state, input and output symbols and a a tropical weight.
 # @see libhfst.HfstBasicTransducer
@@ -887,27 +946,25 @@ class HfstBasicTransition:
         pass
 
     ## Get the input symbol of the transition.
-    def get_input_symbol():
+    def get_input_symbol(self):
         pass
 
     ## Get the output symbol of the transition.
-    def get_output_symbol():
+    def get_output_symbol(self):
         pass
 
     ## Get number of the target state of the transition.
-    def get_target_state():
+    def get_target_state(self):
         pass
         
     ## Get the weight of the transition.
-    def get_weight():
+    def get_weight(self):
         pass
 
-
-## Print an HfstBasicTransition
-def print(hfst_basic_transition):
-    pass
-
-
+    ## A string representation of the transition.
+    #
+    # @return "target_state input_symbol output_symbol, weight"
+    def __str__(self)
 
 ## A synchronous finite-state transducer.
 # 
@@ -964,7 +1021,7 @@ def print(hfst_basic_transition):
 # tr1 = libhfst.HfstBasicTransducer()
 # tr1.add_state(1)
 # tr1.set_final_weight(1, 0)
-# tr1.add_transition(0, libhfst.HfstBasicTransition(1, '@_UNKNOWN_SYMBOL_@, 'foo', 0) )
+# tr1.add_transition(0, libhfst.HfstBasicTransition(1, libhfst.UNKNOWN, 'foo', 0) )
 # 
 # # tr1 is now [ ?:foo ]
 # 
@@ -972,7 +1029,7 @@ def print(hfst_basic_transition):
 # tr2.add_state(1)
 # tr2.add_state(2)
 # tr2.set_final_weight(2, 0)
-# tr2.add_transition(0, libhfst.HfstBasicTransition(1, '@_IDENTITY_SYMBOL_@', '@_IDENTITY_SYMBOL_@', 0) )
+# tr2.add_transition(0, libhfst.HfstBasicTransition(1, libhfst.IDENTITY, libhfst.IDENTITY, 0) )
 # tr2.add_transition(1, libhfst.HfstBasicTransition(2, 'bar', 'bar', 0) )
 # 
 # # tr2 is now [ [ ?:? ] [ bar:bar ] ]
@@ -1071,7 +1128,7 @@ class HfstTransducer:
 
     ## Create an empty transducer, i.e. a transducer that does not recognize any string. The type of the transducer is defined by \a type.
     # 
-    # @note Use HfstTransducer('\@_EPSILON_SYMBOL_\@') to create an epsilon transducer. 
+    # @note Use HfstTransducer(libhfst.EPSILON) to create an epsilon transducer. 
     def __init__(self, type):
         pass
 
@@ -1139,7 +1196,7 @@ class HfstTransducer:
     # print "Read %i transducers in total" % len(transducers)
     # \endverbatim
     # 
-    # Epsilon will be represented as '\@_EPSILON_SYMBOL_\@' in the resulting transducer.
+    # Epsilon will be represented as libhfst.EPSILON in the resulting transducer.
     # The argument \a epsilon_symbol only denotes how epsilons are represented 
     # in \a ifile.
     # 
@@ -1393,7 +1450,7 @@ class HfstTransducer:
     # \verbatim
     # type = libhfst.FOMA_TYPE
     # foobar = libhfst.HfstTransducer('foo','bar',type)
-    # epsilon = libhfst.HfstTransducer('@_EPSILON_SYMBOL_@',type)
+    # epsilon = libhfst.HfstTransducer(libhfst.EPSILON,type)
     # empty = libhfst.HfstTransducer(type)
     # a_star = libhfst.HfstTransducer('a',type)
     # a_star.repeat_star()
@@ -1519,6 +1576,14 @@ class HfstTransducer:
     def push_weights(PushType type):
         pass
 
+    ## Substitute transitions in the transducer with transitions or transducers.
+    # @param subst A dictionary of substitutions. Key can be string (single symbol) or 2-tuple of strings (symbol pair).
+    #              Value can be string (single symbol), 2-tuple of strings (symbol pair), tuple of strings,
+    #              tuple of 2-tuples of strings or a transducer.
+    # @param kvargs Arguments recognized are \a input_side and \a output_side with values True and False
+    #               if both keys and values of \a subst are single strings. 
+    def substitute(subst, **kvargs):
+
     ## Substitute \a old_symbol with \a new_symbol in all transitions. \a input_side and \a output_side define whether the substitution is made on input and output sides.
     # @return This transducer.
     def substitute(old_symbol, new_symbol, input_side=True, output_side=True):
@@ -1570,6 +1635,11 @@ class HfstTransducer:
     # @param sp The transition (string pair) to be substituted.
     # @param transducer The substituting transducer.
     def substitute(sp, transducer):
+        pass
+
+    ## Lookup string \a input.
+    # @param kvargs Possible parameters and their default values are: obey_flags=True, limit=-1, simple_output=True
+    def lookup(self, input, **kvargs):
         pass
 
     ## Lookup or apply a single tokenized string \a tok_input and return a maximum of \a limit results.

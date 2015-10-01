@@ -244,6 +244,7 @@ namespace std {
 %template(HfstSymbolSubstitutions) map<string, string>;
 %template(HfstSymbolPairSubstitutions) map<pair<string, string>, pair<string, string> >;
 %template(FooBarBaz) vector<hfst::implementations::HfstBasicTransition>;
+%template(BarBazFoo) vector<unsigned int>;
 %template(HfstBasicStates) vector<vector<hfst::implementations::HfstBasicTransition> >;
 %template(HfstOneLevelPath) pair<float, vector<string> >;
 %template(HfstOneLevelPaths) set<pair<float, vector<string> > >;
@@ -365,6 +366,52 @@ enum PushType { TO_INITIAL_STATE, TO_FINAL_STATE };
 
 bool is_diacritic(const std::string & symbol);
 
+%pythoncode{
+  def is_string(s):
+      if isinstance(s, str):
+         return True
+      else:
+        return False   
+  def is_string_pair(sp):
+      if not isinstance(sp, tuple):
+         return False
+      if len(sp) != 2:
+         return False
+      if not is_string(sp[0]):
+         return False
+      if not is_string(sp[1]):
+         return False
+      return True
+  def is_string_vector(sv):
+      if not isinstance(sv, tuple):
+         return False
+      for s in sv:
+          if not is_string(s):
+             return False
+      return True
+  def is_string_pair_vector(spv):
+      if not isinstance(spv, tuple):
+         return False
+      for sp in spv:
+          if not is_string_pair(sp):
+             return False
+      return True
+
+  def two_level_paths_to_dict(tlps):
+      retval = {}
+      for tlp in tlps:
+          input = ""
+          output = ""
+          for sp in tlp[1]:
+              input = input + sp[0]
+              output = output + sp[1]
+          if input in retval:
+              retval[input] = (retval[input], (output, tlp[0]))
+          else:
+              retval[input] = (output, tlp[0])
+      return retval
+%}
+
 class HfstTransducer 
 {
 public: 
@@ -425,9 +472,10 @@ HfstTransducer & output_project();
 HfstTransducer & optionalize();
 
 /* Insert freely, substitute */
+
 HfstTransducer & insert_freely(const StringPair &symbol_pair, bool harmonize=true);
 HfstTransducer & insert_freely(const HfstTransducer &tr, bool harmonize=true);
-//HfstTransducer & substitute(bool (*func)(const StringPair &sp, hfst::StringPairSet &sps));  // Maybe needs to be rewritten in python.
+/*HfstTransducer & substitute(bool (*func)(const StringPair &sp, hfst::StringPairSet &sps));  // Maybe needs to be rewritten in python.
 HfstTransducer & substitute(const std::string &old_symbol,
                                const std::string &new_symbol,
                                bool input_side=true,
@@ -436,12 +484,13 @@ HfstTransducer & substitute(const StringPair &old_symbol_pair,
                                const StringPair &new_symbol_pair);
 HfstTransducer & substitute(const StringPair &old_symbol_pair,
                                const hfst::StringPairSet &new_symbol_pair_set);
-//HfstTransducer & substitute(const hfst::HfstSymbolSubstitutions &substitutions);
+HfstTransducer & substitute(const hfst::HfstSymbolSubstitutions &substitutions);
 HfstTransducer & substitute_symbols(const hfst::HfstSymbolSubstitutions &substitutions); // alias for the previous function which is shadowed
-//HfstTransducer & substitute(const hfst::HfstSymbolPairSubstitutions &substitutions);
+HfstTransducer & substitute(const hfst::HfstSymbolPairSubstitutions &substitutions);
 HfstTransducer & substitute_symbol_pairs(const hfst::HfstSymbolPairSubstitutions &substitutions); // alias for the previous function which is shadowed
 HfstTransducer & substitute(const StringPair &symbol_pair,
                                HfstTransducer &transducer, bool harmonize=true);
+*/
 
 /* Weight handling */
 HfstTransducer & set_final_weights(float weight, bool increment=false);
@@ -533,20 +582,6 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
 //{ return *($self->lookup(tok, s, limit)); }
 
 %pythoncode{
-
-  def two_level_paths_to_dict(tlps):
-      retval = {}
-      for tlp in tlps:
-          input = ""
-          output = ""
-          for sp in tlp[1]:
-              input = input + sp[0]
-              output = output + sp[1]
-          if input in retval:
-              retval[input] = (retval[input], (output, tlp[0]))
-          else:
-              retval[input] = (output, tlp[0])
-      return retval
 
   def lookup(self, input, **kvargs):
       
@@ -665,9 +700,39 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
       if output == 'text':
          return two_level_paths_to_string(retval)
       elif output == 'dict':
-         return HfstTransducer.two_level_paths_to_dict(retval)
+         return two_level_paths_to_dict(retval)
       else:
          return retval
+
+  def substitute(self, subst, **kvargs):
+      if not isinstance(subst, dict):
+         raise RuntimeError('First input argument must be a dictionary.')
+      single = False
+      pair = False
+      transducer = False
+      for s, S in subst.items():
+          if is_string(s):
+             single = True
+          elif is_string_pair(s):
+             pair = True
+          else:
+             raise RuntimeError('...1')
+
+          if is_string(S):
+             single = True
+          elif is_string_vector(S):
+             single = True
+          elif is_string_pair(S):
+             pair = True
+          elif is_string_pair_vector(S):
+             pair = True
+          elif isinstance(S, HfstTransducer):
+             transducer = True
+          else:
+             raise RuntimeError('...2')
+
+      pass
+
 }
 
 };
@@ -762,7 +827,6 @@ class HfstBasicTransducer {
   public:
 
     typedef std::vector<HfstBasicTransition> HfstTransitions;
-    typedef std::vector<HfstTransitions> HfstStates;    
 
     HfstBasicTransducer(void);
     //HfstBasicTransducer(FILE *file);
@@ -782,6 +846,7 @@ class HfstBasicTransducer {
     HfstState add_state(void);
     HfstState add_state(HfstState s);
     HfstState get_max_state() const;
+    std::vector<HfstState> states() const;
     void add_transition(HfstState s, const hfst::implementations::HfstBasicTransition & transition,
                          bool add_symbols_to_alphabet=true);
     void remove_transition(HfstState s, const hfst::implementations::HfstBasicTransition & transition,
@@ -807,7 +872,7 @@ class HfstBasicTransducer {
     //        unsigned int & linecount);
 
     // substitution functions...
-
+    
     hfst::implementations::HfstBasicStates states_and_transitions() const;
 
 
@@ -844,6 +909,38 @@ class HfstBasicTransducer {
 %pythoncode{
   def __iter__(self):
       return self.states_and_transitions().__iter__()
+
+  def __enumerate__(self):
+      return enumerate(self.states_and_transitions())
+
+  def substitute(self, subst, **kvargs):
+      if not isinstance(subst, dict):
+         raise RuntimeError('First input argument must be a dictionary.')
+      single = False
+      pair = False
+      transducer = False
+      for s, S in subst.items():
+          if is_string(s):
+             single = True
+          elif is_string_pair(s):
+             pair = True
+          else:
+             raise RuntimeError('...')
+
+          if is_string(S):
+             single = True
+          elif is_string_vector(S):
+             single = True
+          elif is_string_pair(S):
+             pair = True
+          elif is_string_pair_vector(S):
+             pair = True
+          elif isinstance(S, HfstBasicTransducer):
+             transducer = True
+          else:
+             raise RuntimeError('...')
+
+      pass
 %}
 
 }

@@ -37,55 +37,55 @@ tr.insert_freely(('A','B')).minimize()
 
 # HfstTransducer & substitute(const std::string &old_symbol, const std::string &new_symbol, bool input_side=true, bool output_side=true);
 tr = libhfst.regex('a a:b b;')
-tr.substitute('a', 'A', True, False)
+tr.substitute({'a':'A'}, input=True, output=False)
 eq = libhfst.regex('A:a A:b b;')
 print(tr.compare(eq))
 
 tr = libhfst.regex('a a:b b;')
-tr.substitute('a', 'A', False, True)
+tr.substitute({'a':'A'}, input=False, output=True)
 eq = libhfst.regex('a:A a:b b;')
 print(tr.compare(eq))
 
 tr = libhfst.regex('a a:b b;')
-tr.substitute('a', 'A')
+tr.substitute({'a':'A'})
 eq = libhfst.regex('A A:b b;')
 print(tr.compare(eq))
 
 # HfstTransducer & substitute(const StringPair &old_symbol_pair, const StringPair &new_symbol_pair);
 tr = libhfst.regex('a a:b b;')
-tr.substitute(('a','b'), ('A','B'))
+tr.substitute({('a','b'):('A','B')})
 eq = libhfst.regex('a A:B b;')
 print(tr.compare(eq))
 
 # HfstTransducer & substitute(const StringPair &old_symbol_pair, const hfst::StringPairSet &new_symbol_pair_set);
 tr = libhfst.regex('a a:b b;')
-tr.substitute(('a','b'), (('A','B'),('B','C'),('C','D'))) # use tuple as an equivalent for std::set
+tr.substitute({('a','b'):(('A','B'),('B','C'),('C','D'))}) # use tuple as an equivalent for std::set
 eq = libhfst.regex('a [A:B|B:C|C:D] b;')
 print(tr.compare(eq))
 
 tr = libhfst.regex('a a:b b;')
-tr.substitute(('a','b'), [('A','B'),('B','C'),('C','D')]) # use list as an equivalent for std::set
+tr.substitute({('a','b'):(('A','B'),('B','C'),('C','D'))}) # use list as an equivalent for std::set
 eq = libhfst.regex('a [A:B|B:C|C:D] b;')
 print(tr.compare(eq))
 
 # HfstTransducer & substitute(const hfst::HfstSymbolSubstitutions &substitutions);
 # HfstTransducer & substitute_symbols(const hfst::HfstSymbolSubstitutions &substitutions); // alias for the previous function
 tr = libhfst.regex('a a:b b;')
-tr.substitute_symbols({'a':'A', 'b':'B', 'c':'C'})
+tr.substitute({'a':'A', 'b':'B', 'c':'C'})
 eq = libhfst.regex('A A:B B;')
 print(tr.compare(eq))
 
 # HfstTransducer & substitute(const hfst::HfstSymbolPairSubstitutions &substitutions);
 # HfstTransducer & substitute_symbol_pairs(const hfst::HfstSymbolPairSubstitutions &substitutions); // alias for the previous function
 tr = libhfst.regex('a a:b b;')
-tr.substitute_symbol_pairs({('a','a'):('A','a'), ('a','b'):('a','B'), ('c','c'):('C','c')})
+tr.substitute({('a','a'):('A','a'), ('a','b'):('a','B'), ('c','c'):('C','c')})
 eq = libhfst.regex('A:a a:B b;')
 print(tr.compare(eq))
 
 # HfstTransducer & substitute(const StringPair &symbol_pair, HfstTransducer &transducer, bool harmonize=true);
 tr = libhfst.regex('a a:b b;')
 sub = libhfst.regex('[c:d]+;')
-tr.substitute(('a','b'), sub)
+tr.substitute({('a','b'):sub})
 eq = libhfst.regex('a [c:d]+ b;')
 print(tr.compare(eq))
 
@@ -171,9 +171,20 @@ fsm.add_transition(0,1,'foo','BAR',2)
 fsm.add_transition(1,2,'baz','baz',0)
 fsm.set_final_weight(2,0.5)
 
-state_number=0
-for state in fsm:
-    for arc in state:
-        print('%i ' % (state_number), end='')
+for state in fsm.states():
+    for arc in fsm.transitions(state):
+        print('%i ' % (state), end='')
         print(arc)
-    state_number += 1
+    if fsm.is_final_state(state):
+        print('%i %f' % (state, fsm.get_final_weight(state)) )
+
+for state, arcs in enumerate(fsm):
+    for arc in arcs:
+        print('%i ' % (state), end='')
+        print(arc)
+    if fsm.is_final_state(state):
+        print('%i %f' % (state, fsm.get_final_weight(state)) )
+
+tr = libhfst.HfstBasicTransducer(libhfst.regex('foo'))
+tr.substitute({'foo':'bar'})
+tr.substitute({('foo','foo'):'bar'})
