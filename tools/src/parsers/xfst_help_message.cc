@@ -262,16 +262,12 @@ bool handle_case(const std::string & names, const std::string & arguments,
   //COMMAND("apply med <string>, apply med", "find approximate matches to string in top network by minimum edit distance");
   COMMAND("apropos", "<string>",
           "search help for <string>");
-  COMMAND("add properties, add", "", 
-          "<no description>");
-  COMMAND("alias", "", 
-          "<no description>");
-  COMMAND("cleanup net, cleanup", "", 
-          "<no description>");
+  //COMMAND("add properties, add", "", "<not implemented>");
+  //COMMAND("alias", "", "<not implemented>");
+  //COMMAND("cleanup net, cleanup", "", "<not implemented>");
   COMMAND("clear stack, clear", "", 
           "clears the stack");
-  COMMAND("collect epsilon-loops, epsilon-loops", "", 
-          "<no description>");
+  //COMMAND("collect epsilon-loops, epsilon-loops", "", "<not implemented>");
   //"compile-replace lower, com-rep lower"
   //"compile-replace upper, com-rep upper"
   COMMAND("compact sigma", "", "removes redundant symbols from FSM");
@@ -283,18 +279,18 @@ bool handle_case(const std::string & names, const std::string & arguments,
   COMMAND("define", "<fname>(<v1,..,vn>) <r.e.>", "define function");
   COMMAND("determinize net, determinize, determinise net, determinise", "", "determinizes top FSM on stack"); 
   COMMAND("echo", "<string>", "echo a string");
-  COMMAND("edit properties, edit", "", "<no description>");
+  //COMMAND("edit properties, edit", "", "<not implemented>");
   //"epsilon-remove net, epsilon-remove"
   COMMAND("eliminate flag", "<name>", "eliminate flag <name> diacritics from the top network");
   COMMAND("eliminate flags", "", "eliminate all flag diacritics from the top network");
   COMMAND("export cmatrix", "(filename)", "export the confusion matrix as an AT&T transducer");
   COMMAND("extract ambiguous", "", "extracts the ambiguous paths of a transducer");
   COMMAND("extract unambiguous", "", "extracts the unambiguous paths of a transducer");
-  COMMAND("hfst", "", "<no description>");
+  //COMMAND("hfst", "", "<no description>");
   COMMAND("ignore net, ignore", "", "applies ignore to top two FSMs on stack");
   COMMAND("intersect net, intersect, conjunct net, conjunct", "", "intersects FSMs on stack");
   COMMAND("invert net, invert", "", "inverts top FSM");
-  COMMAND("inspect, inspect net", "", "<no description>");
+  COMMAND("inspect, inspect net", "", "interactively traverse top FSM");
   AMBIGUOUS_COMMAND("help", "help, help license, help warranty");
   CONT_COMMAND("help", "", "lists all commands");
   COMMAND("help", "<name>", "prints help message of a command");
@@ -302,7 +298,7 @@ bool handle_case(const std::string & names, const std::string & arguments,
   COMMAND("help warranty", "", "prints warranty information");
   COMMAND("label net", "", "extracts all attested symbol pairs from FSM");
   COMMAND("letter machine", "", "Converts top FSM to a letter machine");
-  COMMAND("list", "", "<no description>");
+  COMMAND("list <symbol> <symbols>", "", "Associates the given symbol with a set of symbols");
   AMBIGUOUS_COMMAND("load", "load stack, load defined");
   COMMAND("load stack, load", "<filename>", "Loads networks and pushes them on the stack");
   COMMAND("load defined, loadd", "<filename>", "Restores defined networks from file");
@@ -321,44 +317,46 @@ bool handle_case(const std::string & names, const std::string & arguments,
                     "print shortest-string-size, print shortest-string, print sigma, print sigma-tally, print size, "
                     "print stack, print upper-words, print words");
   AMBIGUOUS_COMMAND("write", "write definition, write dot, write att, print properties, write prolog, write text, write spaced-text");
-  COMMAND("print aliases, aliases", "", "<no description>");
-  COMMAND("print arc-tally, arc-tally", "", "<no description>");
+  //COMMAND("print aliases, aliases", "", "<not implemented>");
+  //COMMAND("print arc-tally, arc-tally", "", "<not implemented>");
   // print cmatrix
   COMMAND("print defined, pdefined", "", "prints defined symbols and functions");
-  COMMAND("write definition, wdef, write definitions, wdefs", "", "<no description>");
-  COMMAND("print directory, directory", "", "<no description>");
+  COMMAND("write definition, wdef", "<definition> > <filename>", "write defined network <defined> into file <filename>");
+  COMMAND("write definitions, wdefs", "> <filename>", "write all defined networks into file <filename>");
+#ifndef _WIN32
+  COMMAND("print directory, directory", "","print contents of current directory");
+#endif
   COMMAND("write dot, wdot, dot", "", "prints top FSM in Graphviz dot format");
-  COMMAND("write att, att", "", "<no description>");
-  COMMAND("print file-info, file-info", "", "<no description>");
-  COMMAND("print flags, flags", "", "<no description>");
-  COMMAND("print labels, labels", "", "<no description>");
-  COMMAND("print label-maps, label-maps", "", "<no description>");
-  COMMAND("print label-tally, label-tally", "", "<no description>");
-  COMMAND("print list", "", "<no description>");
-  COMMAND("print lists", "", "<no description>");
-  COMMAND("print longest-string, longest-string, pls", "", "<no description>");
-  COMMAND("print longest-string-size, longest-string-size, plz", "", "<no description>");
-  COMMAND("print lower-words, lower-words", "", "prints words on the lower-side of top FSM");
+  //COMMAND("print file-info, file-info", "", "<not implemented>");
+  //COMMAND("print flags, flags", "", "<not implemented>");
+  COMMAND("print labels, labels", "", "print symbol pairs of top FSM");
+  //COMMAND("print label-maps, label-maps", "> <filename>", "<not implemented>");
+  COMMAND("print label-tally, label-tally", "", "print statistics about symbol pairs in top FSM");
+  COMMAND("print list <symbol>", "", "Print the set of symbols that is associated to <symbol>");
+  COMMAND("print lists", "", "Print all symbols that are associated to a set of symbols");
+  COMMAND("print longest-string, longest-string, pls", "", "print longest input and output string of top FSM");
+  COMMAND("print longest-string-size, longest-string-size, plz", "", "print length of longest input and output string of top FSM");
+  COMMAND("print lower-words, lower-words", "", "print words on the lower-side of top FSM");
   COMMAND("print name, pname", "", "prints the name of the top FSM");
   COMMAND("print net", "", "prints all information about top FSM");
-  COMMAND("print properties, print props, write properties, write props", "", "<no description>");
+  //COMMAND("print properties, print props, write properties, write props", "", "<not implemented>");
   COMMAND("print random-lower, random-lower", "", "prints random words from lower side");
   COMMAND("print random-upper, random-upper", "", "prints random words from upper side");
   COMMAND("print random-words, random-words", "", "prints random words from top FSM");
   COMMAND("print shortest-string-size, print shortest-string-length, psss, pssl", "", "prints length of shortest string");
   COMMAND("print shortest-string, shortest-string, pss", "", "prints the shortest string of the top FSM");
   COMMAND("print sigma, sigma", "", "prints the alphabet of the top FSM");
-  COMMAND("print sigma-tally, sigma-tally, sitally, print sigma-word-tally", "", "<no description>");
+  //COMMAND("print sigma-tally, sigma-tally, sitally, print sigma-word-tally", "", "<not implemented>");
   COMMAND("print size, size", "", "prints size information about top FSM");
-  COMMAND("print stack, stack", "", "<no description>");
-  COMMAND("print upper-words, upper-words", "", "<no description>");
-  COMMAND("print words, words", "", "<no description>");
+  COMMAND("print stack, stack", "", "print info about FSMs in stack");
+  COMMAND("print upper-words, upper-words", "", "print words on the upper-side of top FSM");
+  COMMAND("print words, words", "", "print words recognized by top FSM");
   COMMAND("prune net, prune", "", "makes top network coaccessible");
   COMMAND("push (defined)", "<name>", "adds a defined FSM to top of stack");
-  COMMAND("quit, exit, bye, stop, hyvästi, au revoir, näkemiin, viszlát, auf wiedersehen, has", "", "exit foma");
+  COMMAND("quit, exit, bye, stop, hyvästi, au revoir, näkemiin, viszlát, auf wiedersehen, has", "", "exit hfst-xfst");
   COMMAND("read lexc", "(<filename>)", "read and compile lexc format file");
   COMMAND("read att", "(<filename>)", "read a file in AT&T FSM format and add to top of stack");
-  COMMAND("read properties, rprops", "", "<no description>");
+  //COMMAND("read properties, rprops", "", "<not implemented>");
   COMMAND("read prolog, rpl", "<filename>", "reads prolog format file");
   COMMAND("read regex, regex", "", "read a regular expression");
   COMMAND("read spaced-text, rs", "(<filename>)", "compile space-separated words/word-pairs separated by newlines into a FST");
@@ -384,7 +382,7 @@ bool handle_case(const std::string & names, const std::string & arguments,
   COMMAND("substitute defined", "<X> for <Y>", "substitutes defined network X at all arcs containing Y");
   //"substitute label"
   COMMAND("substitute symbol", "<X> for <Y>", "substitutes all occurrences of Y in an arc with X");
-  COMMAND("substring", "", "<no description>");
+  //COMMAND("substring", "", "<not implemented>");
   COMMAND("system", "<cmd>", "execute the system command <cmd>");
   AMBIGUOUS_COMMAND("test", "test unambiguous, test equivalent, test functional, test identity, test lower-universal, "
                     "test upper-universal, test non-null, test null, test lower-bounded, test overlap, test sequential, "
@@ -398,26 +396,26 @@ bool handle_case(const std::string & names, const std::string & arguments,
   COMMAND("test upper-universal, upper-universal, tuu", "", "test if upper side is ..");
   COMMAND("test non-null, tnn", "", "test if top machine is not the empty language");
   COMMAND("test null, tnu", "", "test if top machine is the empty language");
-  COMMAND("test lower-bounded, lower-bounded, tlb", "", "<no description>");
-  COMMAND("test overlap, overlap, to", "", "<no description>");
+  COMMAND("test lower-bounded, lower-bounded, tlb", "", "test if top FSM accepts a finite number of input strings");
+  COMMAND("test overlap, overlap, to", "", "test if intersection of two top FSMs is not empty");
   COMMAND("test sequential", "", "tests if top machine is sequential");
   COMMAND("test star-free", "", "test if top FSM is star-free");
-  COMMAND("test sublanguage, sublanguage, ts", "", "<no description>");
-  COMMAND("test upper-bounded, upper-bounded, tub", "", "<no description>");
+  COMMAND("test sublanguage, sublanguage, ts", "", "test if top FSM is a sublanguage of the next FSM in stack");
+  COMMAND("test upper-bounded, upper-bounded, tub", "", "test if top FSM produces a finite number of output strings");
   COMMAND("turn stack, turn", "", "turns stack upside down");
   COMMAND("twosided flag-diacritics, tfd", "", "changes flags to always be identity pairs");
   COMMAND("undefine", "<name>", "remove <name> from defined networks");
-  COMMAND("unlist", "", "<no description>");
+  COMMAND("unlist <symbol>", "", "disassociates the given symbol from the set that was bound to it");
   COMMAND("union net, union, disjunct", "", "union of top two FSMs");
   COMMAND("upper-side net, upper-side", "", "upper projection of top FSM");
   COMMAND("view net", "", "display top network (if supported)");
-  COMMAND("write spaced-text, wspaced-text", "", "<no description>");
-  COMMAND("write text, wt", "", "<no description>");
+  //COMMAND("write spaced-text, wspaced-text", "", "<not implemented>");
+  //COMMAND("write text, wt", "", "<not implemented>");
   COMMAND("write prolog, wpl", "(> filename)", "writes top network to prolog format file/stdout");
-  COMMAND("write att", "(> <filename>)", "writes top network to AT&T format file/stdout");
+  COMMAND("write att", "(> <filename>)", "writes top network in AT&T format to file/stdout");
   COMMAND("zero-plus net, zero-plus", "", "Kleene star on top fsm");
   AMBIGUOUS_COMMAND("variable", "variable compose-tristate, variable show-flags, variable obey-flags, variable minimal, "
-                    "variable print-pairs, variable print-space, variable print-sigma, variable quit-on-fail, "
+                    "variable print-pairs, variable print-space, variable print-sigma, variable print-weight, variable quit-on-fail, "
                     "variable recursive-define, variable verbose, variable hopcroft-min, variable med-limit, "
                     "variable med-cutoff, variable att-epsilon");
   COMMAND("variable compose-tristate", "", "use the tristate composition algorithm");
@@ -427,6 +425,7 @@ bool handle_case(const std::string & names, const std::string & arguments,
   COMMAND("variable print-pairs", "", "always print both sides when applying");
   COMMAND("variable print-space", "", "print spaces between symbols");
   COMMAND("variable print-sigma", "", "print the alphabet when printing network");
+  COMMAND("variable print-weight", "", "show weights when printing networks or strings");
   COMMAND("variable quit-on-fail", "", "Abort operations when encountering errors");
   COMMAND("variable recursive-define", "", "Allow recursive definitions");
   COMMAND("variable verbose", "", "Verbosity of interface");
