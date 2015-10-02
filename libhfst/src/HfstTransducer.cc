@@ -3576,6 +3576,15 @@ HfstTransducer &HfstTransducer::substitute
 
 }
 
+HfstTransducer & HfstTransducer::substitute_symbol(const std::string &old_symbol, const std::string &new_symbol, bool input_side, bool output_side)
+{ return this->substitute(old_symbol, new_symbol, input_side, output_side); }
+HfstTransducer & HfstTransducer::substitute_symbol_pair(const StringPair &old_symbol_pair, const StringPair &new_symbol_pair)
+{ return this->substitute(old_symbol_pair, new_symbol_pair); }
+HfstTransducer & HfstTransducer::substitute_symbol_pair_with_set(const StringPair &old_symbol_pair, const hfst::StringPairSet &new_symbol_pair_set)
+{ return this->substitute(old_symbol_pair, new_symbol_pair_set); }
+HfstTransducer & HfstTransducer::substitute_symbol_pair_with_transducer(const StringPair &symbol_pair, HfstTransducer &transducer, bool harmonize)
+{ return this->substitute(symbol_pair, transducer, harmonize); }
+
 HfstTransducer &HfstTransducer::substitute_symbols
 (const HfstSymbolSubstitutions &substitutions)
 { return this->substitute(substitutions); }

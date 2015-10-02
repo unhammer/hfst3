@@ -2458,7 +2458,6 @@
 
 
 
-
          /* ----------------------------------------------------           
                Substitute string pair with a transition graph
             ---------------------------------------------------- */
@@ -2980,6 +2979,18 @@
          }
 
 
+         // aliases
+         HFSTDLL HfstTransitionGraph & substitute_symbol(const std::string &old_symbol, const std::string &new_symbol, bool input_side=true, bool output_side=true)
+           { return this->substitute(old_symbol, new_symbol, input_side, output_side); }
+
+         HFSTDLL HfstTransitionGraph & substitute_symbol_pair(const StringPair &old_symbol_pair, const StringPair &new_symbol_pair)
+           { return this->substitute(old_symbol_pair, new_symbol_pair); }
+
+         HFSTDLL HfstTransitionGraph & substitute_symbol_pair_with_set(const StringPair &old_symbol_pair, const hfst::StringPairSet &new_symbol_pair_set)
+           { return this->substitute(old_symbol_pair, new_symbol_pair_set); }
+
+         HFSTDLL HfstTransitionGraph & substitute_symbol_pair_with_transducer(const StringPair &symbol_pair, HfstTransitionGraph &transducer)
+           { return this->substitute(symbol_pair, transducer); }
 
 
          /* ----------------------------

@@ -1522,6 +1522,12 @@ t.substitute(&function);
     HFSTDLL HfstTransducer &substitute(const StringPair &old_symbol_pair,
                                const StringPairSet &new_symbol_pair_set);
 
+    HFSTDLL HfstTransducer & substitute_symbol(const std::string &old_symbol, const std::string &new_symbol, bool input_side=true, bool output_side=true);
+    HFSTDLL HfstTransducer & substitute_symbol_pair(const StringPair &old_symbol_pair, const StringPair &new_symbol_pair);
+    HFSTDLL HfstTransducer & substitute_symbol_pair_with_set(const StringPair &old_symbol_pair, const hfst::StringPairSet &new_symbol_pair_set);
+    HFSTDLL HfstTransducer & substitute_symbol_pair_with_transducer(const StringPair &symbol_pair, HfstTransducer &transducer, bool harmonize=true);
+
+
     /** \brief Substitute all transition symbols as defined in \a substitutions.
 
         Each symbol old_symbol is substituted with symbol new_symbol, iff 
