@@ -37,34 +37,34 @@ tr.insert_freely(('A','B')).minimize()
 
 # HfstTransducer & substitute(const std::string &old_symbol, const std::string &new_symbol, bool input_side=true, bool output_side=true);
 tr = libhfst.regex('a a:b b;')
-tr.substitute({'a':'A'}, input=True, output=False)
+tr.substitute('a', 'A', input=True, output=False)
 eq = libhfst.regex('A:a A:b b;')
 print(tr.compare(eq))
 
 tr = libhfst.regex('a a:b b;')
-tr.substitute({'a':'A'}, input=False, output=True)
+tr.substitute('a', 'A', input=False, output=True)
 eq = libhfst.regex('a:A a:b b;')
 print(tr.compare(eq))
 
 tr = libhfst.regex('a a:b b;')
-tr.substitute({'a':'A'})
+tr.substitute('a','A')
 eq = libhfst.regex('A A:b b;')
 print(tr.compare(eq))
 
 # HfstTransducer & substitute(const StringPair &old_symbol_pair, const StringPair &new_symbol_pair);
 tr = libhfst.regex('a a:b b;')
-tr.substitute({('a','b'):('A','B')})
+tr.substitute(('a','b'),('A','B'))
 eq = libhfst.regex('a A:B b;')
 print(tr.compare(eq))
 
 # HfstTransducer & substitute(const StringPair &old_symbol_pair, const hfst::StringPairSet &new_symbol_pair_set);
 tr = libhfst.regex('a a:b b;')
-tr.substitute({('a','b'):(('A','B'),('B','C'),('C','D'))}) # use tuple as an equivalent for std::set
+tr.substitute(('a','b'),(('A','B'),('B','C'),('C','D'))) # use tuple as an equivalent for std::set
 eq = libhfst.regex('a [A:B|B:C|C:D] b;')
 print(tr.compare(eq))
 
 tr = libhfst.regex('a a:b b;')
-tr.substitute({('a','b'):(('A','B'),('B','C'),('C','D'))}) # use list as an equivalent for std::set
+tr.substitute(('a','b'),(('A','B'),('B','C'),('C','D'))) # use list as an equivalent for std::set
 eq = libhfst.regex('a [A:B|B:C|C:D] b;')
 print(tr.compare(eq))
 
@@ -85,7 +85,7 @@ print(tr.compare(eq))
 # HfstTransducer & substitute(const StringPair &symbol_pair, HfstTransducer &transducer, bool harmonize=true);
 tr = libhfst.regex('a a:b b;')
 sub = libhfst.regex('[c:d]+;')
-tr.substitute({('a','b'):sub})
+tr.substitute(('a','b'),sub)
 eq = libhfst.regex('a [c:d]+ b;')
 print(tr.compare(eq))
 
@@ -187,4 +187,4 @@ for state, arcs in enumerate(fsm):
 
 tr = libhfst.HfstBasicTransducer(libhfst.regex('foo'))
 tr.substitute({'foo':'bar'})
-tr.substitute({('foo','foo'):'bar'})
+tr.substitute({('foo','foo'):('bar','bar')})

@@ -475,22 +475,17 @@ HfstTransducer & optionalize();
 
 HfstTransducer & insert_freely(const StringPair &symbol_pair, bool harmonize=true);
 HfstTransducer & insert_freely(const HfstTransducer &tr, bool harmonize=true);
-/*HfstTransducer & substitute(bool (*func)(const StringPair &sp, hfst::StringPairSet &sps));  // Maybe needs to be rewritten in python.
-HfstTransducer & substitute(const std::string &old_symbol,
-                               const std::string &new_symbol,
-                               bool input_side=true,
-                               bool output_side=true);
-HfstTransducer & substitute(const StringPair &old_symbol_pair,
-                               const StringPair &new_symbol_pair);
-HfstTransducer & substitute(const StringPair &old_symbol_pair,
-                               const hfst::StringPairSet &new_symbol_pair_set);
-HfstTransducer & substitute(const hfst::HfstSymbolSubstitutions &substitutions);
+
+//HfstTransducer & substitute(bool (*func)(const StringPair &sp, hfst::StringPairSet &sps));
+
+HfstTransducer & substitute_symbol(const std::string &old_symbol, const std::string &new_symbol, bool input_side=true, bool output_side=true);
+HfstTransducer & substitute_symbol_pair(const StringPair &old_symbol_pair, const StringPair &new_symbol_pair);
+HfstTransducer & substitute_symbol_pair_with_set(const StringPair &old_symbol_pair, const hfst::StringPairSet &new_symbol_pair_set);
+HfstTransducer & substitute_symbol_pair_with_transducer(const StringPair &symbol_pair, HfstTransducer &transducer, bool harmonize=true);
 HfstTransducer & substitute_symbols(const hfst::HfstSymbolSubstitutions &substitutions); // alias for the previous function which is shadowed
-HfstTransducer & substitute(const hfst::HfstSymbolPairSubstitutions &substitutions);
 HfstTransducer & substitute_symbol_pairs(const hfst::HfstSymbolPairSubstitutions &substitutions); // alias for the previous function which is shadowed
-HfstTransducer & substitute(const StringPair &symbol_pair,
-                               HfstTransducer &transducer, bool harmonize=true);
-*/
+
+
 
 /* Weight handling */
 HfstTransducer & set_final_weights(float weight, bool increment=false);
@@ -704,35 +699,64 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
       else:
          return retval
 
-  def substitute(self, subst, **kvargs):
-      if not isinstance(subst, dict):
-         raise RuntimeError('First input argument must be a dictionary.')
-      single = False
-      pair = False
-      transducer = False
-      for s, S in subst.items():
-          if is_string(s):
-             single = True
-          elif is_string_pair(s):
-             pair = True
-          else:
-             raise RuntimeError('...1')
+  def substitute(self, s, S=None, **kvargs):
 
-          if is_string(S):
-             single = True
-          elif is_string_vector(S):
-             single = True
-          elif is_string_pair(S):
-             pair = True
-          elif is_string_pair_vector(S):
-             pair = True
-          elif isinstance(S, HfstTransducer):
-             transducer = True
-          else:
-             raise RuntimeError('...2')
+      if S == None:
+         if not isinstance(s, dict):
+            raise RuntimeError('Sole input argument must be a dictionary.')
 
-      pass
+         subst_type=""
 
+         for k, v in s.items():
+             if is_string(k):
+                if subst_type == "":
+                   subst_type="string"
+                elif subst_type == "string pair":
+                   raise RuntimeError('')
+                if not is_string(v):
+                   raise RuntimeError('')
+             elif is_string_pair(k):
+                if subst_type == "":
+                   subst_type="string pair"
+                elif subst_type == "string":
+                   raise RuntimeError('')
+                if not is_string_pair(v):
+                   raise RuntimeError('')
+             else:
+                raise RuntimeError('')
+
+         if subst_type == "string":
+            return self.substitute_symbols(s)
+         else:
+            return self.substitute_symbol_pairs(s)
+
+      if is_string(s):
+         if is_string(S):
+            input=True
+            output=True
+            for k,v in kvargs.items():
+                if k == 'input':
+                   if v == False:
+                      input=False
+                elif k == 'output':
+                   if v == False:
+                      output=False
+                else:
+                   raise RuntimeError('Free argument not recognized.')
+            return self.substitute_symbol(s, S, input, output)
+         else:
+            raise RuntimeError('...')
+      elif is_string_pair(s):
+         if is_string_pair(S):
+            return self.substitute_symbol_pair(s, S)
+         elif is_string_pair_vector(S):
+            return self.substitute_symbol_pair_with_set(s, S)
+         elif isinstance(S, HfstTransducer):
+            return self.substitute_symbol_pair_with_transducer(s, S, True)
+         else:
+            raise RuntimeError('...')
+      else:
+         raise RuntimeError('...')
 }
 
 };
@@ -871,7 +895,12 @@ class HfstBasicTransducer {
     //        std::string epsilon_symbol,
     //        unsigned int & linecount);
 
-    // substitution functions...
+    HfstBasicTransducer & substitute_symbol(const std::string &old_symbol, const std::string &new_symbol, bool input_side=true, bool output_side=true);
+    HfstBasicTransducer & substitute_symbol_pair(const StringPair &old_symbol_pair, const StringPair &new_symbol_pair);
+    HfstBasicTransducer & substitute_symbol_pair_with_set(const StringPair &old_symbol_pair, const hfst::StringPairSet &new_symbol_pair_set);
+    HfstBasicTransducer & substitute_symbol_pair_with_transducer(const StringPair &symbol_pair, HfstBasicTransducer &transducer);
+    HfstBasicTransducer & substitute_symbols(const hfst::HfstSymbolSubstitutions &substitutions); // alias for the previous function which is shadowed
+    HfstBasicTransducer & substitute_symbol_pairs(const hfst::HfstSymbolPairSubstitutions &substitutions); // alias for the previous function which is shadowed
     
     hfst::implementations::HfstBasicStates states_and_transitions() const;
 
@@ -913,34 +942,65 @@ class HfstBasicTransducer {
   def __enumerate__(self):
       return enumerate(self.states_and_transitions())
 
-  def substitute(self, subst, **kvargs):
-      if not isinstance(subst, dict):
-         raise RuntimeError('First input argument must be a dictionary.')
-      single = False
-      pair = False
-      transducer = False
-      for s, S in subst.items():
-          if is_string(s):
-             single = True
-          elif is_string_pair(s):
-             pair = True
-          else:
-             raise RuntimeError('...')
+  def substitute(self, s, S=None, **kvargs):
 
-          if is_string(S):
-             single = True
-          elif is_string_vector(S):
-             single = True
-          elif is_string_pair(S):
-             pair = True
-          elif is_string_pair_vector(S):
-             pair = True
-          elif isinstance(S, HfstBasicTransducer):
-             transducer = True
-          else:
-             raise RuntimeError('...')
+      if S == None:
+         if not isinstance(s, dict):
+            raise RuntimeError('First input argument must be a dictionary.')
 
-      pass
+         subst_type=""
+
+         for k, v in s.items():
+             if is_string(k):
+                if subst_type == "":
+                   subst_type="string"
+                elif subst_type == "string pair":
+                   raise RuntimeError('')
+                if not is_string(v):
+                   raise RuntimeError('')
+             elif is_string_pair(k):
+                if subst_type == "":
+                   subst_type="string pair"
+                elif subst_type == "string":
+                   raise RuntimeError('')
+                if not is_string_pair(v):
+                   raise RuntimeError('')
+             else:
+                raise RuntimeError('')
+
+         if subst_type == "string":
+            return self.substitute_symbols(s)
+         else:
+            return self.substitute_symbol_pairs(s)
+
+      if is_string(s):
+         if is_string(S):
+            input=True
+            output=True
+            for k,v in kvargs.items():
+                if k == 'input':
+                   if v == False:
+                      input=False
+                elif k == 'output':
+                   if v == False:
+                      output=False
+                else:
+                   raise RuntimeError('Free argument not recognized.')
+            return self.substitute_symbol(s, S, input, output)
+         else:
+            raise RuntimeError('...')
+      elif is_string_pair(s):
+         if is_string_pair(S):
+            return self.substitute_symbol_pair(s, S)
+         elif is_string_pair_vector(S):
+            return self.substitute_symbol_pair_with_set(s, S)
+         elif isinstance(S, HfstBasicTransducer):
+            return self.substitute_symbol_pair_with_transducer(s, S)
+         else:
+            raise RuntimeError('...')
+      else:
+         raise RuntimeError('...')
+
 %}
 
 }
