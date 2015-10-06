@@ -1,17 +1,24 @@
 import libhfst
 
-istr = libhfst.input_stream('foobar.hfst')
-try:
-    tr1 = libhfst.HfstTransducer(istr)
-    tr2 = libhfst.HfstTransducer(istr)
-    tr3 = libhfst.HfstTransducer(istr)
-except libhfst.EndOfStreamException:
-    pass
-except:
-    print("FAIL")
-istr.close()
+libhfst.set_default_fst_type(libhfst.FOMA_TYPE)
 
-istr = libhfst.input_stream('foobar.hfst')
+tr1 = None
+tr2 = None
+tr3 = None
+
+# Currently not supported
+# istr = libhfst.HfstInputStream('foobar.hfst')
+# try:
+#    tr1 = libhfst.HfstTransducer(istr)
+#    tr2 = libhfst.HfstTransducer(istr)
+#    tr3 = libhfst.HfstTransducer(istr)
+# except libhfst.EndOfStreamException:
+#    pass
+# except:
+#    print("FAIL")
+# istr.close()
+
+istr = libhfst.HfstInputStream('foobar.hfst')
 try:
     tr1 = istr.read()
     tr2 = istr.read()
@@ -22,6 +29,32 @@ except:
     print("FAIL")
 istr.close()
 
+tr1.convert(libhfst.get_default_fst_type())
+tr2.convert(libhfst.get_default_fst_type())
+
+ostr = libhfst.HfstOutputStream(filename='foobar2.hfst')
+ostr.write(tr1)
+ostr.write(tr2)
+ostr.flush()
+ostr.close()
+
+TR1 = None
+TR2 = None
+TR3 = None
+
+istr = libhfst.HfstInputStream('foobar2.hfst')
+try:
+    TR1 = istr.read()
+    TR2 = istr.read()
+    TR3 = istr.read()
+except libhfst.EndOfStreamException:
+    pass
+except:
+    print("FAIL")
+istr.close()
+
+print(TR1.compare(tr1))
+print(TR2.compare(tr2))
 
 tr = libhfst.compile_lexc_file('test.lexc')
 #print(tr)

@@ -67,7 +67,6 @@ namespace hfst {
     return file;
   };
 
-
 typedef std::vector<float> FloatVector;
 
 hfst::ImplementationType type = hfst::TROPICAL_OPENFST_TYPE;
@@ -151,24 +150,10 @@ hfst::HfstTransducer word_pair_list_hfst(const StringPairVector & wpl, const Flo
         return hfst::HfstTransducer(retval, type);
 }
 
-hfst::HfstOutputStream * output_stream()
+hfst::HfstOutputStream * create_hfst_output_stream(const std::string & filename, hfst::ImplementationType type, bool hfst_format)
 {
-        return new hfst::HfstOutputStream(type, true);
-}
-
-hfst::HfstOutputStream * output_stream(const std::string & filename)
-{
-        return new hfst::HfstOutputStream(filename, type, true);
-}
-
-hfst::HfstInputStream * input_stream()
-{
-        return new hfst::HfstInputStream();
-}
-
-hfst::HfstInputStream * input_stream(const std::string & filename)
-{
-        return new hfst::HfstInputStream(filename);
+        if (filename == "") { return new hfst::HfstOutputStream(type, hfst_format); }
+        else { return new hfst::HfstOutputStream(filename, type, hfst_format); }
 }
 
 hfst::HfstTransducer * compile_lexc_file(const std::string & filename) /* throw ... */
@@ -420,9 +405,6 @@ HfstTransducer(ImplementationType);
 //HfstTransducer(hfst::HfstInputStream & istr) throw(EndOfStreamException);
 ~HfstTransducer();
 
-
-/* Reading and writing */
-
 /* Basic binary operations */
 HfstTransducer & concatenate(const HfstTransducer&, bool harmonize=true);
 HfstTransducer & disjunct(const HfstTransducer&, bool harmonize=true);
@@ -455,6 +437,7 @@ HfstTransducer & prune();
 HfstTransducer & eliminate_flags();
 HfstTransducer & eliminate_flag(const std::string&);
 HfstTransducer & n_best(unsigned int n);
+HfstTransducer & convert(ImplementationType impl);
 
 /* Repeat */
 HfstTransducer & repeat_star();
@@ -486,7 +469,6 @@ HfstTransducer & substitute_symbols(const hfst::HfstSymbolSubstitutions &substit
 HfstTransducer & substitute_symbol_pairs(const hfst::HfstSymbolPairSubstitutions &substitutions); // alias for the previous function which is shadowed
 
 
-
 /* Weight handling */
 HfstTransducer & set_final_weights(float weight, bool increment=false);
 // Can 'transform_weights' be wrapped?  It maybe needs to be rewritten in python.
@@ -497,10 +479,6 @@ void extract_shortest_paths(HfstTwoLevelPaths &results) const;
 bool extract_longest_paths(HfstTwoLevelPaths &results, bool obey_flags=true) const;
 int longest_path_size(bool obey_flags=true) const;
 
-//void extract_paths(HfstTwoLevelPaths &results, int max_num=-1, int cycles=-1) const;
-//void extract_paths_fd(HfstTwoLevelPaths &results, int max_num=-1, int cycles=-1, bool filter_fd=true) const;
-//void extract_random_paths(HfstTwoLevelPaths &results, int max_num) const;
-//void extract_random_paths_fd(HfstTwoLevelPaths &results, int max_num, bool filter_fd) const;
 
 %extend {
     char *__str__() {
@@ -554,27 +532,17 @@ int longest_path_size(bool obey_flags=true) const;
       return results;
     }
 
-// HfstOneLevelPaths * lookdown(const StringVector& s, ssize_t limit = -1) const throw (FunctionNotImplementedException);
-// HfstOneLevelPaths * lookdown(const std::string& s, ssize_t limit = -1) const throw (FunctionNotImplementedException);
-//HfstOneLevelPaths * lookdown_fd(StringVector& s, ssize_t limit = -1) const throw (FunctionNotImplementedException);
-//HfstOneLevelPaths * lookdown_fd(const std::string& s, ssize_t limit = -1) const throw (FunctionNotImplementedException);
-//bool is_lookup_infinitely_ambiguous(const StringVector & s) const; // calls is_infinitely_ambiguous
-//bool is_lookup_infinitely_ambiguous(const std::string & s) const;  // calls is_infinitely_ambiguous
-//bool is_lookdown_infinitely_ambiguous(const StringVector& s) const throw (FunctionNotImplementedException);
-
+// Wrappers for lookup functions
 
 HfstOneLevelPaths lookup_fd_vector(const StringVector& s, int limit = -1 /*ignored?*/ ) const
 { return *($self->lookup_fd(s, limit)); }
 HfstOneLevelPaths lookup_fd_string(const std::string& s, int limit /*=-1*/ ) const
 { return *($self->lookup_fd(s, limit)); }
-//HfstOneLevelPaths lookup_fd_(const HfstTokenizer& tok, const std::string &s, ssize_t limit = -1) const
-//{ return *($self->lookup_fd(tok, s, limit)); }
 HfstOneLevelPaths lookup_vector(const StringVector& s, int limit = -1) const
 { return *($self->lookup(s, limit)); }
 HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
 { return *($self->lookup(s, limit)); }
-//HfstOneLevelPaths lookup_(const HfstTokenizer& tok, const std::string &s, int limit = -1) const
-//{ return *($self->lookup(tok, s, limit)); }
+
 
 %pythoncode{
 
@@ -609,7 +577,7 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
 
       retval=0
 
-      if isinstance(input, list):
+      if isinstance(input, tuple):
          if obey_flags:
             retval=self.lookup_fd_vector(input, limit)
          else:
@@ -620,13 +588,12 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
          else:
             retval=self.lookup_string(input, limit)
       else:
-         raise RuntimeError('Input argument must be string or list.')
+         raise RuntimeError('Input argument must be string or tuple.')
 
       if simple_output:
          return one_level_paths_to_string(retval)
       else:
          return retval   
-
 
   def extract_paths(self, **kvargs):
 
@@ -635,7 +602,7 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
       max_cycles=-1
       max_number=-1
       random=False
-      output='text'
+      output='dict' # 'dict' (default), 'text', 'raw'
 
       for k,v in kvargs.items():
           if k == 'obey_flags' :
@@ -763,22 +730,47 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
 
 };
 
+hfst::HfstOutputStream * create_hfst_output_stream(const std::string & filename, hfst::ImplementationType type, bool hfst_format);
+
 class HfstOutputStream
 {
 public:
-HfstOutputStream(ImplementationType type, bool hfst_format=true);
-HfstOutputStream(const std::string &filename, ImplementationType type, bool hfst_format=true);
+//HfstOutputStream(ImplementationType type, bool hfst_format=true);
+//HfstOutputStream(const std::string &filename, ImplementationType type, bool hfst_format=true);
 ~HfstOutputStream(void);
 HfstOutputStream &flush();
-HfstOutputStream &operator<< (HfstTransducer &transducer);
-HfstOutputStream& redirect (HfstTransducer &transducer);
+//HfstOutputStream &operator<< (HfstTransducer &transducer);
+//HfstOutputStream& redirect (HfstTransducer &transducer);
 void close(void);
 
 %extend {
-HfstOutputStream & write(HfstTransducer &transducer)
+
+HfstOutputStream & write(hfst::HfstTransducer & transducer)
 {
 return $self->redirect(transducer);
 }
+
+HfstOutputStream() { return new hfst::HfstOutputStream(hfst::get_default_fst_type()); }
+
+%pythoncode {
+
+def __init__(self, **kvargs):
+    filename = ""
+    hfst_format = True
+    type = _libhfst.get_default_fst_type()
+    for k,v in kvargs.items():
+        if k == 'filename':
+           filename = v
+        if k == 'hfst_format':
+           hfst_format = v
+        if k == 'type':
+           type = v
+    if filename == "":
+       self.this = _libhfst.create_hfst_output_stream("", type, hfst_format)
+    else:
+       self.this = _libhfst.create_hfst_output_stream(filename, type, hfst_format)
+}
+
 }
 
 };
@@ -902,6 +894,8 @@ class HfstBasicTransducer {
     HfstBasicTransducer & substitute_symbols(const hfst::HfstSymbolSubstitutions &substitutions); // alias for the previous function which is shadowed
     HfstBasicTransducer & substitute_symbol_pairs(const hfst::HfstSymbolPairSubstitutions &substitutions); // alias for the previous function which is shadowed
     
+    // TODO lookup_fd
+
     hfst::implementations::HfstBasicStates states_and_transitions() const;
 
 
@@ -1125,15 +1119,6 @@ hfst::HfstTransducer word_pair(const std::string & wi, const std::string & wo, f
 //hfst::HfstTransducer word_pair(const std::string & wi, const std::string & wo, const hfst::HfstTokenizer & tok);
 hfst::HfstTransducer word_list_hfst(const StringVector & wl, const FloatVector & weights);
 hfst::HfstTransducer word_pair_list_hfst(const StringPairVector & wpl, const FloatVector & weights);
-
-
-// Use constructor instead?
-hfst::HfstOutputStream * output_stream();
-hfst::HfstOutputStream * output_stream(const std::string & filename);
-
-// Use constructor instead?
-hfst::HfstInputStream * input_stream();
-hfst::HfstInputStream * input_stream(const std::string & filename);
 
 void set_default_fst_type(hfst::ImplementationType t);
 hfst::ImplementationType get_default_fst_type();
