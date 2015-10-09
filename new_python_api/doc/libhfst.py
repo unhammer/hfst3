@@ -868,9 +868,11 @@ class HfstBasicTransducer:
     ## Substitute symbols or transitions in the transducer.
     #
     # @param s The symbol or transition to be substituted. Can also be a dictionary of substitutions, if S == None.
-    # @param S The symbol, transition, a tuple of transitions or a transducer that substitutes \a s.
-    # @param kvargs Arguments recognized are 'input' and 'output', their values can be False or True, True being the default.
+    # @param S The symbol, transition, a tuple of transitions or a transducer (libhfst.HfstBasicTransducer) that substitutes \a s.
+    # @param kvargs Arguments recognized are 'input' and 'output', their values can be False or True, True being the default.   
     #               These arguments are valid only if \a s and \a S are strings, else they are ignored.
+    # @param input Whether substitution is performed on input side, defaults to True. Valid only if \a s and \a S are strings.
+    # @param output Whether substitution is performed on output side, defaults to True. Valid only if \a s and \a S are strings.
     #
     # Possible combinations of arguments and their types are:
     #
@@ -878,96 +880,24 @@ class HfstBasicTransducer:
     # (2) substitute(strpair, strpair): substitute transition with transition
     # (3) substitute(strpair, strpairtuple): substitute transition with several transitions
     # (4) substitute(strpair, transducer): substitute transition with a transducer
-    # (5) substitute(dict): perform several symbol-to-symbol sustitutions
+    # (5) substitute(dict): perform several symbol-to-symbol substitutions
     # (6) substitute(dict): perform several transition-to-transition substitutions
     #
     # Examples:
     #
-    # (1) tr.substitute('a', 'A', input=True, output=False): subtitute lowercase a:s with uppercase ones
+    # (1) tr.substitute('a', 'A', input=True, output=False): substitute lowercase a:s with uppercase ones
     # (2) tr.substitute(('a','b'),('A','B')): substitute transitions that map lowercase a into lowercase b with transitions that map uppercase a into uppercase b 
     # (3) tr.substitute(('a','b'), (('A','B'),('a','B'),('A','b'))): change either or both sides of a transition [a:b] to uppercase
     # (4) tr.substitute(('a','b'), libhfst.regex('[a:b]+')) change [a:b] transition into one or more consecutive [a:b] transitions
     # (5) tr.substitute({'a':'A', 'b':'B', 'c','C'}) change lowercase a, b and c into their uppercase variants
     # (6) tr.substitute( {('a','a'):('A':'A'), ('b','b'):('B','B'), ('c','c'):('C','C')} ): change lowercase a, b and c into their uppercase variants
+    #
+    # In case (4), epsilon transitions are used to attach copies of transducer \a S between the SOURCE and TARGET state of each transition that is substituted.
+    # The transition itself is deleted, but its weight is copied to the epsilon transition leading from SOURCE to the initial state of \a S.
+    # Each final state of \a S is made non-final and an epsilon transition leading to TARGET is attached to it. The final weight is copied to the epsilon transition.
+    # 
     def substitute(self, s, S=None, **kvargs):
         pass
-
-    # Substitute transitions in the transducer with transitions or transducers.
-    #
-    # @param subst A dictionary of substitutions. Key can be string (single symbol) or 2-tuple of strings (symbol pair).
-    #              Value can be string (single symbol), 2-tuple of strings (symbol pair), tuple of strings,
-    #              tuple of 2-tuples of strings or a transducer.
-    # @param kvargs Arguments recognized are \a input_side and \a output_side with values True and False
-    #               if both keys and values of \a subst are single strings.
-    #
-    # Examples of usage:
-    #
-    # \verbatim
-    # fsm.substitute({'foo':'bar'})
-    # fsm.substitute({'foo':'bar'}, input_side=False)
-    # fsm.substitute({'foo':'bar'}, output_side=False)
-    # fsm.substitute({('foo','bar'):('foo','baz')})
-    # fsm.substitute({'foo':('foo','bar','baz')})
-    # fsm.substitute({('foo','bar'):(('FOO','BAR'),('FOO','bar'),('foo','BAR'))})
-    # 
-    # tr = libhfst.HfstBasicTransducer(libhfst.regex('[foo bar+ (baz)]'))
-    # fsm.substitute({('foo','foo'), tr})
-    # \endverbatim
-    # def substitute(subst, **kvargs):
-    #    pass
-
-    # Substitute \a old_symbol with \a new_symbol in all transitions. \a input_side and \a output_side define whether the substitution is made on input and output sides.
-    # @return This transducer.
-    # def substitute(old_symbol, new_symbol, input_side=True, output_side=True):
-    #    pass
-    
-    # Substitute all transition symbols as defined in \a substitutions.
-    # For each transition symbol x, \a substitutions is searched and if a mapping x -> X is found,
-    # the transition symbol x is replaced with X. If no mapping is found, the transition remains the same.
-    # The weights remain the same.
-    # @param substitutions A dictionary that maps symbols (strings) to symbols (strings).
-    # def substitute_symbols(substitutions):
-    #    pass
-    
-    # Substitute all transitions as defined in \a substitutions.
-    # For each transition x:y, \a substitutions is searched and if a mapping x:y -> X:Y is found,
-    # the transition x:y is replaced with X:Y. If no mapping is found, the transition remains the same.
-    # The weights remain the same.
-    # @param substitutions A dictionary that maps transitions (string pairs) to transitions (string pairs).
-    # def substitute_symbol_pairs(substitutions):
-    #    pass
-    
-    # Substitute all transitions \a sp with a set of transitions \a sps.
-    # The weights remain the same.
-    # @param sp A transition (string pair) to be substituted.
-    # @param sps A tuple of substituting transitions (string pairs).
-    # def substitute(sp, sps):
-    #    pass
-    
-    # Substitute all transitions \a old_pair with \a new_pair.
-    # @param old_pair The transition (string pair) to be substituted.
-    # @param new_pair The substituting transition (string pair).
-    # def substitute(old_pair, new_pair):
-    #    pass
-        
-    # Substitute all transitions equal to \a sp with a copy of \a transducer
-    #
-    # Copies of \a transducer are attached to this graph with epsilon transitions.
-    #
-    # The weights of the transitions to be substituted are copied
-    # to epsilon transitions leaving from the source state of
-    # the transitions to be substituted to the initial state
-    # of a copy of \a transducer.
-    #
-    # The final weights in \a transducer are copied to epsilon transitions leading from
-    # the final states (after substitution non-final states)
-    # of \a transducer to target states of transitions equal to \a sp
-    # (that are substituted) in this transducer.
-    #
-    # @param sp The transition (string pair) to be substituted.
-    # @param transducer The substituting transducer.
-    # def substitute(sp, transducer):
-    #    pass
 
     ## Return an enumeration of the states and transitions of the transducer.
     #
@@ -1632,9 +1562,11 @@ class HfstTransducer:
     ## Substitute symbols or transitions in the transducer.
     #
     # @param s The symbol or transition to be substituted. Can also be a dictionary of substitutions, if S == None.
-    # @param S The symbol, transition, a tuple of transitions or a transducer that substitutes \a s.
-    # @param kvargs Arguments recognized are 'input' and 'output', their values can be False or True, True being the default.
+    # @param S The symbol, transition, a tuple of transitions or a transducer (libhfst.HfstTransducer) that substitutes \a s.
+    # @param kvargs Arguments recognized are 'input' and 'output', their values can be False or True, True being the default.   
     #               These arguments are valid only if \a s and \a S are strings, else they are ignored.
+    # @param input Whether substitution is performed on input side, defaults to True. Valid only if \a s and \a S are strings.
+    # @param output Whether substitution is performed on output side, defaults to True. Valid only if \a s and \ S are strings.
     #
     # For more information, see libhfst.HfstBasicTransducer.substitute. The function works similarly, with the exception
     # of argument \a S, which must be libhfst.HfstTransducer instead of libhfst.HfstBasicTransducer.

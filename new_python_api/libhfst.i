@@ -150,6 +150,11 @@ hfst::HfstTransducer word_pair_list_hfst(const StringPairVector & wpl, const Flo
         return hfst::HfstTransducer(retval, type);
 }
 
+hfst::HfstTransducer * basic_to_hfst_transducer(const hfst::implementations::HfstBasicTransducer & fsm, hfst::ImplementationType type)
+{
+        return new hfst::HfstTransducer(fsm, type);
+}
+
 hfst::HfstOutputStream * create_hfst_output_stream(const std::string & filename, hfst::ImplementationType type, bool hfst_format)
 {
         if (filename == "") { return new hfst::HfstOutputStream(type, hfst_format); }
@@ -169,11 +174,16 @@ hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSIL
     return new HfstTransducer(f.get_file(), type, epsilon);
 }
 
+hfst::HfstTransducer * read_att(FILE * f, std::string epsilon="@_EPSILON_SYMBOL_@")
+{
+    return new HfstTransducer(f, type, epsilon);
+}
+
 hfst::HfstTransducer * read_prolog(hfst::HfstFile & f)
 {
     unsigned int linecount = 0;
     hfst::implementations::HfstBasicTransducer fsm = hfst::implementations::HfstBasicTransducer::read_in_prolog_format(f.get_file(), linecount);
-    return new hfst::HfstTransducer(fsm, type);
+    return new hfst::HfstTransducer(fsm, hfst::type);
 }
 
 std::string one_level_paths_to_string(const hfst::HfstOneLevelPaths & paths)
@@ -388,21 +398,30 @@ bool is_diacritic(const std::string & symbol);
           input = ""
           output = ""
           for sp in tlp[1]:
-              input = input + sp[0]
-              output = output + sp[1]
+              input += sp[0]
+              output += sp[1]
           if input in retval:
-              retval[input] = (retval[input], (output, tlp[0]))
+              retval[input].append((output, tlp[0]))
           else:
-              retval[input] = (output, tlp[0])
+              retval[input] = [(output, tlp[0])]
       return retval
+
+  def one_level_paths_to_tuple(olps):
+      retval = []
+      for olp in olps:
+          path = ""
+          for s in olp[1]:
+              path += s
+          retval.append((path, olp[0]))
+      return tuple(retval)
 %}
 
 class HfstTransducer 
 {
-public: 
-HfstTransducer(ImplementationType);
-//HfstTransducer(const std::string &, const std::string &, ImplementationType);
-//HfstTransducer(hfst::HfstInputStream & istr) throw(EndOfStreamException);
+public:
+HfstTransducer();
+HfstTransducer(const hfst::HfstTransducer &);
+HfstTransducer(const hfst::implementations::HfstBasicTransducer &, hfst::ImplementationType);
 ~HfstTransducer();
 
 /* Basic binary operations */
@@ -549,9 +568,8 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
   def lookup(self, input, **kvargs):
       
       obey_flags=True
-      # filter_flags=True
-      limit=-1
-      simple_output=True
+      max_number=-1
+      output='tuple' # 'tuple' (default), 'text', 'raw'
 
       for k,v in kvargs.items():
           if k == 'obey_flags':
@@ -562,16 +580,19 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
              else:
                 print('Warning: ignoring argument %s as it has value %s.' % (k, v))
                 print("Possible values are 'True' and 'False'.")
-          elif k == 'simple_output':
-             if v == 'True':
+          elif k == 'output':
+             if v == 'text':
+                output='text'
                 pass
-             elif v == 'False':
-                simple_output=False
+             elif v == 'raw':
+                output='raw'
+             elif v == 'tuple':
+                output='tuple'
              else:
                 print('Warning: ignoring argument %s as it has value %s.' % (k, v))
-                print("Possible values are 'True' and 'False'.")
-          elif k == 'limit' :
-             limit=v
+                print("Possible values are 'tuple' (default), 'text', 'raw'.")
+          elif k == 'max_number' :
+             max_number=v
           else:
              print('Warning: ignoring unknown argument %s.' % (k))
 
@@ -579,21 +600,23 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
 
       if isinstance(input, tuple):
          if obey_flags:
-            retval=self.lookup_fd_vector(input, limit)
+            retval=self.lookup_fd_vector(input, max_number)
          else:
-            retval=self.lookup_vector(input, limit)
+            retval=self.lookup_vector(input, max_number)
       elif isinstance(input, str):
          if obey_flags:
-            retval=self.lookup_fd_string(input, limit)
+            retval=self.lookup_fd_string(input, max_number)
          else:
-            retval=self.lookup_string(input, limit)
+            retval=self.lookup_string(input, max_number)
       else:
          raise RuntimeError('Input argument must be string or tuple.')
 
-      if simple_output:
+      if output == 'text':
          return one_level_paths_to_string(retval)
+      elif output == 'tuple':
+         return one_level_paths_to_tuple(retval)
       else:
-         return retval   
+         return retval
 
   def extract_paths(self, **kvargs):
 
@@ -635,7 +658,7 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
                 print("Possible values are 'True' and 'False'.")
           elif k == 'output':
              if v == 'text':
-                pass
+                output == 'text'
              elif v == 'raw':
                 output='raw'
              elif v == 'dict':
@@ -731,6 +754,7 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
 };
 
 hfst::HfstOutputStream * create_hfst_output_stream(const std::string & filename, hfst::ImplementationType type, bool hfst_format);
+hfst::HfstTransducer * basic_to_hfst_transducer(const hfst::implementations::HfstBasicTransducer & fsm, hfst::ImplementationType type);
 
 class HfstOutputStream
 {
@@ -820,13 +844,6 @@ hfst::HfstTransducer * read() throw (EndOfStreamException)
      static StringPairVector tokenize_space_separated(const std::string & str);
      StringPairVector tokenize(const std::string &input_string,
                               const std::string &output_string) const;
-     //StringPairVector tokenize(const std::string &input_string,
-     //                         const std::string &output_string,
-     //                         void (*warn_about_pair)(const std::pair<std::string, std::string> &symbol_pair)) const;
-     //StringPairVector tokenize_and_align_flag_diacritics
-     // (const std::string &input_string,
-     //  const std::string &output_string,
-     //  void (*warn_about_pair)(const std::pair<std::string, std::string> &symbol_pair)) const;
      static void check_utf8_correctness(const std::string &input_string);
   };
 
@@ -881,7 +898,6 @@ class HfstBasicTransducer {
     // void write_in_xfst_format(FILE * file, bool write_weights=true);
     // void write_in_att_format(FILE *file, bool write_weights=true); 
 
-    void write_in_att_format(char * ptr, bool write_weights=true);
     // static HfstBasicTransducer read_in_att_format
     //       (FILE *file, 
     //        std::string epsilon_symbol,
@@ -901,17 +917,22 @@ class HfstBasicTransducer {
 
 
 %extend {
-  void write_in_prolog_format(hfst::HfstFile & f, const std::string & name, bool write_weights=true) {
+  void write_prolog(hfst::HfstFile & f, const std::string & name, bool write_weights=true) {
     $self->write_in_prolog_format(f.get_file(), name, write_weights);
   }
-  static HfstBasicTransducer read_in_prolog_format(hfst::HfstFile & f, unsigned int & linecount) {
+  static HfstBasicTransducer read_prolog(hfst::HfstFile & f) {
+    unsigned int linecount = 0;
     return hfst::implementations::HfstBasicTransducer::read_in_prolog_format(f.get_file(), linecount);
   }
-  void write_in_xfst_format(hfst::HfstFile & f, bool write_weights=true) {
+  void write_xfst(hfst::HfstFile & f, bool write_weights=true) {
     $self->write_in_xfst_format(f.get_file(), write_weights);
   }
-  void write_in_att_format(hfst::HfstFile & f, bool write_weights=true) {
+  void write_att(hfst::HfstFile & f, bool write_weights=true) {
     $self->write_in_att_format(f.get_file(), write_weights);
+  }
+  static HfstBasicTransducer read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") {
+    unsigned int linecount = 0;
+    return hfst::implementations::HfstBasicTransducer::read_in_att_format(f.get_file(), epsilon, linecount);
   }
 
   char * __str__()
@@ -921,9 +942,6 @@ class HfstBasicTransducer {
     return str;
   }
 
-  static HfstBasicTransducer read_in_att_format(HfstFile & f, std::string epsilon_symbol, unsigned int & linecount) {
-    return hfst::implementations::HfstBasicTransducer::read_in_att_format(f.get_file(), epsilon_symbol, linecount);
-  }
   void add_transition(HfstState source, HfstState target, std::string input, std::string output, float weight=0) {
     hfst::implementations::HfstBasicTransition tr(target, input, output, weight);
     $self->add_transition(source, tr);
@@ -1109,6 +1127,8 @@ namespace lexc {
 //extern LexcCompiler* lexc_;
 }
 
+
+
 hfst::HfstTransducer fst(const std::string & symbol);
 hfst::HfstTransducer fst(const std::string & isymbol, const std::string & osymbol);
 hfst::HfstTransducer * regex(const std::string & regex_string);
@@ -1125,6 +1145,7 @@ hfst::ImplementationType get_default_fst_type();
 std::string fst_type_to_string(hfst::ImplementationType t);
 
 hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException);
+hfst::HfstTransducer * read_att(FILE * f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException);
 hfst::HfstTransducer * read_prolog(hfst::HfstFile & f) throw(EndOfStreamException);
 
 std::string one_level_paths_to_string(const HfstOneLevelPaths &);
@@ -1153,20 +1174,6 @@ def word_list(l):
                         f.push_back(item[1])
         return _libhfst.word_list_hfst(v,f)
                 
-#def word_pair_list(l):
-#        if not isinstance(l, list):
-#                raise RuntimeError('Input argument must be a list.')
-#
-#        v = StringPairVector()
-#        f = FloatVector()
-#        for item in l:
-#                v.push_back(StringPair(word[0],word[1]))
-#                if (len(word) > 2):
-#                        f.push_back(word[2])
-#                else:
-#                        f.push_back(0)  
-#        return _libhfst.word_pair_list_hfst(v,f)
-
 def dictionary(d):
     if not isinstance(d, dict):
        raise RuntimeError('Input argument must be a dictionary.')
@@ -1180,10 +1187,5 @@ def dictionary(d):
            pass
         else:
            raise RuntimeError('Each value in the dictionary must be a string or a tuple/list of strings.')
-
-        print("%s\t%s" % (k,v))
-
-def foobar(f):
-    print('FOOBAR: %s' % (f))
 
 %}
