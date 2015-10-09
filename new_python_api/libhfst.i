@@ -94,15 +94,6 @@ bool is_diacritic(const std::string & symbol)
         return hfst::FdOperation::is_diacritic(symbol);
 }
         
-hfst::HfstTransducer fst(const std::string & symbol)
-{
-        return hfst::HfstTransducer(symbol, type);
-}
-
-hfst::HfstTransducer fst(const std::string & isymbol, const std::string & osymbol)
-{
-        return hfst::HfstTransducer(isymbol, osymbol, type);
-}
 
 hfst::HfstTransducer * regex(const std::string & regex_string)
 {
@@ -110,50 +101,6 @@ hfst::HfstTransducer * regex(const std::string & regex_string)
         return comp.compile(regex_string);
 }
 
-hfst::HfstTransducer word(const std::string & w, float weight=0)
-{
-        HfstTransducer retval = hfst::HfstTransducer(w, deftok, type);
-        retval.set_final_weights(weight);
-        return retval;
-}
-
-hfst::HfstTransducer word_pair(const std::string & wi, const std::string & wo, float weight=0)
-{
-        HfstTransducer retval = hfst::HfstTransducer(wi, wo, deftok, type);
-        retval.set_final_weights(weight);
-        return retval;
-}
-
-hfst::HfstTransducer word_list_hfst(const StringVector & wl, const FloatVector & weights)
-{
-        hfst::implementations::HfstBasicTransducer retval;
-        unsigned int i=0;
-        for (std::vector<std::string>::const_iterator it = wl.begin();
-                it != wl.end(); it++)
-                {
-                        retval.disjunct(deftok.tokenize(*it), weights[i]);
-                        i++;
-                }
-        return hfst::HfstTransducer(retval, type);
-}
-
-hfst::HfstTransducer word_pair_list_hfst(const StringPairVector & wpl, const FloatVector & weights)
-{
-        hfst::implementations::HfstBasicTransducer retval;
-        unsigned int i=0;
-        for (std::vector<std::pair<std::string, std::string> >::const_iterator it = wpl.begin();
-                it != wpl.end(); it++)
-                {
-                        retval.disjunct(deftok.tokenize(it->first, it->second), weights[i]);
-                        i++;
-                }
-        return hfst::HfstTransducer(retval, type);
-}
-
-hfst::HfstTransducer * basic_to_hfst_transducer(const hfst::implementations::HfstBasicTransducer & fsm, hfst::ImplementationType type)
-{
-        return new hfst::HfstTransducer(fsm, type);
-}
 
 hfst::HfstOutputStream * create_hfst_output_stream(const std::string & filename, hfst::ImplementationType type, bool hfst_format)
 {
@@ -754,7 +701,6 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
 };
 
 hfst::HfstOutputStream * create_hfst_output_stream(const std::string & filename, hfst::ImplementationType type, bool hfst_format);
-hfst::HfstTransducer * basic_to_hfst_transducer(const hfst::implementations::HfstBasicTransducer & fsm, hfst::ImplementationType type);
 
 class HfstOutputStream
 {
@@ -1129,16 +1075,8 @@ namespace lexc {
 
 
 
-hfst::HfstTransducer fst(const std::string & symbol);
-hfst::HfstTransducer fst(const std::string & isymbol, const std::string & osymbol);
 hfst::HfstTransducer * regex(const std::string & regex_string);
 hfst::HfstTransducer * compile_lexc_file(const std::string & filename);
-hfst::HfstTransducer word(const std::string & w, float weight=0);
-//hfst::HfstTransducer word(const std::string & w, const hfst::HfstTokenizer & tok);
-hfst::HfstTransducer word_pair(const std::string & wi, const std::string & wo, float weight=0);
-//hfst::HfstTransducer word_pair(const std::string & wi, const std::string & wo, const hfst::HfstTokenizer & tok);
-hfst::HfstTransducer word_list_hfst(const StringVector & wl, const FloatVector & weights);
-hfst::HfstTransducer word_pair_list_hfst(const StringPairVector & wpl, const FloatVector & weights);
 
 void set_default_fst_type(hfst::ImplementationType t);
 hfst::ImplementationType get_default_fst_type();
@@ -1159,33 +1097,56 @@ EPSILON='@_EPSILON_SYMBOL_@'
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
-def word_list(l):
-        if not isinstance(l, list):
-                raise RuntimeError('Input argument must be a list.')
+def is_weighted_word(arg):
+    if isinstance(arg, tuple) and len(arg) == 2 and isinstance(arg[0], str) and isinstance(arg[1], (int, float)):
+       return True
+    return False
 
-        v = StringVector()
-        f = FloatVector()
-        for item in l:
-                if isinstance(item, str):
-                        v.push_back(item)
-                        f.push_back(0)
-                else:
-                        v.push_back(item[0])
-                        f.push_back(item[1])
-        return _libhfst.word_list_hfst(v,f)
-                
-def dictionary(d):
-    if not isinstance(d, dict):
-       raise RuntimeError('Input argument must be a dictionary.')
+def check_word(arg):
+    if len(arg) == 0:
+       raise RuntimeError('Empty word.')
+    return arg
 
-    for k,v in d.items():
-        if not isinstance(k, str):
-            raise RuntimeError('Keys in the dictionary must be strings.')
-        if isinstance(v, str): # "bar"
-           pass
-        elif isinstance(v, list) or isinstance(v, tuple): # ("bar", "baz")
-           pass
-        else:
-           raise RuntimeError('Each value in the dictionary must be a string or a tuple/list of strings.')
+def fsa(arg):
+    if isinstance(arg, str):
+       return _libhfst.regex('{' + check_word(arg) + '}')
+    elif is_weighted_word(arg):
+       return _libhfst.regex('{' + check_word(arg[0]) + '}::' + str(arg[1]))
+    elif isinstance(arg, tuple) or isinstance(arg, list):
+       exp = '[0-0]' # empty automaton
+       for word in arg:
+           if is_weighted_word(word):
+              exp += ' | {' + check_word(word[0]) + '}::' + str(word[1])
+           elif isinstance(word, str):
+              exp += ' | {' + check_word(word) + '}'
+           else:
+              raise RuntimeError('Tuple/list element not a string or tuple of string and weight.')           
+       return _libhfst.regex(exp)
+    else:
+       raise RuntimeError('Not a string or tuple/list of strings.')
+
+def fst(arg):
+    if not isinstance(arg, dict):
+       raise RuntimeError('Not a dictionary.')
+    retval = _libhfst.regex('[0-0]') # empty transducer
+    for input, output in arg.items():
+       if not isinstance(input, str):
+          raise RuntimeError('Key not a string.')
+       left = fsa(input)
+       right = 0
+       if isinstance(output, str):
+          right = fsa(output)
+       elif isinstance(output, list) or isinstance(output, tuple):
+          right = fsa(output)
+       else:
+          raise RuntimeError('Value not a string or tuple/list of strings.')
+       retval.disjunct(left.cross_product(right))
+    return retval
+
+def empty_fst():
+    return _libhfst.regex('[0-0]')
+
+def epsilon_fst(weight=0):
+    return _libhfst.regex('[0]::' + str(weight))
 
 %}

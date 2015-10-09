@@ -449,52 +449,41 @@ UNKNOWN='@_UNKNOWN_SYMBOL_@'
 ## The string for identity symbol.
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
-## Get a single transition transducer [symbol:symbol].
-# @param symbol The symbol used for input and output of the transition.
-def fst(symbol):
-    pass
-## Get a single transition transducer [isymbol:osymbol].
-# @param isymbol The symbol used for input of the transition.
-# @param osymbol The symbol used for output of the transition.
-def fst(isymbol, osymbol):
-    pass
-## Get a transducer containing one path as defined by \a str with weight \a weight.
-# @param str The path that the resulting transducer contains. Is tokenized into UTF-8 symbols.
-# @param weight The weight of the final state of the resulting transducer.
-def word(str, weight=0):
-    pass
-## Get a transducer containing one path as defined by input and output strings \a istr and \a ostr with weight \a weight.
-# @param istr The input side of the path that the resulting transducer contains. Is tokenized into UTF-8 symbols.
-# @param ostr The output side of the path that the resulting transducer contains. Is tokenized into UTF-8 symbols.
-# @param weight The weight of the final state of the resulting transducer.
+## Get an automaton.
+# @param arg ...
 #
-# If \a istr and \a ostr do not have the same length, epsilons (see #libhfst.EPSILON) are used for padding the shorter string.
-def word_pair(istr, ostr, weight=0):
+# Path: a string, e.g. 
+# 'foo'
+# Weighted path: a tuple of string and number, e.g. 
+# ('foo',1.4)
+# ('bar',-3)
+# ('baz',0)
+# Several paths: a list or a tuple of paths and/or weighted paths, e.g.
+# ['foo', 'bar']
+# ('foo', ('bar',5.0))
+# ('foo', ('bar',5.0), 'baz', 'Foo', ('Bar',2.4))
+# [('foo',-1), ('bar',0), ('baz',3.5)]
+def fsa(arg):
     pass
-## Get a transducer containing all paths defined in \a l.
-# @param l A tuple whose elements are strings (unweighted path) or pairs of a string and a weight (weighted path).
-#
-# Example: 
-# \verbatim
-# word_list('foo',('bar',2.5),'baz') 
-# \endverbatim
-# creates the transducer [[f o o]::0 | [b a r]::2.5 | [b a z]::0].
-def word_list(l):
+
+## Get a transducer.
+# @param arg ...
+# 
+# A dictionary whose keys are strings and values paths. The requirements for paths are the same as for libhfst.fsa.
+# @see libhfst.fsa
+def fst(arg):
     pass
-## Get a transducer containing all paths defined in \a d.
-# @param d A dictionary mapping strings into several (weighted) strings.
-#
-# Each key of \a d must be a string.
-# Each value of \a d must either be (1) a string, (2) a pair of a string and a weight or (3) a tuple.
-# Each element of the tuple (3) must be a string or a pair of a string and a weight.
-#
-# Example:
-# \verbatim
-# word_pair_list( { 'foo':'FOO', 'bar':('BAR',0.5), 'baz':('baz',('BAZ', 1.2)) } )
-# \endverbatim
-# creates the transducer [ [f o o]:[F O O]::0 | [b a r]:[B A R]::0.5 | [b a z]:[b a z]::0 | [b a z]:[B A Z]::1.2 ].
-def word_pair_list(d):
+
+## Get an empty transducer.
+def empty_fst():
     pass
+
+## Get an epsilon transducer.
+# @param weight ...
+def epsilon_fst(weight=0):
+    pass
+
+
 ## Get a transducer as defined by regular expression \a regexp.
 # @param regexp The regular expression defined with <a href="http://www.fsmbook.com/">Xerox transducer notation</a>.
 def regex(regexp):

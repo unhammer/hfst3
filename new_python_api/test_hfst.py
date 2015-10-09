@@ -191,9 +191,73 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     print('tr.extract_paths')
     print(tr.extract_paths(obey_flags='True', filter_flags='False', max_number=3, output='dict'))
 
-    # print('libhfst.dictionary')
-    # print(libhfst.dictionary({'FOO':(('BAR',0.5),'BAZ'), 'foo':('bar','baz')}))
+    # fsa functions:
+    # unweighted
+    if not libhfst.fsa('foobar').compare(libhfst.regex('[f o o b a r]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fsa(['foobar']).compare(libhfst.regex('[f o o b a r]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fsa(['foobar', 'foobaz']).compare(libhfst.regex('[f o o b a [r|z]]')):
+        raise RuntimeError(get_linenumber())
+    # with weights
+    if not libhfst.fsa(('foobar', 0.3)).compare(libhfst.regex('[f o o b a r]::0.3')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fsa([('foobar', 0.5)]).compare(libhfst.regex('[f o o b a r]::0.5')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fsa(['foobar', ('foobaz', -2)]).compare(libhfst.regex('[ f o o b a [r|[z::-2]] ]')):
+        raise RuntimeError(get_linenumber())
+    # Special inputs
+    if not libhfst.fsa('*** FOO ***').compare(libhfst.regex('{*** FOO ***}')):
+        raise RuntimeError(get_linenumber())
+    try:
+        foo = libhfst.fsa('')
+        raise RuntimeError(get_linenumber())
+    except RuntimeError as e:
+        if not e.__str__() == 'Empty word.':
+            raise RuntimeError(get_linenumber())
 
+    # fst functions:
+    # unweighted
+    if not libhfst.fst({'foobar':'foobaz'}).compare(libhfst.regex('[f o o b a r:z]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fst({'foobar':['foobar','foobaz']}).compare(libhfst.regex('[f o o b a [r|r:z]]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fst({'foobar':('foobar','foobaz')}).compare(libhfst.regex('[f o o b a [r|r:z]]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fst({'foobar':'foobaz', 'FOOBAR':('foobar','FOOBAR'), 'Foobar':['Foo','bar','Foobar']}).compare(libhfst.regex('[f o o b a r:z] | [F O O B A R] | [F:f O:o O:o B:b A:a R:r] | [F o o b:0 a:0 r:0] | [F:b o:a o:r b:0 a:0 r:0] | [F o o b a r]')):
+        raise RuntimeError(get_linenumber())
+    # with weights
+    if not libhfst.fst({'foobar':('foobaz', -1)}).compare(libhfst.regex('[f o o b a r:z]::-1')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fst({'foobar':['foobar',('foobaz',-2.0)]}).compare(libhfst.regex('[f o o b a [r|r:z::-2.0]]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fst({'foobar':('foobar',('foobaz',3.5))}).compare(libhfst.regex('[f o o b a [r|r:z::3.5]]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.fst({'foobar':('foobaz', -1), 'FOOBAR':('foobar',('FOOBAR', 2)), 'Foobar':[('Foo',2.5),'bar',('Foobar',0.3)]}).compare(libhfst.regex('[f o o b a r:z]::-1 | [F O O B A R]::2 | [F:f O:o O:o B:b A:a R:r] | [F o o b:0 a:0 r:0]::2.5 | [F:b o:a o:r b:0 a:0 r:0] | [F o o b a r]::0.3')):
+        raise RuntimeError(get_linenumber())
+    # Special inputs
+    if not libhfst.fst({'*** FOO ***':'+++ BAR +++'}).compare(libhfst.regex('{*** FOO ***}:{+++ BAR +++}')):
+        raise RuntimeError(get_linenumber())
+    try:
+        foo = libhfst.fst({'':'foo'})
+        raise RuntimeError(get_linenumber())
+    except RuntimeError as e:
+        if not e.__str__() == 'Empty word.':
+            raise RuntimeError(get_linenumber())
+    try:
+        foo = libhfst.fst({'foo':''})
+        raise RuntimeError(get_linenumber())
+    except RuntimeError as e:
+        if not e.__str__() == 'Empty word.':
+            raise RuntimeError(get_linenumber())
+
+    # other python functions
+    if not libhfst.empty_fst().compare(libhfst.regex('[0-0]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.epsilon_fst().compare(libhfst.regex('[0]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.epsilon_fst(-1.5).compare(libhfst.regex('[0]::-1.5')):
+        raise RuntimeError(get_linenumber())
 
 print('\n--- Testing HfstBasicTransducer ---\n')
 
@@ -253,9 +317,9 @@ for state, arcs in enumerate(fsm):
 index=0
 for state in fsm.states_and_transitions():
     for transition in state:
-        print('%u\t%u\t%s\t%s\t%.2f\n' % (index, transition.get_target_state(), transition.get_input_symbol(), transition.get_output_symbol(), transition.get_weight()))
+        print('%u\t%u\t%s\t%s\t%.2f' % (index, transition.get_target_state(), transition.get_input_symbol(), transition.get_output_symbol(), transition.get_weight()))
     if fsm.is_final_state(index):
-        print('%s\t%.2f\n' % (index, fsm.get_final_weight(index)))
+        print('%s\t%.2f' % (index, fsm.get_final_weight(index)))
     index = index + 1
 
 print(fsm)
