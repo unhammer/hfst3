@@ -95,6 +95,21 @@ bool is_diacritic(const std::string & symbol)
 }
         
 
+HfstTransducer * copy_hfst_transducer(const hfst::HfstTransducer & t)
+{
+        return new HfstTransducer(t);
+}
+
+HfstTransducer * copy_hfst_transducer_from_basic_transducer(const hfst::implementations::HfstBasicTransducer & t)
+{
+        return new HfstTransducer(t, type);
+}
+
+HfstTransducer * copy_hfst_transducer_from_basic_transducer(const hfst::implementations::HfstBasicTransducer & t, hfst::ImplementationType impl)
+{
+        return new HfstTransducer(t, impl);
+}
+
 hfst::HfstTransducer * regex(const std::string & regex_string)
 {
         hfst::xre::XreCompiler comp(type);
@@ -367,9 +382,16 @@ class HfstTransducer
 {
 public:
 HfstTransducer();
-HfstTransducer(const hfst::HfstTransducer &);
-HfstTransducer(const hfst::implementations::HfstBasicTransducer &, hfst::ImplementationType);
+//HfstTransducer(const hfst::HfstTransducer &);
+//HfstTransducer(const hfst::implementations::HfstBasicTransducer &, hfst::ImplementationType);
 ~HfstTransducer();
+
+void set_name(const std::string &name);
+std::string get_name() const;
+hfst::ImplementationType get_type() const;
+void set_property(const std::string& property, const std::string& value);
+std::string get_property(const std::string& property) const;
+const std::map<std::string,std::string>& get_properties() const;
 
 /* Basic binary operations */
 HfstTransducer & concatenate(const HfstTransducer&, bool harmonize=true);
@@ -394,6 +416,8 @@ bool is_cyclic() const;
 bool is_automaton() const;
 bool is_infinitely_ambiguous() const;
 bool has_flag_diacritics() const;
+
+static bool is_implementation_type_available(hfst::ImplementationType type);
 
 /* Optimization */
 HfstTransducer & remove_epsilons();
@@ -445,8 +469,21 @@ void extract_shortest_paths(HfstTwoLevelPaths &results) const;
 bool extract_longest_paths(HfstTwoLevelPaths &results, bool obey_flags=true) const;
 int longest_path_size(bool obey_flags=true) const;
 
-
 %extend {
+
+    HfstTransducer(const hfst::HfstTransducer & t)
+    {
+        return hfst::copy_hfst_transducer(t);
+    }
+    HfstTransducer(const hfst::implementations::HfstBasicTransducer & t)
+    {
+        return hfst::copy_hfst_transducer_from_basic_transducer(t);
+    }
+    HfstTransducer(const hfst::implementations::HfstBasicTransducer & t, hfst::ImplementationType impl)
+    {
+        return hfst::copy_hfst_transducer_from_basic_transducer(t, impl);
+    }
+
     char *__str__() {
          static char tmp[1024];
          $self->write_in_att_format(tmp);

@@ -191,24 +191,22 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     print('tr.extract_paths')
     print(tr.extract_paths(obey_flags='True', filter_flags='False', max_number=3, output='dict'))
 
+    def test_fst(input, result):
+        if not libhfst.fst(input).compare(libhfst.regex(result)):
+            raise RuntimeError('test_fst failed with input: ' + input)
+
     # Create automaton:
     # unweighted
-    if not libhfst.fst('foobar').compare(libhfst.regex('[f o o b a r]')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst(['foobar']).compare(libhfst.regex('[f o o b a r]')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst(['foobar', 'foobaz']).compare(libhfst.regex('[f o o b a [r|z]]')):
-        raise RuntimeError(get_linenumber())
+    test_fst('foobar', '[f o o b a r]')
+    test_fst(['foobar'], '[f o o b a r]')
+    test_fst(['foobar', 'foobaz'], '[f o o b a [r|z]]')
     # with weights
-    if not libhfst.fst(('foobar', 0.3)).compare(libhfst.regex('[f o o b a r]::0.3')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst([('foobar', 0.5)]).compare(libhfst.regex('[f o o b a r]::0.5')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst(['foobar', ('foobaz', -2)]).compare(libhfst.regex('[ f o o b a [r|[z::-2]] ]')):
-        raise RuntimeError(get_linenumber())
+    test_fst(('foobar', 0.3), '[f o o b a r]::0.3')
+    test_fst([('foobar', 0.5)], '[f o o b a r]::0.5')
+    test_fst(['foobar', ('foobaz', -2)], '[ f o o b a [r|[z::-2]] ]')
     # Special inputs
-    if not libhfst.fst('*** FOO ***').compare(libhfst.regex('{*** FOO ***}')):
-        raise RuntimeError(get_linenumber())
+    test_fst('*** FOO ***', '{*** FOO ***}')
+
     try:
         foo = libhfst.fst('')
         raise RuntimeError(get_linenumber())
@@ -218,26 +216,20 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
 
     # Create transducer:
     # unweighted
-    if not libhfst.fst({'foobar':'foobaz'}).compare(libhfst.regex('[f o o b a r:z]')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst({'foobar':['foobar','foobaz']}).compare(libhfst.regex('[f o o b a [r|r:z]]')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst({'foobar':('foobar','foobaz')}).compare(libhfst.regex('[f o o b a [r|r:z]]')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst({'foobar':'foobaz', 'FOOBAR':('foobar','FOOBAR'), 'Foobar':['Foo','bar','Foobar']}).compare(libhfst.regex('[f o o b a r:z] | [F O O B A R] | [F:f O:o O:o B:b A:a R:r] | [F o o b:0 a:0 r:0] | [F:b o:a o:r b:0 a:0 r:0] | [F o o b a r]')):
-        raise RuntimeError(get_linenumber())
+    test_fst({'foobar':'foobaz'}, '[f o o b a r:z]')
+    test_fst({'foobar':['foobar','foobaz']}, '[f o o b a [r|r:z]]')
+    test_fst({'foobar':('foobar','foobaz')}, '[f o o b a [r|r:z]]')
+    test_fst({'foobar':'foobaz', 'FOOBAR':('foobar','FOOBAR'), 'Foobar':['Foo','bar','Foobar']}, '[f o o b a r:z] | [F O O B A R] | [F:f O:o O:o B:b A:a R:r] | [F o o b:0 a:0 r:0] | [F:b o:a o:r b:0 a:0 r:0] | [F o o b a r]')
+
     # with weights
-    if not libhfst.fst({'foobar':('foobaz', -1)}).compare(libhfst.regex('[f o o b a r:z]::-1')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst({'foobar':['foobar',('foobaz',-2.0)]}).compare(libhfst.regex('[f o o b a [r|r:z::-2.0]]')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst({'foobar':('foobar',('foobaz',3.5))}).compare(libhfst.regex('[f o o b a [r|r:z::3.5]]')):
-        raise RuntimeError(get_linenumber())
-    if not libhfst.fst({'foobar':('foobaz', -1), 'FOOBAR':('foobar',('FOOBAR', 2)), 'Foobar':[('Foo',2.5),'bar',('Foobar',0.3)]}).compare(libhfst.regex('[f o o b a r:z]::-1 | [F O O B A R]::2 | [F:f O:o O:o B:b A:a R:r] | [F o o b:0 a:0 r:0]::2.5 | [F:b o:a o:r b:0 a:0 r:0] | [F o o b a r]::0.3')):
-        raise RuntimeError(get_linenumber())
+    test_fst({'foobar':('foobaz', -1)}, '[f o o b a r:z]::-1')
+    test_fst({'foobar':['foobar',('foobaz',-2.0)]}, '[f o o b a [r|r:z::-2.0]]')
+    test_fst({'foobar':('foobar',('foobaz',3.5))}, '[f o o b a [r|r:z::3.5]]')
+    test_fst({'foobar':('foobaz', -1), 'FOOBAR':('foobar',('FOOBAR', 2)), 'Foobar':[('Foo',2.5),'bar',('Foobar',0.3)]}, '[f o o b a r:z]::-1 | [F O O B A R]::2 | [F:f O:o O:o B:b A:a R:r] | [F o o b:0 a:0 r:0]::2.5 | [F:b o:a o:r b:0 a:0 r:0] | [F o o b a r]::0.3')
+
     # Special inputs
-    if not libhfst.fst({'*** FOO ***':'+++ BAR +++'}).compare(libhfst.regex('{*** FOO ***}:{+++ BAR +++}')):
-        raise RuntimeError(get_linenumber())
+    test_fst({'*** FOO ***':'+++ BAR +++'}, '{*** FOO ***}:{+++ BAR +++}')
+
     try:
         foo = libhfst.fst({'':'foo'})
         raise RuntimeError(get_linenumber())
@@ -259,7 +251,10 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
         else:
             tokenized = tok.tokenize(pathin, pathout)
         if not libhfst.tokenized_fst(tokenized).compare(libhfst.regex(exp)):
-            raise RuntimeError('test_tokenized failed with input: ' + pathin + ", " + pathout)
+            if pathout == None:
+                raise RuntimeError('test_tokenized failed with input: ' + pathin)
+            else:
+                raise RuntimeError('test_tokenized failed with input: ' + pathin + ", " + pathout)
 
     tok = libhfst.HfstTokenizer()
 
@@ -295,6 +290,21 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     test_tokenized(tok, 'How is this tokenized?', None, '[H o w i s t h i s t o k e n i z e d]')
     tok.add_skip_symbol(' is ')
     test_tokenized(tok, 'How is this tokenized?', None, '[H o w t h i s t o k e n i z e d]')
+
+    tok = libhfst.HfstTokenizer()
+    tok.add_multichar_symbol(libhfst.EPSILON) # TODO: should this be included by default???
+    test_tokenized(tok, '@_EPSILON_SYMBOL_@foo', None, '[f o o]')
+
+    if not libhfst.tokenized_fst([(libhfst.EPSILON,'b'),('f','a'),('o','a'),('o','r')]).compare(libhfst.regex('[0:b f:a o:a o:r]')):
+        raise RuntimeError(get_linenumber())
+
+    # Is this ok???
+    if not libhfst.regex('"' + libhfst.EPSILON + '"').compare(libhfst.regex('[0]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.regex('"' + libhfst.IDENTITY + '"').compare(libhfst.regex('[?]')):
+        raise RuntimeError(get_linenumber())
+    if not libhfst.regex('"' + libhfst.UNKNOWN + '":"' + libhfst.UNKNOWN + '"').compare(libhfst.regex('[?:?]')):
+        raise RuntimeError(get_linenumber())
 
     # other python functions
     if not libhfst.empty_fst().compare(libhfst.regex('[0-0]')):
