@@ -191,32 +191,32 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     print('tr.extract_paths')
     print(tr.extract_paths(obey_flags='True', filter_flags='False', max_number=3, output='dict'))
 
-    # fsa functions:
+    # Create automaton:
     # unweighted
-    if not libhfst.fsa('foobar').compare(libhfst.regex('[f o o b a r]')):
+    if not libhfst.fst('foobar').compare(libhfst.regex('[f o o b a r]')):
         raise RuntimeError(get_linenumber())
-    if not libhfst.fsa(['foobar']).compare(libhfst.regex('[f o o b a r]')):
+    if not libhfst.fst(['foobar']).compare(libhfst.regex('[f o o b a r]')):
         raise RuntimeError(get_linenumber())
-    if not libhfst.fsa(['foobar', 'foobaz']).compare(libhfst.regex('[f o o b a [r|z]]')):
+    if not libhfst.fst(['foobar', 'foobaz']).compare(libhfst.regex('[f o o b a [r|z]]')):
         raise RuntimeError(get_linenumber())
     # with weights
-    if not libhfst.fsa(('foobar', 0.3)).compare(libhfst.regex('[f o o b a r]::0.3')):
+    if not libhfst.fst(('foobar', 0.3)).compare(libhfst.regex('[f o o b a r]::0.3')):
         raise RuntimeError(get_linenumber())
-    if not libhfst.fsa([('foobar', 0.5)]).compare(libhfst.regex('[f o o b a r]::0.5')):
+    if not libhfst.fst([('foobar', 0.5)]).compare(libhfst.regex('[f o o b a r]::0.5')):
         raise RuntimeError(get_linenumber())
-    if not libhfst.fsa(['foobar', ('foobaz', -2)]).compare(libhfst.regex('[ f o o b a [r|[z::-2]] ]')):
+    if not libhfst.fst(['foobar', ('foobaz', -2)]).compare(libhfst.regex('[ f o o b a [r|[z::-2]] ]')):
         raise RuntimeError(get_linenumber())
     # Special inputs
-    if not libhfst.fsa('*** FOO ***').compare(libhfst.regex('{*** FOO ***}')):
+    if not libhfst.fst('*** FOO ***').compare(libhfst.regex('{*** FOO ***}')):
         raise RuntimeError(get_linenumber())
     try:
-        foo = libhfst.fsa('')
+        foo = libhfst.fst('')
         raise RuntimeError(get_linenumber())
     except RuntimeError as e:
         if not e.__str__() == 'Empty word.':
             raise RuntimeError(get_linenumber())
 
-    # fst functions:
+    # Create transducer:
     # unweighted
     if not libhfst.fst({'foobar':'foobaz'}).compare(libhfst.regex('[f o o b a r:z]')):
         raise RuntimeError(get_linenumber())
@@ -251,6 +251,51 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
         if not e.__str__() == 'Empty word.':
             raise RuntimeError(get_linenumber())
 
+    # Tokenized input
+    def test_tokenized(tok, pathin, pathout, exp):
+        tokenized = None
+        if (pathout == None):
+            tokenized = tok.tokenize_one_level(pathin)
+        else:
+            tokenized = tok.tokenize(pathin, pathout)
+        if not libhfst.tokenized_fst(tokenized).compare(libhfst.regex(exp)):
+            raise RuntimeError('test_tokenized failed with input: ' + pathin + ", " + pathout)
+
+    tok = libhfst.HfstTokenizer()
+
+    test_tokenized(tok, 'foobar', None, '[f o o b a r]')
+    test_tokenized(tok, 'foobar', 'foobar', '[f o o b a r]')
+    test_tokenized(tok, 'foobar', 'foobaz', '[f o o b a r:z]')
+    test_tokenized(tok, 'fööbär?', None, '[f ö ö b ä r "?"]')
+    test_tokenized(tok, 'fööbär?', 'fööbär?', '[f ö ö b ä r "?"]')
+    test_tokenized(tok, 'fööbär?', 'fööbäz!', '[f ö ö b ä r:z "?":"!"]')
+
+    test_tokenized(tok, 'foo', None, '[f o o]')
+    test_tokenized(tok, 'foobar', 'foo', '[f o o b:0 a:0 r:0]')
+    test_tokenized(tok, 'bar', 'foobaz', '[b:f a:o r:o 0:b 0:a 0:z]')
+    test_tokenized(tok, 'bär?', None, '[b ä r "?"]')
+    test_tokenized(tok, 'fööbär?', 'bär?', '[f:b ö:ä ö:r b:"?" ä:0 r:0 "?":0]')
+    test_tokenized(tok, 'bär?', 'fööbäz!', '[b:f ä:ö r:ö "?":b 0:ä 0:z 0:"!"]')
+
+    tok.add_skip_symbol('fö')
+    tok.add_multichar_symbol('föö')
+    tok.add_multichar_symbol('fööbär')
+
+    test_tokenized(tok, 'föbär', None, '[b ä r]')
+    test_tokenized(tok, 'fööbär', None, '[fööbär]')
+    test_tokenized(tok, 'föfööfö', None, '[föö]')
+
+    test_tokenized(tok, 'föbär', 'foofö', '[b:f ä:o r:o]')
+    test_tokenized(tok, 'fööbär', 'föbar', '[fööbär:b 0:a 0:r]')
+    test_tokenized(tok, 'föfööfö', 'föföföföö', '[föö]')
+
+    tok = libhfst.HfstTokenizer()
+    tok.add_skip_symbol('?')
+    tok.add_skip_symbol(' ')
+    test_tokenized(tok, 'How is this tokenized?', None, '[H o w i s t h i s t o k e n i z e d]')
+    tok.add_skip_symbol(' is ')
+    test_tokenized(tok, 'How is this tokenized?', None, '[H o w t h i s t o k e n i z e d]')
+
     # other python functions
     if not libhfst.empty_fst().compare(libhfst.regex('[0-0]')):
         raise RuntimeError(get_linenumber())
@@ -258,6 +303,22 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
         raise RuntimeError(get_linenumber())
     if not libhfst.epsilon_fst(-1.5).compare(libhfst.regex('[0]::-1.5')):
         raise RuntimeError(get_linenumber())
+
+    # Non-ascii characters and unknowns/identities
+    tr1 = libhfst.regex('Ä:é å ?;')
+    tr2 = libhfst.regex('? Ö;')
+    tr1.concatenate(tr2)
+    result = libhfst.regex('Ä:é å [Ä|é|å|Ö|?] [Ä|é|å|Ö|?] Ö;')
+    if not tr1.compare(result):
+        raise RuntimeError(get_linenumber())
+
+    tr1 = libhfst.regex('ñ ?:á;')
+    tr2 = libhfst.regex('Ê:?;')
+    tr1.concatenate(tr2)
+    result = libhfst.regex('ñ [ñ:á|á|Ê:á|?:á] [Ê:ñ|Ê|Ê:á|Ê:?];')
+    if not tr1.compare(result):
+        raise RuntimeError(get_linenumber())
+
 
 print('\n--- Testing HfstBasicTransducer ---\n')
 

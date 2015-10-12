@@ -449,11 +449,13 @@ UNKNOWN='@_UNKNOWN_SYMBOL_@'
 ## The string for identity symbol.
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
-## Get an automaton.
-# @param arg ...
+## Get a transducer that recognizes one or more paths.
+# @param arg See example below
 #
-# Path: a string, e.g. 
-# 'foo'
+# Possible inputs:
+# \verbatim
+# One unweighted identity path:
+# 'foo'  ->  [f o o]
 # Weighted path: a tuple of string and number, e.g. 
 # ('foo',1.4)
 # ('bar',-3)
@@ -463,15 +465,11 @@ IDENTITY='@_IDENTITY_SYMBOL_@'
 # ('foo', ('bar',5.0))
 # ('foo', ('bar',5.0), 'baz', 'Foo', ('Bar',2.4))
 # [('foo',-1), ('bar',0), ('baz',3.5)]
-def fsa(arg):
+# \endverbatim
+def fst(arg):
     pass
 
-## Get a transducer.
-# @param arg ...
-# 
-# A dictionary whose keys are strings and values paths. The requirements for paths are the same as for libhfst.fsa.
-# @see libhfst.fsa
-def fst(arg):
+def tokenized_fst(arg):
     pass
 
 ## Get an empty transducer.
@@ -482,7 +480,6 @@ def empty_fst():
 # @param weight ...
 def epsilon_fst(weight=0):
     pass
-
 
 ## Get a transducer as defined by regular expression \a regexp.
 # @param regexp The regular expression defined with <a href="http://www.fsmbook.com/">Xerox transducer notation</a>.
@@ -2350,19 +2347,18 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 #
 # \verbatim
 # import libhfst
-# import sys
 # 
-# tr1 = libhfst.HfstTransducer('foo', 'bar', libhfst.SFST_TYPE)
-# tr2 = libhfst.HfstTransducer('bar', 'baz', libhfst.SFST_TYPE)
+# tr1 = libhfst.regex('foo:bar')
+# tr2 = libhfst.regex('bar:baz')
 # tr1.compose(tr2)
-# tr1.write_in_att_format(sys.stdout);
+# print(tr1)
 # \endverbatim
 # 
 # should print to standard output the following text when run:
 # 
 # \verbatim
-# 0      1     foo    baz
-# 1
+# 0      1     foo    baz    0
+# 1      0
 # \endverbatim
 # 
 # <BR>
@@ -2387,32 +2383,31 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # transducer properties and handling exceptions:
 # 
 # \verbatim
-# import libhfst 
-#
+# import libhfst
 # # Create a HFST basic transducer [a:b] with transition weight 0.3 and final weight 0.5.
 # t = libhfst.HfstBasicTransducer()
 # t.add_state(1)
-# t.add_transition(0, libhfst.HfstBasicTransition(1, 'a', 'b', 0.3))
+# t.add_transition(0, 1, 'a', 'b', 0.3)
 # t.set_final_weight(1, 0.5)
-# 
-# # Convert to tropical OpenFst format and push weights toward final state.
-# T = libhfst.HfstTransducer(t, libhfst.TROPICAL_OPENFST_TYPE)
+# #
+# # Convert to tropical OpenFst format (the default) and push weights toward final state.
+# T = libhfst.HfstTransducer(t, libhfst.get_default_fst_type())
 # T.push_weights(libhfst.TO_FINAL_STATE)
-# 
+# #
 # # Convert back to HFST basic transducer.
 # tc = libhfst.HfstBasicTransducer(T)
 # try:
-#     # Rounding might affect the precision. 
+#     # Rounding might affect the precision.
 #     if (0.79 < tc.get_final_weight(1)) and (tc.get_final_weight(1) < 0.81):
-#         print "TEST OK"
+#         print("TEST PASSED")
 #         exit(0)
 #     else:
-#         print "TEST FAILED"
+#         print("TEST FAILED")
 #         exit(1)
 # # If the state does not exist or is not final */
 # except libhfst.HfstException:
-#     print "TEST FAILED: An exception thrown."
-# exit(1)
+#     print("TEST FAILED: An exception thrown.")
+#     exit(1)
 # \endverbatim
 # 
 # 
@@ -2420,7 +2415,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # 
 # \verbatim
 # import libhfst
-# type = libhfst.FOMA_TYPE
+# libhfst.set_default_fst_type(libhfst.FOMA_TYPE)
 # 
 # # Create a simple lexicon transducer [[foo bar foo] | [foo bar baz]].
 # 

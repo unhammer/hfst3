@@ -1126,27 +1126,47 @@ def fsa(arg):
        raise RuntimeError('Not a string or tuple/list of strings.')
 
 def fst(arg):
-    if not isinstance(arg, dict):
-       raise RuntimeError('Not a dictionary.')
-    retval = _libhfst.regex('[0-0]') # empty transducer
-    for input, output in arg.items():
-       if not isinstance(input, str):
-          raise RuntimeError('Key not a string.')
-       left = fsa(input)
-       right = 0
-       if isinstance(output, str):
-          right = fsa(output)
-       elif isinstance(output, list) or isinstance(output, tuple):
-          right = fsa(output)
-       else:
-          raise RuntimeError('Value not a string or tuple/list of strings.')
-       retval.disjunct(left.cross_product(right))
-    return retval
+    if isinstance(arg, dict):
+       retval = _libhfst.regex('[0-0]') # empty transducer
+       for input, output in arg.items():
+           if not isinstance(input, str):
+              raise RuntimeError('Key not a string.')
+           left = fsa(input)
+           right = 0
+           if isinstance(output, str):
+              right = fsa(output)
+           elif isinstance(output, list) or isinstance(output, tuple):
+              right = fsa(output)
+           else:
+              raise RuntimeError('Value not a string or tuple/list of strings.')
+           retval.disjunct(left.cross_product(right))
+       return retval
+    return fsa(arg)
+
+def tokenized_fst(arg):
+    exp = '[ '
+    if isinstance(arg, list) or isinstance(arg, tuple):
+       for token in arg:
+           if isinstance(token, str):
+              exp += '"' + token + '" '
+           elif isinstance(token, list) or isinstance(token, tuple):
+              if len(token) == 2:
+                 exp += '"' + token[0] + '":"' + token[1] + '" '
+              elif len(token) == 1:
+                 exp += '"' + token + '" '
+              else:
+                 raise RuntimeError('Symbol or symbol pair must be given.')
+       exp += ']'
+       return _libhfst.regex(exp)
+    else:
+       raise RuntimeError('Argument must be a list or a tuple')
 
 def empty_fst():
     return _libhfst.regex('[0-0]')
 
 def epsilon_fst(weight=0):
     return _libhfst.regex('[0]::' + str(weight))
+
+
 
 %}
