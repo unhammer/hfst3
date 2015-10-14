@@ -62,19 +62,11 @@
 class HfstException:
     pass
 
-## Two or more HfstTransducers are not of the same type.
+## Two or more HfstTransducers are not of the same type. Same as HfstTransducerTypeMismatchException ???
 class HfstTransducerTypeMismatchException(HfstException):
     pass
 
 ## The library required by the implementation type requested is not linked to HFST. 
-# 
-# An example:
-# \verbatim
-# try:
-#     tr = libhfst.HfstTransducer('foo', 'bar', type)
-# except libhfst.ImplementationTypeNotAvailableException:
-#     print "ERROR: Type requested is not available."
-# \endverbatim
 class ImplementationTypeNotAvailableException(HfstException):
     pass
 
@@ -92,51 +84,32 @@ class NotValidPrologFormatException(HfstException):
 
 ## Stream cannot be read. 
 # 
-# Thrown by
-# libhfst.HfstTransducer.__init__
-# 
-# An example:
-# \verbatim
-# try:
-#     instr = libhfst.HfstInputStream('foofile')
-# except libhfst.StreamNotReadableException:
-#     print "ERROR: file cannot be read."
-# \endverbatim
+# Thrown by (TODO)
 class StreamNotReadableException(HfstException):
     pass
 
 ## Stream cannot be written. 
 # 
-# Thrown by #libhfst.HfstOutputStream.write and #libhfst.HfstTransducer.write_in_att_format
+# Thrown by #libhfst.HfstOutputStream.write and #libhfst.HfstTransducer.write_att
 # 
-# An example:
-# \verbatim
-# try:
-#     tr = libhfst.HfstTransducer('foo', libhfst.FOMA_TYPE)
-#     outstr = libhfst.HfstOutputStream('testfile')
-#     outstr.redirect(tr)
-# except libhfst.StreamCannotBeWrittenException:
-#     print "ERROR: file cannot be written."
-# \endverbatim
 class StreamCannotBeWrittenException(HfstException):
     pass
 
 ## Stream is closed. 
 # 
-# Thrown by #libhfst.HfstTransducer.write_in_att_format
-# #libhfst.HfstTransducer.__init__
+# Thrown by #libhfst.HfstTransducer.write_att
 # #libhfst.HfstOutputStream.write
 # 
-# An example:
+# An example: (TESTED)
 # 
 # \verbatim
 # try:
-#     tr = libhfst.HfstTransducer('foo', libhfst.TROPICAL_OPENFST_TYPE)
-#     outstr = libhfst.HfstOutputStream('testfile', tr.get_type())
+#     tr = libhfst.regex('foo')
+#     outstr = libhfst.HfstOutputStream(filename='testfile')
 #     outstr.close()
-#     outstr.redirect(tr)
+#     outstr.write(tr)
 # except libhfst.StreamIsClosedException:
-#     print "ERROR: stream to file is closed."
+#     print("Could not write transducer: stream to file was closed.")
 # \endverbatim
 class StreamIsClosedException(HfstException):
     pass
@@ -151,14 +124,17 @@ class EndOfStreamException(HfstException):
 
 ## Transducer is cyclic. 
 # 
-#     Thrown by #libhfst.HfstTransducer.extract_paths. An example
+#     Thrown by #libhfst.HfstTransducer.extract_paths. An example (TESTED)
 # \verbatim
 # transducer = libhfst.regex('[a:b]*')
 # try:
-#     results = transducer.extract_paths()
-#     print("The transducer has %i paths" % len(results))
+#     results = transducer.extract_paths(output='text')
+#     print("The transducer has %i paths:" % len(results))
+#     print(results)
 # except libhfst.TransducerIsCyclicException:
-#     print "The transducer is cyclic and has an infinite number of paths."
+#     print("The transducer is cyclic and has an infinite number of paths. Some of them:")
+#     results = transducer.extract_paths(output='text', max_cycles=5)
+#     print(results)
 # \endverbatim
 class TransducerIsCyclicException(HfstException):
     pass
@@ -169,46 +145,38 @@ class TransducerIsCyclicException(HfstException):
 #     #libhfst.HfstTransducer
 #     #libhfst.HfstInputStream.__init__
 # 
-#     An example. The file 'foofile' contains
+#     An example. (TESTED)
 # \verbatim
-# This is a text file.
-# Here is another line.
-# The file ends here.
-# \endverbatim
-# 
-# When we try to read it, an exception will be thrown:
-# 
-# \verbatim
+# f = open('foofile', 'w')
+# f.write('This is an ordinary text file.\n')
+# f.close()
 # try:
 #     instr = libhfst.HfstInputStream('foofile')
+#     tr = instr.read()
+#     print(tr)
+#     instr.close()
 # except libhfst.NotTransducerStreamException:
-#     print "ERROR: file does not contain transducers."
+#     print("Could not print transducer: the file does not contain binary transducers.")
 # \endverbatim
 class NotTransducerStreamException(HfstException):
     pass
 
 ## The stream is not in valid AT&T format. 
 # 
-#     An example. The file 'testfile.att' contains
-# 
-# \verbatim
-# 0       1       a      b
-# 1
-# c
-# \endverbatim
-# 
-# When we try to read it, an exception is thrown:
-# 
-# \verbatim
-# ifile = open('testfile.att', 'rb')
+#     An example: (TODO throws HfstException ???)
+# NotValidAttFormatException
+# f = open('testfile.att', 'w')
+# f.write('0 1 a b\n')
+# f.write('1 2 c\n')
+# f.write('2\n')
+# f.close()
+# f = libhfst.hfst_open('testfile.att', 'r')
 # try:
-#     t = libhfst.HfstTransducer(ifile, libhfst.TROPICAL_OPENFST_TYPE, 'epsilon')
-#     print "read one transducer"
-# except libhfst.NotValidAttFormatException:
-#     print "Error reading transducer: not valid AT&T format."
-# ifile.close()
-# \endverbatim
-#
+#     tr = libhfst.read_att(f)
+# except NotValidAttformatException:
+#     print('Could not read file: it is not in valid ATT format.')
+# f.close()
+
 #     thrown by 
 #     #libhfst.HfstTransducer.__init__
 class NotValidAttFormatException(HfstException):
@@ -220,7 +188,7 @@ class NotValidLexcFormatException(HfstException):
 
 ## State is not final (and cannot have a final weight). 
 # 
-#     An example:
+#     An example (TESTED):
 # 
 # \verbatim
 # tr = libhfst.HfstBasicTransducer()
@@ -229,7 +197,7 @@ class NotValidLexcFormatException(HfstException):
 # try:
 #     w = tr.get_final_weight(1)
 # except libhfst.StateIsNotFinalException:
-#     print "ERROR: State is not final."
+#     print("State is not final.")
 # \endverbatim
 # 
 # You should use function #libhfst.HfstBasicTransducer.is_final_state if you are not sure whether a
@@ -239,32 +207,21 @@ class NotValidLexcFormatException(HfstException):
 class StateIsNotFinalException(HfstException):
     pass
 
-## Context transducers are not automata.
-# 
-#     This exception is thrown by
-#     #libhfst.replace_up
-#     when either context transducer does not have equivalent input and
-#     output symbols in all its transitions.
-# 
-#     An example:
-# 
-# \verbatim
-# type = libhfst.SFST_TYPE
-# # The second context transducer is 
-# contexts = (libhfst.HfstTransducer('c', type), libhfst.HfstTransducer('c', 'd', type))
-# mapping = libhfst.HfstTransducer('a', 'b', type)
-# alphabet = ('a','a'), ('b','b'), ('c','c'), ('d','d')
-# # An exception is thrown
-# try:
-#     rule = libhfst.replace_up(contexts, mapping, True, alphabet)
-# except libhfst.ContextTransducersAreNotAutomataException:
-#     print "ERROR: Context transducers must be automata!"
-# \endverbatim
+# TODO
 class ContextTransducersAreNotAutomataException(HfstException):
     pass
 
 ## Transducers are not automata.
-# 
+#
+# Example: (TESTED)
+# \verbatim
+# tr1 = libhfst.regex('foo:bar')
+# tr2 = libhfst.regex('bar:baz')
+# try:
+#     tr1.cross_product(tr2)
+# except libhfst.TransducersAreNotAutomataException:
+#     print('Transducers must be automata in cross product.')
+# \endverbatim 
 #     This exception is thrown by
 #     #libhfst.HfstTransducer.cross_product
 #     when either input transducer does not have equivalent input and
@@ -274,13 +231,15 @@ class TransducersAreNotAutomataException(HfstException):
 
 ## The state number argument is not valid.
 # 
-#     An example:
+#     An example (TESTED):
 # 
 # \verbatim
 # tr = libhfst.HfstBasicTransducer()
 # tr.add_state(1)
-# # An exception is thrown as there is no state number 2
-# w = tr.get_final_weight(2)
+# try:
+#     w = tr.get_final_weight(2)
+# except libhfst.StateIndexOutOfBoundsException:
+#     print('State number 2 does not exist')
 # \endverbatim
 class StateIndexOutOfBoundsException(HfstException):
     pass
@@ -311,21 +270,21 @@ class MissingOpenFstInputSymbolTableException(HfstException):
 # 
 # An example:
 # \verbatim
-# foo = libhfst.HfstTransducer('foo', libhfst.SFST_TYPE)
-# bar = libhfst.HfstTransducer('bar', libhfst.FOMA_TYPE)
-# foo.disjunct(bar)   # an exception is thrown 
+# libhfst.set_default_fst_type(libhfst.TROPICAL_OPENFST_TYPE)
+# tr1 = libhfst.regex('foo')
+# tr2 = libhfst.regex('bar')
+# tr2.convert(libhfst.FOMA_TYPE)
+# try:
+#     tr1.disjunct(tr2)
+# except libhfst.TransducerTypeMismatchException:
+#     print('The implementation types of transducers must be the same.')
 # \endverbatim
 class TransducerTypeMismatchException(HfstException):
     pass
 
 ## TODO: The set of transducer pairs is empty. 
 # 
-#     Thrown by rule functions. An example:
-# 
-# \verbatim
-#     contexts = (),  # contexts is empty
-#     restr = libhfst.restriction(contexts, mapping, alphabet, twol_type, direction); 
-# \endverbatim
+#     Thrown by rule functions.
 class EmptySetOfContextsException(HfstException):
     pass
 
@@ -473,6 +432,8 @@ IDENTITY='@_IDENTITY_SYMBOL_@'
 # ('foo', ('bar',5.0))
 # ('foo', ('bar',5.0), 'baz', 'Foo', ('Bar',2.4))
 # [('foo',-1), ('bar',0), ('baz',3.5)]
+# A dictionary mapping strings to any of the above cases:
+# {'foo':'foo', 'bar':('foo',1.4), 'baz':(('foo',-1),'BAZ')}
 # \endverbatim
 def fst(arg):
     pass
@@ -480,7 +441,7 @@ def fst(arg):
 ## Get a transducer that recognizes the concatenation of symbols or symbol pairs in \a arg.
 # @param arg The symbols or symbol pairs that form the path to be recognized.
 #
-# Example
+# Example (TESTED)
 # \verbatim
 # import libhfst
 # tok = libhfst.HfstTokenizer()
@@ -526,7 +487,7 @@ def read_att(f, epsilonstr=libhfst.EPSILON):
 def read_prolog(f):
     pass
 
-## A simple transducer class with tropical weights.
+## A simple transducer class with tropical weights. (TESTED)
 #
 #    An example of creating an HfstBasicTransducer [foo:bar baz:baz] 
 #    with weight 0.4 from scratch:
@@ -620,11 +581,12 @@ class HfstBasicTransducer:
     def is_lookup_infinitely_ambiguous(self, str):
         pass
 
-    # TODO: rewrite
-    ## Lookup \a str in the transducer minding flag diacritics.
-    # @param str The input string to look up.
-    # @param kvargs infinite_cutoff=-1, max_weight=inf
-    def lookup_fd(self, str, **kvargs):
+    ## Lookup tokenized input \a input in the transducer minding flag diacritics.
+    # @param str A list/tuple of strings to look up.
+    # @param kvargs infinite_cutoff=-1, max_weight=None
+    # @param infinite_cutoff Defaults to -1, i.e. infinite.
+    # @param max_weight Defaults to None, i.e. infinity. 
+    def lookup_fd(self, input, **kvargs):
         pass
 
     ## Add a new state to this transducer and return its number.      
@@ -642,7 +604,7 @@ class HfstBasicTransducer:
     def add_state(self, state):
         pass
 
-    ## The states of the transducer
+    ## The states of the transducer (TESTED)
     # @return A tuple of state numbers.
     #
     # An example:
@@ -706,14 +668,14 @@ class HfstBasicTransducer:
     #
     # There is no way to test whether a graph is a trie, so the use
     # of this function is probably limited to fast construction of a lexicon.
-    # Here is an example:
+    # Here is an example: (TESTED)
     # 
     # \verbatim
     # lexicon = libhfst.HfstBasicTransducer()
-    # TOK = libhfst.HfstTokenizer()
-    # lexicon.disjunct(TOK.tokenize('dog'), 0.3)
-    # lexicon.disjunct(TOK.tokenize('cat'), 0.5)
-    # lexicon.disjunct(TOK.tokenize('elephant'), 1.6)
+    # tok = libhfst.HfstTokenizer()
+    # lexicon.disjunct(tok.tokenize('dog'), 0.3)
+    # lexicon.disjunct(tok.tokenize('cat'), 0.5)
+    # lexicon.disjunct(tok.tokenize('elephant'), 1.6)
     # \endverbatim
     def disjunct(self, stringpairpath, weight):
         pass
@@ -773,41 +735,31 @@ class HfstBasicTransducer:
     ## Read a transducer from prolog file \a f. \a linecount is incremented as lines are read (is it in python?).
     # @return A transducer constructed by reading from file \a file.
     # This function is a static one.
-    def read_in_prolog_format(f, linecount):
+    def read_prolog(f, linecount):
         pass
 
     ## Write the transducer in prolog format to file \a f. Name the transducer \a name.
-    def write_in_prolog_format(self, f, name, write_weights=True):
+    def write_prolog(self, f, name, write_weights=True):
         pass
 
     ## Write the transducer in xfst format to file \a f.
-    def write_in_xfst_format(self, f, write_weights=True):
+    def write_xfst(self, f, write_weights=True):
         pass
 
     ## Read a transducer in AT&T format from file \a f. \a epsilon_symbol defines the symbol used for epsilon, \a linecount is incremented as lines are read.
     # @return A transducer constructed by reading from file \a file.
     # This function is a static one.
-    def read_in_att_format(f, epsilon_symbol, linecount):
+    def read_att(f, epsilon_symbol, linecount):
         pass
 
-    # Write this transducer in AT&T format to file \a file, \a write_weights defines whether weights are written.
-    # def write_in_att_format(self, f, write_weights=True):
-    #    pass
-
-    # Write transducer in AT&T format to string \a str.
-    # def write_in_att_format(self, str, write_weights=True);
-    #
+    ## Write this transducer in AT&T format to file \a f, \a write_weights defines whether weights are written.
+    def write_att(f, bool write_weights=True):
+        pass
 
     ## Insert freely any number of \a symbol_pair in the transducer with weight \a weight.
     # @param symbol_pair A string pair to be inserted.
     # @param weight The weight of the inserted symbol pair.
     def insert_freely(self, symbol_pair, weight):
-        pass
-
-    ## Insert freely any number of any symbol in \a symbol_pairs in the graph with weight \a weight.
-    # @param symbol_pairs A tuple of string pairs to be inserted.
-    # @param weight The weight of the inserted symbol pair.
-    def insert_freely(self, symbol_pairs, weight):
         pass
 
     ## Insert freely any number of \a transducer in this transducer.
@@ -819,13 +771,8 @@ class HfstBasicTransducer:
     # @param state The state whose finality is returned.
     def is_final_state(self, state):
         pass
-
-    ## The assignment operator.
-    # @return This transducer.
-    def assign(self, transducer):
-        pass
     
-    ## Get the transitions of state \a state in this transducer.
+    ## Get the transitions of state \a state in this transducer. (TESTED)
     # If the state does not exist, a @a StateIndexOutOfBoundsException is thrown.
     # @return A tuple of HfstBasicTransitions.
     #
@@ -851,10 +798,6 @@ class HfstBasicTransducer:
 
     ## Get a list of all input/output symbol pairs used in the transitions of this transducer. 
     def get_transition_pairs(self):
-        pass
-
-    ## Print the alphabet of this transducer to standard output.
-    def print_alphabet(self):
         pass
 
     ## Remove symbol \a symbol from the alphabet of the graph. 
@@ -1458,6 +1401,10 @@ class HfstTransducer:
     ## Compose this transducer with \a another. 
     def compose(self, another):
         pass
+
+    ## TODO
+    def lenient_composition(self, another):
+        pass
     
     ## Compose this transducer with the intersection of
     # transducers in \a v. If \a invert is true, then compose the
@@ -1487,6 +1434,16 @@ class HfstTransducer:
     
     ## Subtract transducer \a another from this transducer. 
     def subtract(self, another):
+        pass
+
+    ## Alias for subtract.
+    # @see libhfst.HfstTransducer.subtract
+    def minus(self, another):
+        pass
+
+    ## Alias for intersect.
+    # @see libhfst.HfstTransducer.intersect
+    def conjunct(self, another):
         pass
 
     ## Convert the transducer into an equivalent transducer in format \a type. 
@@ -1718,6 +1675,19 @@ class HfstTransducer:
     def extract_paths(self, **kvargs):
         pass
 
+    ## Extract shortest paths of the transducer.
+    # @return A dictionary.
+    def extract_shortest_paths():
+        pass
+
+    ## Extract longest paths of the transducer.
+    # @return A dictionary.
+    def extract_longest_paths(**kvargs):
+        pass
+
+    ## Get length of longest path of the transducer.
+    def longest_path_size(**kvargs):
+        pass
 
     # Lookup or apply a single tokenized string \a tok_input and return a maximum of \a limit results.
     # 
@@ -1794,6 +1764,14 @@ class HfstTransducer:
     #
     # @todo Do not ignore the argument \a input
     def is_lookup_infinitely_ambiguous(self, tok_input):
+        pass
+
+    ## TODO
+    def is_infinitely_ambiguous(self):
+        pass
+
+    ## TODO
+    def has_flag_diacritics(self):
         pass
 
 ## Detokenize \a tokenized_paths.

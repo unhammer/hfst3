@@ -131,14 +131,9 @@ hfst::HfstTransducer * compile_lexc_file(const std::string & filename) /* throw 
     return comp.compileLexical();
 }
 
-hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@")
+hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(NotValidAttFormatException)
 {
-    return new HfstTransducer(f.get_file(), type, epsilon);
-}
-
-hfst::HfstTransducer * read_att(FILE * f, std::string epsilon="@_EPSILON_SYMBOL_@")
-{
-    return new HfstTransducer(f, type, epsilon);
+      return new HfstTransducer(f.get_file(), type, epsilon);
 }
 
 hfst::HfstTransducer * read_prolog(hfst::HfstFile & f)
@@ -394,17 +389,17 @@ std::string get_property(const std::string& property) const;
 const std::map<std::string,std::string>& get_properties() const;
 
 /* Basic binary operations */
-HfstTransducer & concatenate(const HfstTransducer&, bool harmonize=true);
-HfstTransducer & disjunct(const HfstTransducer&, bool harmonize=true);
-HfstTransducer & subtract(const HfstTransducer&, bool harmonize=true);
-HfstTransducer & intersect(const HfstTransducer&, bool harmonize=true);
-HfstTransducer & compose(const HfstTransducer&, bool harmonize=true);
+HfstTransducer & concatenate(const HfstTransducer&, bool harmonize=true) throw(TransducerTypeMismatchException);
+HfstTransducer & disjunct(const HfstTransducer&, bool harmonize=true) throw(TransducerTypeMismatchException);
+HfstTransducer & subtract(const HfstTransducer&, bool harmonize=true) throw(TransducerTypeMismatchException);
+HfstTransducer & intersect(const HfstTransducer&, bool harmonize=true) throw(TransducerTypeMismatchException);
+HfstTransducer & compose(const HfstTransducer&, bool harmonize=true) throw(TransducerTypeMismatchException);
 
 /* More binary operations */
 HfstTransducer & compose_intersect(const hfst::HfstTransducerVector &v, bool invert=false, bool harmonize=true);
 HfstTransducer & priority_union(const HfstTransducer &another, bool harmonize=true, bool encode_epsilons=true);
 HfstTransducer & lenient_composition(const HfstTransducer &another, bool harmonize=true);
-HfstTransducer & cross_product(const HfstTransducer &another, bool harmonize=true);
+HfstTransducer & cross_product(const HfstTransducer &another, bool harmonize=true) throw(TransducersAreNotAutomataException);
 HfstTransducer & shuffle(const HfstTransducer &another, bool harmonize=true);
 
 /* Testing */
@@ -415,7 +410,11 @@ StringSet get_alphabet() const;
 bool is_cyclic() const;
 bool is_automaton() const;
 bool is_infinitely_ambiguous() const;
+bool is_lookup_infinitely_ambiguous(const std::string &) const;
 bool has_flag_diacritics() const;
+
+void insert_to_alphabet(const std::string &);
+void remove_from_alphabet(const std::string &);
 
 static bool is_implementation_type_available(hfst::ImplementationType type);
 
@@ -464,12 +463,25 @@ HfstTransducer & set_final_weights(float weight, bool increment=false);
 // Can 'transform_weights' be wrapped?  It maybe needs to be rewritten in python.
 HfstTransducer & push_weights(hfst::PushType type);
 
-// TODO:
-void extract_shortest_paths(HfstTwoLevelPaths &results) const;
-bool extract_longest_paths(HfstTwoLevelPaths &results, bool obey_flags=true) const;
+//void extract_shortest_paths(HfstTwoLevelPaths &results) const;
+//bool extract_longest_paths(HfstTwoLevelPaths &results, bool obey_flags=true) const;
 int longest_path_size(bool obey_flags=true) const;
 
 %extend {
+
+    hfst::HfstTwoLevelPaths extract_shortest_paths_()
+    {
+        hfst::HfstTwoLevelPaths results;
+        $self->extract_shortest_paths(results);
+        return results;
+    }
+
+    hfst::HfstTwoLevelPaths extract_longest_paths_(bool obey_flags)
+    {
+        hfst::HfstTwoLevelPaths results;
+        $self->extract_longest_paths(results, obey_flags);
+        return results;
+    }
 
     HfstTransducer(const hfst::HfstTransducer & t)
     {
@@ -507,14 +519,14 @@ int longest_path_size(bool obey_flags=true) const;
       $self->write_in_prolog_format(f.get_file(), name, write_weights);
     }
 
-    hfst::HfstTwoLevelPaths extract_paths_(int max_num=-1, int cycles=-1) const
+    hfst::HfstTwoLevelPaths extract_paths_(int max_num=-1, int cycles=-1) const throw(TransducerIsCyclicException)
     {
       hfst::HfstTwoLevelPaths results;
       $self->extract_paths(results, max_num, cycles);
       return results;
     }
 
-    hfst::HfstTwoLevelPaths extract_paths_fd_(int max_num=-1, int cycles=-1, bool filter_fd=true) const
+    hfst::HfstTwoLevelPaths extract_paths_fd_(int max_num=-1, int cycles=-1, bool filter_fd=true) const throw(TransducerIsCyclicException)
     {
       hfst::HfstTwoLevelPaths results;
       $self->extract_paths_fd(results, max_num, cycles, filter_fd);
@@ -567,7 +579,6 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
           elif k == 'output':
              if v == 'text':
                 output='text'
-                pass
              elif v == 'raw':
                 output='raw'
              elif v == 'tuple':
@@ -599,6 +610,67 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
          return one_level_paths_to_string(retval)
       elif output == 'tuple':
          return one_level_paths_to_tuple(retval)
+      else:
+         return retval
+
+  def extract_longest_paths(self, **kvargs):
+      obey_flags=True
+      output='dict' # 'dict' (default), 'text', 'raw'
+
+      for k,v in kvargs.items():
+          if k == 'obey_flags':
+             if v == 'True':
+                pass
+             elif v == 'False':
+                obey_flags=False
+             else:
+                print('Warning: ignoring argument %s as it has value %s.' % (k, v))
+                print("Possible values are 'True' and 'False'.")
+          elif k == 'output':
+             if v == 'text':
+                output == 'text'
+             elif v == 'raw':
+                output='raw'
+             elif v == 'dict':
+                output='dict'
+             else:
+                print('Warning: ignoring argument %s as it has value %s.' % (k, v))
+                print("Possible values are 'dict' (default), 'text', 'raw'.")
+          else:
+             print('Warning: ignoring unknown argument %s.' % (k))
+
+      retval = self.extract_longest_paths_(obey_flags)
+
+      if output == 'text':
+         return two_level_paths_to_string(retval)
+      elif output == 'dict':
+         return two_level_paths_to_dict(retval)
+      else:
+         return retval
+
+  def extract_shortest_paths(self, **kvargs):
+      output='dict' # 'dict' (default), 'text', 'raw'
+
+      for k,v in kvargs.items():
+          if k == 'output':
+             if v == 'text':
+                output == 'text'
+             elif v == 'raw':
+                output='raw'
+             elif v == 'dict':
+                output='dict'
+             else:
+                print('Warning: ignoring argument %s as it has value %s.' % (k, v))
+                print("Possible values are 'dict' (default), 'text', 'raw'.")
+          else:
+             print('Warning: ignoring unknown argument %s.' % (k))
+
+      retval = self.extract_shortest_paths_()
+
+      if output == 'text':
+         return two_level_paths_to_string(retval)
+      elif output == 'dict':
+         return two_level_paths_to_dict(retval)
       else:
          return retval
 
@@ -642,7 +714,7 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
                 print("Possible values are 'True' and 'False'.")
           elif k == 'output':
              if v == 'text':
-                output == 'text'
+                output = 'text'
              elif v == 'raw':
                 output='raw'
              elif v == 'dict':
@@ -752,9 +824,9 @@ void close(void);
 
 %extend {
 
-HfstOutputStream & write(hfst::HfstTransducer & transducer)
+HfstOutputStream & write(hfst::HfstTransducer & transducer) throw(StreamIsClosedException)
 {
-return $self->redirect(transducer);
+  return $self->redirect(transducer);
 }
 
 HfstOutputStream() { return new hfst::HfstOutputStream(hfst::get_default_fst_type()); }
@@ -858,7 +930,7 @@ class HfstBasicTransducer {
     std::set<std::string> symbols_used();
     void prune_alphabet(bool force=true);
     const std::set<std::string> &get_alphabet() const;
-
+    StringPairSet get_transition_pairs() const;
     HfstState add_state(void);
     HfstState add_state(HfstState s);
     HfstState get_max_state() const;
@@ -868,23 +940,16 @@ class HfstBasicTransducer {
     void remove_transition(HfstState s, const hfst::implementations::HfstBasicTransition & transition,
                             bool remove_symbols_from_alphabet=false);
     bool is_final_state(HfstState s) const;
-    float get_final_weight(HfstState s) const;
+    float get_final_weight(HfstState s) const throw(StateIsNotFinalException, StateIndexOutOfBoundsException);
     void set_final_weight(HfstState s, const float & weight);
     HfstBasicTransducer &sort_arcs(void);
     const std::vector<HfstBasicTransition> & transitions(HfstState s) const;
+    HfstBasicTransducer &disjunct(const StringPairVector &spv, float weight);
+    HfstBasicTransducer &harmonize(HfstBasicTransducer &another);
 
-    //void write_in_prolog_format(FILE * file, const std::string & name, 
-    //                                 bool write_weights=true);
-    //static HfstBasicTransducer read_in_prolog_format
-    //       (FILE *file, 
-    //        unsigned int & linecount) ;
-    // void write_in_xfst_format(FILE * file, bool write_weights=true);
-    // void write_in_att_format(FILE *file, bool write_weights=true); 
-
-    // static HfstBasicTransducer read_in_att_format
-    //       (FILE *file, 
-    //        std::string epsilon_symbol,
-    //        unsigned int & linecount);
+    bool is_infinitely_ambiguous();
+    bool is_lookup_infinitely_ambiguous(const StringVector & s);
+    int longest_path_size();
 
     HfstBasicTransducer & substitute_symbol(const std::string &old_symbol, const std::string &new_symbol, bool input_side=true, bool output_side=true);
     HfstBasicTransducer & substitute_symbol_pair(const StringPair &old_symbol_pair, const StringPair &new_symbol_pair);
@@ -892,14 +957,24 @@ class HfstBasicTransducer {
     HfstBasicTransducer & substitute_symbol_pair_with_transducer(const StringPair &symbol_pair, HfstBasicTransducer &transducer);
     HfstBasicTransducer & substitute_symbols(const hfst::HfstSymbolSubstitutions &substitutions); // alias for the previous function which is shadowed
     HfstBasicTransducer & substitute_symbol_pairs(const hfst::HfstSymbolPairSubstitutions &substitutions); // alias for the previous function which is shadowed
+
+    HfstBasicTransducer & insert_freely(const StringPair &symbol_pair, float weight);
+    HfstBasicTransducer & insert_freely(const HfstBasicTransducer &tr);
     
-    // TODO lookup_fd
+    // void lookup_fd(const StringVector &lookup_path, HfstTwoLevelPaths &results, size_t infinite_cutoff, float * max_weight = NULL)
 
     hfst::implementations::HfstBasicStates states_and_transitions() const;
 
 
 
 %extend {
+
+  HfstTwoLevelPaths lookup_fd_(const StringVector &lookup_path, size_t infinite_cutoff, float * max_weight)
+  {
+    hfst::HfstTwoLevelPaths results;
+    $self->lookup_fd(lookup_path, results, infinite_cutoff, max_weight);
+    return results;
+  }
   void write_prolog(hfst::HfstFile & f, const std::string & name, bool write_weights=true) {
     $self->write_in_prolog_format(f.get_file(), name, write_weights);
   }
@@ -913,7 +988,7 @@ class HfstBasicTransducer {
   void write_att(hfst::HfstFile & f, bool write_weights=true) {
     $self->write_in_att_format(f.get_file(), write_weights);
   }
-  static HfstBasicTransducer read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") {
+  static HfstBasicTransducer read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(NotValidAttFormatException) {
     unsigned int linecount = 0;
     return hfst::implementations::HfstBasicTransducer::read_in_att_format(f.get_file(), epsilon, linecount);
   }
@@ -936,6 +1011,38 @@ class HfstBasicTransducer {
 
   def __enumerate__(self):
       return enumerate(self.states_and_transitions())
+
+  def lookup_fd(self, lookup_path, **kvargs):
+      max_weight = None
+      infinite_cutoff = -1 # Is this right?
+      output='dict' # 'dict' (default), 'text', 'raw'
+
+      for k,v in kvargs.items():
+          if k == 'max_weight' :
+             max_weight=v
+          elif k == 'infinite_cutoff' :
+             infinite_cutoff=v
+          elif k == 'output':
+             if v == 'text':
+                output == 'text'
+             elif v == 'raw':
+                output='raw'
+             elif v == 'dict':
+                output='dict'
+             else:
+                print('Warning: ignoring argument %s as it has value %s.' % (k, v))
+                print("Possible values are 'dict' (default), 'text', 'raw'.")
+          else:
+             print('Warning: ignoring unknown argument %s.' % (k))
+
+      retval = self.lookup_fd_(lookup_path, infinite_cutoff, max_weight)
+
+      if output == 'text':
+         return two_level_paths_to_string(retval)
+      elif output == 'dict':
+         return two_level_paths_to_dict(retval)
+      else:
+         return retval
 
   def substitute(self, s, S=None, **kvargs):
 
@@ -1119,8 +1226,8 @@ void set_default_fst_type(hfst::ImplementationType t);
 hfst::ImplementationType get_default_fst_type();
 std::string fst_type_to_string(hfst::ImplementationType t);
 
-hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException);
-hfst::HfstTransducer * read_att(FILE * f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException);
+hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException, NotValidAttFormatException);
+//hfst::HfstTransducer * read_att(FILE * f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException);
 hfst::HfstTransducer * read_prolog(hfst::HfstFile & f) throw(EndOfStreamException);
 
 std::string one_level_paths_to_string(const HfstOneLevelPaths &);

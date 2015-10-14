@@ -329,6 +329,16 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     if not tr1.compare(result):
         raise RuntimeError(get_linenumber())
 
+    # Other functions (TODO: more extensixe checks)
+    tr = libhfst.regex('[foo]|[foo bar]|[f o o bar baz]')
+    if not tr.longest_path_size() == 5:
+        raise RuntimeError(get_linenumber())
+    result = tr.extract_longest_paths()
+    if not len(result) == 1:
+        raise RuntimeError(get_linenumber())
+    result = tr.extract_shortest_paths()    
+    if not len(result) == 1:
+        raise RuntimeError(get_linenumber())
 
 print('\n--- Testing HfstBasicTransducer ---\n')
 
