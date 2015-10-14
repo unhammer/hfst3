@@ -616,6 +616,8 @@
 
          /** Get the final weight of state \a s in this graph. */
          HFSTDLL typename C::WeightType get_final_weight(HfstState s) const {
+           if (s > this->get_max_state())
+             HFST_THROW(StateIndexOutOfBoundsException);
            if (final_weight_map.find(s) != final_weight_map.end())
              return final_weight_map.find(s)->second;
            HFST_THROW(StateIsNotFinalException);
@@ -627,7 +629,7 @@
              If the state does not exist, it is created. */
          HFSTDLL void set_final_weight(HfstState s, 
                    const typename C::WeightType & weight) {
-       add_state(s);
+           add_state(s);
            final_weight_map[s] = weight;
          }
 
