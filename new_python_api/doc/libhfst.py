@@ -477,6 +477,73 @@ def compile_lexc_file(filename):
 # @param epsilonstr How epsilon is represented in the file. By default, "@_EPSILON_SYMBOL_@" and "@0@" are both recognized.
 #
 # If the file contains several transducers, they must be separated by "--" lines.
+    # In AT&T format, the transition lines are of the form:
+    # 
+    # \verbatim 
+    # [0-9]+[\w]+[0-9]+[\w]+[^\w]+[\w]+[^\w]([\w]+(-)[0-9]+(\.[0-9]+)) 
+    # \endverbatim
+    # 
+    # and final state lines:
+    # 
+    # \verbatim
+    # [0-9]+[\w]+([\w]+(-)[0-9]+(\.[0-9]+))
+    # \endverbatim
+    # 
+    # If several transducers are listed in the same file, they are separated by lines of 
+    # two consecutive hyphens "--". If the weight 
+    # \verbatim
+    # ([\w]+(-)[0-9]+(\.[0-9]+))
+    # \endverbatim
+    # is missing, the transition or final state is given a zero weight.
+    # 
+    # NOTE: If transition symbols contains spaces, they must be escaped
+    # as '\@_SPACE_\@' because spaces are used as field separators.
+    # Both '\@0\@' and '\@_EPSILON_SYMBOL_\@' are always interpreted as
+    # epsilons.
+    # 
+    # 
+    # An example: (TESTED)
+    # \verbatim
+    # 0      1      foo      bar      0.3
+    # 1      0.5
+    # --
+    # 0      0.0
+    # --
+    # --
+    # 0      0.0
+    # 0      0      a        <eps>    0.2
+    # \endverbatim
+    # 
+    # The example lists four transducers in AT&T format: 
+    # one transducer accepting the string pair &lt;'foo','bar'&gt;, one
+    # epsilon transducer, one empty transducer and one transducer 
+    # that accepts any number of 'a's and produces an empty string
+    # in all cases. The transducers can be read with the following commands (from a file named 
+    # 'testfile.att'):
+    # \verbatim
+    # transducers = []
+    # ifile = libhfst.hfst_open('testfile2.att', 'r')
+    # try:
+    #     while (not ifile.is_eof()):
+    #         t = libhfst.read_att(ifile, '<eps>')
+    #         transducers.append(t)
+    #         print("read one transducer")
+    # except libhfst.NotValidAttFormatException:
+    #     print("Error reading transducer: not valid AT&T format.")
+    # ifile.close()
+    # print("Read %i transducers in total" % len(transducers))
+    # \endverbatim
+    # 
+    # Epsilon will be represented as libhfst.EPSILON in the resulting transducer.
+    # The argument \a epsilon_symbol only denotes how epsilons are represented 
+    # in \a ifile.
+    # 
+    # @throws NotValidAttFormatException 
+    # @throws StreamNotReadableException
+    # @throws StreamIsClosedException
+    # @throws EndOfStreamException
+    # @see #write_in_att_format 
+    # TODO: move this to read_att
 def read_att(f, epsilonstr=libhfst.EPSILON):
     pass
 
@@ -840,14 +907,14 @@ class HfstBasicTransducer:
     # (5) substitute(dict): perform several symbol-to-symbol substitutions
     # (6) substitute(dict): perform several transition-to-transition substitutions
     #
-    # Examples:
+    # Examples: (TESTED)
     #
     # (1) tr.substitute('a', 'A', input=True, output=False): substitute lowercase a:s with uppercase ones
     # (2) tr.substitute(('a','b'),('A','B')): substitute transitions that map lowercase a into lowercase b with transitions that map uppercase a into uppercase b 
     # (3) tr.substitute(('a','b'), (('A','B'),('a','B'),('A','b'))): change either or both sides of a transition [a:b] to uppercase
     # (4) tr.substitute(('a','b'), libhfst.regex('[a:b]+')) change [a:b] transition into one or more consecutive [a:b] transitions
-    # (5) tr.substitute({'a':'A', 'b':'B', 'c','C'}) change lowercase a, b and c into their uppercase variants
-    # (6) tr.substitute( {('a','a'):('A':'A'), ('b','b'):('B','B'), ('c','c'):('C','C')} ): change lowercase a, b and c into their uppercase variants
+    # (5) tr.substitute({'a':'A', 'b':'B', 'c':'C'}) change lowercase a, b and c into their uppercase variants
+    # (6) tr.substitute( {('a','a'):('A','A'), ('b','b'):('B','B'), ('c','c'):('C','C')} ): change lowercase a, b and c into their uppercase variants
     #
     # In case (4), epsilon transitions are used to attach copies of transducer \a S between the SOURCE and TARGET state of each transition that is substituted.
     # The transition itself is deleted, but its weight is copied to the epsilon transition leading from SOURCE to the initial state of \a S.
@@ -856,7 +923,7 @@ class HfstBasicTransducer:
     def substitute(self, s, S=None, **kvargs):
         pass
 
-    ## Return an enumeration of the states and transitions of the transducer.
+    ## Return an enumeration of the states and transitions of the transducer. (TESTED)
     #
     # \verbatim
     # for state, arcs in enumerate(fsm):
@@ -936,8 +1003,8 @@ class HfstBasicTransition:
 # For functions that take a transducer as an argument, the type of the calling transducer
 # must be the same as the type of the argument transducer:
 # \verbatim
-# # this will cause an error
-# tropical_transducer.disjunct(sfst_transducer)
+# # this will cause a TransducerTypeMismatchException:
+# tropical_transducer.disjunct(foma_transducer)
 # # this works, but weights are lost in the conversion
 # tropical_transducer.convert(libhfst.SFST_TYPE).disjunct(sfst_transducer)     
 # # this works, information is not lost
@@ -957,35 +1024,6 @@ class HfstBasicTransition:
 # 
 # The HFST transducers support transitions with epsilon, unknown and identity symbols.
 # The special symbols are explained in TODO
-# 
-# An example:
-# \verbatim
-# # In the xerox formalism used here, '?' means the unknown symbol
-# # and '?:?' the identity pair 
-# 
-# tr1 = libhfst.HfstBasicTransducer()
-# tr1.add_state(1)
-# tr1.set_final_weight(1, 0)
-# tr1.add_transition(0, libhfst.HfstBasicTransition(1, libhfst.UNKNOWN, 'foo', 0) )
-# 
-# # tr1 is now [ ?:foo ]
-# 
-# tr2 = libhfst.HfstBasicTransducer tr2
-# tr2.add_state(1)
-# tr2.add_state(2)
-# tr2.set_final_weight(2, 0)
-# tr2.add_transition(0, libhfst.HfstBasicTransition(1, libhfst.IDENTITY, libhfst.IDENTITY, 0) )
-# tr2.add_transition(1, libhfst.HfstBasicTransition(2, 'bar', 'bar', 0) )
-# 
-# # tr2 is now [ [ ?:? ] [ bar:bar ] ]
-# 
-# type = libhfst.SFST_TYPE
-# Tr1 = HfstTransducer (tr1, type)
-# Tr2 = HfstTransducer (tr2, type)
-# Tr1.disjunct(Tr2)
-# 
-# # Tr1 is now [ [ ?:foo | bar:foo ]  |  [[ ?:? | foo:foo ] [ bar:bar ]] ] 
-# \endverbatim
 class HfstTransducer:
 
     ## Whether HFST is linked to the transducer library needed by implementation type \a type.
@@ -1001,74 +1039,10 @@ class HfstTransducer:
     def __init__(self):
         pass
 
-    # NOT SUPPORTED in Python API, use HfstInputStream.read() instead
-    # Read a binary transducer from transducer stream \a instr. 
-    # 
-    # The stream can contain tranducers or OpenFst, foma or SFST
-    # type in their native format, i.e. without an HFST header. 
-    # If the backend implementations are used as such, they are converted into HFST transducers.
-    # 
-    # For more information on transducer conversions and the HFST header
-    # structure, see 
-    # <a href="https://kitwiki.csc.fi/twiki/bin/view/KitWiki/HfstTransducerHeader">here</a>.
-    # 
-    # @pre ((instr.is_eof() == instr.is_bad() == False) and instr.is_fst() ), Otherwise, an exception is thrown.
-    # 
-    # @throws NotTransducerStreamException 
-    # @throws StreamNotReadableException
-    # @throws StreamIsClosedException 
-    # @throws TransducerTypeMismatchException
-    # @throws MissingOpenFstInputSymbolTableException
-    # 
-    # @see libhfst.HfstInputStream libhfst.HfstTransducer.__init__
-    # def __init__(self, instr):
-    #    pass
-
     ## Create a deep copy of HfstTransducer \a another or a transducer equivalent to HfstBasicTransducer \a another.
     # @param another An HfstTransducer or HfstBasicTransducer.
     def __init__(self, another):
         pass
-
-    # NOT SUPPORTED in Python API, use ... instead
-    # Create a transducer by tokenizing the utf8 string \a utf8_string with tokenizer \a multichar_symbol_tokenizer. The type of the transducer is defined by \a type. 
-    # 
-    # \a utf8_str is read one token at a time and for each token 
-    # a new transition is created in the resulting
-    # transducer. The input and output symbols of that transition are 
-    # the same as the token read.
-    # 
-    # An example:
-    # \verbatim
-    # ustring = 'foobar'
-    # TOK = libhfst.HfstTokenizer()
-    # tr = libfhst.HfstTransducer(ustring, TOK, FOMA_TYPE)
-    # # tr now contains one path [f o o b a r]
-    # \endverbatim
-    # 
-    # @see libhfst.HfstTokenizer 
-    # def __init__(self, utf8_str, multichar_symbol_tokenizer, type):
-    #    pass
-
-    # Create a transducer by tokenizing  the utf8 input string \a input_utf8_string and output string \a output_utf8_string with tokenizer \a multichar_symbol_tokenizer. The type of the transducer is defined by \a type. 
-    # 
-    # \a input_utf8_str and \a output_utf8_str are read one token at a time
-    # and for each token a new transition is created in the resulting transducer. 
-    # The input and output symbols of that transition are the same as 
-    # the input and output tokens read. If either string contains less tokens
-    # than another, epsilons are used as transition symbols for the shorter string.
-    # 
-    # An example:
-    # \verbatim
-    # input = 'foo'
-    # output = 'barr'
-    # TOK = libhfst.HfstTokenizer()
-    # tr = libhfst.HfstTransducer(input, output, TOK, libhfst.SFST_TYPE)
-    # # tr now contains one path [f:b o:a o:r 0:r]
-    # \endverbatim
-    # 
-    # @see libhfst.HfstTokenizer 
-    # def __init__(self, input_utf8_str, output_utf8_str, multichar_symbol_tokenizer, type):
-    #    pass
 
     ## Create an HFST transducer equivalent to HfstBasicTransducer \a t. The type of the created transducer is defined by \a type.
     # @param t An HfstBasicTransducer.
@@ -1077,117 +1051,6 @@ class HfstTransducer:
     # libhfst.HfstTransducer(fsm)
     def __init__(self, t, type):
         pass
-
-    # NOT SUPPORTED in Python API, use empty_fst() instead
-    # Create an empty transducer, i.e. a transducer that does not recognize any string. The type of the transducer is defined by \a type.
-    # 
-    # @note Use HfstTransducer(libhfst.EPSILON) to create an epsilon transducer. 
-    # def __init__(self, type):
-    #    pass
-
-    # NOT SUPPORTED in Python API, use ... instead
-    # Create a transducer that recognizes the string pair &lt;'symbol','symbol'&gt;, i.e. [symbol:symbol]. The type of the transducer is defined by \a type. 
-    # def __init__(self, symbol, type):
-    #    pass
-
-    # NOT SUPPORTED in Python API, use ... instead
-    # Create a transducer that recognizes the string pair &lt;'isymbol','osymbol'&gt;, i.e [isymbol:osymbol]. The type of the transducer is defined by \a type. 
-    # def __init__(self, isymbol, osymbol, type):
-    #    pass
-
-    # NOT SUPPORTED in Python API, use read_att(...) instead
-    # Create a transducer of type \a type as defined in AT&T format in file \a ifile. \a epsilon_symbol defines how epsilons are represented.
-    # 
-    # In AT&T format, the transition lines are of the form:
-    # 
-    # \verbatim 
-    # [0-9]+[\w]+[0-9]+[\w]+[^\w]+[\w]+[^\w]([\w]+(-)[0-9]+(\.[0-9]+)) 
-    # \endverbatim
-    # 
-    # and final state lines:
-    # 
-    # \verbatim
-    # [0-9]+[\w]+([\w]+(-)[0-9]+(\.[0-9]+))
-    # \endverbatim
-    # 
-    # If several transducers are listed in the same file, they are separated by lines of 
-    # two consecutive hyphens "--". If the weight 
-    # \verbatim
-    # ([\w]+(-)[0-9]+(\.[0-9]+))
-    # \endverbatim
-    # is missing, the transition or final state is given a zero weight.
-    # 
-    # NOTE: If transition symbols contains spaces, they must be escaped
-    # as '\@_SPACE_\@' because spaces are used as field separators.
-    # Both '\@0\@' and '\@_EPSILON_SYMBOL_\@' are always interpreted as
-    # epsilons.
-    # 
-    # 
-    # An example:
-    # \verbatim
-    # 0      1      foo      bar      0.3
-    # 1      0.5
-    # --
-    # 0      0.0
-    # --
-    # --
-    # 0      0.0
-    # 0      0      a        <eps>    0.2
-    # \endverbatim
-    # 
-    # The example lists four transducers in AT&T format: 
-    # one transducer accepting the string pair &lt;'foo','bar'&gt;, one
-    # epsilon transducer, one empty transducer and one transducer 
-    # that accepts any number of 'a's and produces an empty string
-    # in all cases. The transducers can be read with the following commands (from a file named 
-    # 'testfile.att'):
-    # \verbatim
-    # transducers = []
-    # ifile = open('testfile.att', 'rb')
-    # try:
-    #     while (not ifile.eof()):
-    #         t = libhfst.HfstTransducer(ifile, libhfst.TROPICAL_OPENFST_TYPE, '<eps>')
-    #         transducers.append(t)
-    #         print("read one transducer")
-    # except libhfst.NotValidAttFormatException:
-    #     print("Error reading transducer: not valid AT&T format.")
-    # ifile.close()
-    # print "Read %i transducers in total" % len(transducers)
-    # \endverbatim
-    # 
-    # Epsilon will be represented as libhfst.EPSILON in the resulting transducer.
-    # The argument \a epsilon_symbol only denotes how epsilons are represented 
-    # in \a ifile.
-    # 
-    # @throws NotValidAttFormatException 
-    # @throws StreamNotReadableException
-    # @throws StreamIsClosedException
-    # @throws EndOfStreamException
-    # @see #write_in_att_format 
-    # def __init__(self, ifile, type, epsilon_symbol):
-    #    pass
-
-    # NOT SUPPORTED in Python API, use ... instead
-    # Create a transducer that recognizes (any number of, if \a cyclic is True) the union of string pairs in \a sps. The type of the transducer is defined by \a type. 
-    # @param sps A tuple of consecutive string input/output pairs
-    # @param type The type of the transducer.
-    # @param cyclic Whether the transducer recognizes any number (from zero to infinity, inclusive) of consecutive string pairs in \a sps. 
-    # def __init__(self, sps, type, cyclic=False):
-    #    pass
- 
-    # NOT SUPPORTED in Python API, use ... instead
-    # Create a transducer that recognizes the concatenation of string pairs in \a spv. The type of the transducer is defined by \a type.
-    # @param spv A tuple of string pairs.
-    # @param type The type of the transducer. 
-    # def __init__(self, spv, type):
-    #    pass
- 
-    # NOT SUPPORTED in Python API, use ... instead
-    # Create a transducer that recognizes the concatenation of the unions of string pairs in string pair sets in \a spsv. The type of the transducer is defined by \a type. 
-    # @param spsv A tuple of tuples of string input/output pairs.
-    # @param type The type of the transducer.
-    # def __init__(self, spsv, type):
-    #    pass
 
     ## Rename the transducer \a name.
     # @param name The name of the transducer.
@@ -1462,7 +1325,7 @@ class HfstTransducer:
     def convert(self, type, options=''):
         pass
     
-    ## Write the transducer in AT&T format to file \a ofile, \a write_weights defines whether weights are written.
+    ## Write the transducer in AT&T format to file \a ofile, \a write_weights defines whether weights are written. (TESTED)
     # 
     # The fields in the resulting AT&T format are separated by tabulator characters.
     # 
@@ -1470,38 +1333,37 @@ class HfstTransducer:
     # whitespace characters are used as field separators in AT&T format. Epsilon symbols are printed as '\@0\@'.
     # 
     # If several transducers are written in the same file, they must be separated by a line of two consecutive hyphens "--", so that
-    # they will be read correctly by HfstTransducer(file, type, epsilon).
+    # they will be read correctly by libhfst.read_att.
     # 
     # An example:
     # \verbatim
-    # type = libhfst.FOMA_TYPE
-    # foobar = libhfst.HfstTransducer('foo','bar',type)
-    # epsilon = libhfst.HfstTransducer(libhfst.EPSILON,type)
-    # empty = libhfst.HfstTransducer(type)
-    # a_star = libhfst.HfstTransducer('a',type)
-    # a_star.repeat_star()
+    # tr1 = libhfst.regex('[foo:bar baz:0 " "]::0.3')
+    # tr2 = libhfst.empty_fst()
+    # tr3 = libhfst.epsilon_fst(0.5)
+    # tr4 = libhfst.regex('[foo]')
+    # tr5 = libhfst.empty_fst()
     # 
-    # ofile = open('testfile.att', 'wb')
-    # foobar.write_in_att_format(ofile)
-    # ofile.write("--\n")
-    # epsilon.write_in_att_format(ofile)
-    # ofile.write("--\n")
-    # empty.write_in_att_format(ofile)
-    # ofile.write("--\n")
-    # a_star.write_in_att_format(ofile)
-    # ofile.close()
+    # f = libhfst.hfst_open('testfile.att', 'w')
+    # for tr in [tr1, tr2, tr3, tr4]:
+    #     tr.write_att(f)
+    #     f.write('--\n')
+    # tr5.write_att(f)
+    # f.close()
     # \endverbatim
     # 
     # This will yield a file 'testfile.att' that looks as follows:
     # \verbatim
-    # 0    1    foo  bar  0.0
-    # 1    0.0
+    # 0       1       foo     bar     0.299805
+    # 1       2       baz     @0@     0.000000
+    # 2       3       @_SPACE_@       @_SPACE_@       0.000000
+    # 3       0.000000
     # --
-    # 0    0.0
     # --
+    # 0       0.500000
     # --
-    # 0    0.0
-    # 0    0    a    a    0.0
+    # 0       1       foo     foo     0.000000
+    # 1       0.000000
+    # --
     # \endverbatim
     # 
     # @throws StreamCannotBeWrittenException 
@@ -1509,13 +1371,13 @@ class HfstTransducer:
     # 
     # @see #libhfst.HfstOutputStream.write
     # @see #libhfst.HfstTransducer.__init__
-    def write_in_att_format(self, ofile, write_weights=True):
+    def write_att(self, ofile, write_weights=True):
         pass
 
     ## Write the transducer in AT&T format to file named \a filename. \a write_weights defines whether weights are written.
     # 
     # If the file exists, it is overwritten. If the file does not exist, it is created. 
-    def write_in_att_format(self, filename, write_weights=True):
+    def write_att(self, filename, write_weights=True):
         pass
 
     ## Make priority union of this transducer with \a another.
@@ -1616,7 +1478,7 @@ class HfstTransducer:
     def lookup(self, input, **kvargs):
         pass
 
-    ## Extract paths that are recognized by the transducer.
+    ## Extract paths that are recognized by the transducer. (TESTED)
     #
     # @param kvargs Arguments recognized are filter_flags, max_cycles, max_number, obey_flags, output, random.
     # @param filter_flags Whether flags diacritics are filtered out from the result (default True).
@@ -1632,41 +1494,44 @@ class HfstTransducer:
     # This example
     # 
     # \verbatim
-    # type = libhfst.SFST_TYPE
-    # tr1 = libhfst.HfstTransducer('a', 'b', type)
-    # tr1.repeat_star()
-    # tr2 = libhfst.HfstTransducer('c', 'd', type)
-    # tr2.repeat_star()
-    # tr1.concatenate(tr2).minimize()
-    # results = libhfst.detokenize_paths(tr1.extract_paths(MAX_NUM, CYCLES))
-    # 
-    # for path in results:
-    #     print "%s : &s" % (path.input, path.output)
+    # tr = libhfst.regex('a:b+ (a:c+)')
     # \endverbatim
-    # 
-    # prints with values MAX_NUM == -1 and CYCLES == 1 all paths
-    # that have no consecutive cycles:
-    # 
+    #
     # \verbatim
-    # a : b
-    # ac : bd
-    # acc : bdd
-    # c : d
-    # cc : dd
+    # 0       1       a       b       0.000000
+    # 1       1       a       b       0.000000
+    # 1       2       a       c       0.000000
+    # 1       0.000000
+    # 2       2       a       c       0.000000
+    # 2       0.000000
     # \endverbatim
-    # 
-    # and with values MAX_NUM == 7 and CYCLES == 2 a maximum of 7 paths
-    # that follow a cycle a maximum of 2 times (there are 11 such paths,
-    # but MAX_NUM limits their number to 7):
-    # 
+    #
+    #
+    #
     # \verbatim
-    # a : b
-    # aa : bb
-    # aac : bbd
-    # aacc : bbdd
-    # c : d
-    # cc : dd
-    # ccc : ddd
+    # print(tr.extract_paths(max_cycles=1, output='text'))
+    # print(tr.extract_paths(max_number=4, output='text'))
+    # print(tr.extract_paths(max_cycles=1, max_number=4, output='text'))
+    # \endverbatim
+    #
+    #
+    # \verbatim
+    # a:b     0
+    # aa:bb   0
+    # aaa:bbc 0
+    # aaaa:bbcc       0
+    # aa:bc   0
+    # aaa:bcc 0
+    #
+    # a:b     0
+    # aa:bc   0
+    # aaa:bcc 0
+    # aaaa:bccc       0
+    # 
+    # a:b     0
+    # aa:bb   0
+    # aa:bc   0
+    # aaa:bcc 0
     # \endverbatim
     #
     # @throws TransducerIsCyclicException
@@ -1796,25 +1661,12 @@ def detokenize_and_purge_paths(tokenized_paths):
 #
 # An example:
 # \verbatim
-# instr = 0
-# try:
-#     instr = libhfst.HfstInputStream('testfile') 
-# except libhfst.StreamNotReadableException: 
-#     print "ERROR: File does not exist."
-#     exit()
-#
-# transducers_read = 0
-#
-# while not instr.is_eof(): 
-#     if instr.is_bad():
-#         print "ERROR: Stream cannot be read."
-#         exit(1) 
-#     t = instr.read()
-#     print "One transducer successfully read."
-#     transducers_read++
-#
-# print("Read %i transducers in total" % transducers_read)
-# in.close()
+# istr = libhfst.HfstInputStream('testfile1.hfst')
+# transducers = []
+# while not (istr.is_eof()):
+#     transducers.append(istr.read())
+# istr.close()
+# print("Read %i transducers in total." % len(transducers))
 # \endverbatim
 #
 # For documentation on the HFST binary transducer format, see
@@ -1865,15 +1717,14 @@ class HfstInputStream:
 
 ## A stream for writing binary transducers. 
 #
-#  An example:
+#  An example: (TESTED)
 # \verbatim
-# #Write three HFST transducers in binary format to file named 'testfile'
-# out = libhfst.HfstOutputStream('testfile')
-# out.write(transducer1) 
-# out.write(transducer2)
-# out.write(transducer3)
-# out.flush()
-# out.close()
+# res = ['foo:bar','0','0 - 0','"?":?','a* b+']
+# ostr = libhfst.HfstOutputStream(filename='testfile1.hfst')
+# for re in res:
+#     ostr.write(libhfst.regex(re))
+#     ostr.flush()
+# ostr.close()
 # \endverbatim
 #
 # For more information on HFST transducer structure, see <a href="HeaderFormatAndConversions.html">this page</a>.
@@ -1929,19 +1780,11 @@ class MultiCharSymbolTrie:
 #
 # An example:
 # \verbatim
-# TOK = libhfst.HfstTokenizer()
-# TOK.add_multichar_symbol('<br />')
-# TOK.add_skip_symbol('<p>')
-# TOK.add_skip_symbol('</p>')
-# spv = TOK.tokenize("<p>A<br />paragraph!</p>")
-# # spv now contains
-# #    ('A','A'), ('<br />','<br />'), ('p','p' ('a','a'), ('r','r'), ('a','a'), 
-# #    ('g','g'), ('r','r'), ('a','a'), ('p','p'), ('h','h'), ('!','!')
 # \endverbatim
 #
 # @note The tokenizer only tokenizes utf-8 strings. 
 # Special symbols are not included in the tokenizer 
-# unless added to it.
+# unless added to it. TODO: should they ???
 class HfstTokenizer:
 
     ## Create a tokenizer that recognizes utf-8 symbols. 

@@ -403,7 +403,7 @@ HfstTransducer & cross_product(const HfstTransducer &another, bool harmonize=tru
 HfstTransducer & shuffle(const HfstTransducer &another, bool harmonize=true);
 
 /* Testing */
-bool compare(const HfstTransducer&, bool harmonize=true) const;
+bool compare(const HfstTransducer&, bool harmonize=true) const throw(TransducerTypeMismatchException);
 unsigned int number_of_states() const;
 unsigned int number_of_arcs() const;
 StringSet get_alphabet() const;
@@ -1226,7 +1226,7 @@ void set_default_fst_type(hfst::ImplementationType t);
 hfst::ImplementationType get_default_fst_type();
 std::string fst_type_to_string(hfst::ImplementationType t);
 
-hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException, NotValidAttFormatException);
+hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(NotValidAttFormatException);
 //hfst::HfstTransducer * read_att(FILE * f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException);
 hfst::HfstTransducer * read_prolog(hfst::HfstFile & f) throw(EndOfStreamException);
 
