@@ -276,8 +276,8 @@ namespace hfst { namespace implementations
              tr_it != it->end(); tr_it++)
           {
             // Copy the transition
-            const char * input = tr_it->get_input_symbol().c_str();
-            const char * output = tr_it->get_output_symbol().c_str();
+            const char * input = tr_it->get_transition_data().get_input_symbol().c_str();
+            const char * output = tr_it->get_transition_data().get_output_symbol().c_str();
             fsm_construct_add_arc(h, 
                                   (int)source_state, 
                                   (int)tr_it->get_target_state(),
