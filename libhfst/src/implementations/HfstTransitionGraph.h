@@ -3356,7 +3356,7 @@
                }
              // if there was previous distance defined for 'state', erase it, if needed
              int previous_distance = distance_of_state.at(state);
-             if (previous_distance != -1 && previous_distance != distance && overwrite)
+             if (previous_distance != -1 && previous_distance != (int)distance && overwrite)
                {
                  states_at_distance.at(previous_distance).erase(state);
                }
