@@ -45,7 +45,7 @@ using std::stack;
 #include "xfst-utils.h"
 #include "xfst-parser.hh"
 
-#include "../HfstStrings2FstTokenizer.h"
+#include "HfstStrings2FstTokenizer.h"
 
 #ifdef HAVE_READLINE
   #include <readline/readline.h>

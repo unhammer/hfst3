@@ -191,7 +191,7 @@ noinst_HEADERS= \
 	inc/getopt-cases-common.h inc/getopt-cases-error.h  \
 	inc/getopt-cases-unary.h  inc/globals-binary.h      \
 	inc/globals-common.h      inc/globals-unary.h \
-	HfstStrings2FstTokenizer.h hfst-file-to-mem.h \
+	hfst-file-to-mem.h \
 	hfst-string-conversions.h \
 	hfst-tool-metadata.h hfst-optimized-lookup.h \
 	guessify_fst.h generate_model_forms.h
@@ -266,9 +266,8 @@ hfst_lexc_SOURCES=hfst-lexc-compiler.cc $(HFST_COMMON_SRC)
 #					  parsers/LexcCompiler.h parsers/lexc-utils.h
 #hfst_lexc2fst_BUILT=parsers/lexc-parser.h parsers/xre_parse.h
 hfst_lookup_SOURCES=hfst-lookup.cc $(HFST_COMMON_SRC) \
-HfstStrings2FstTokenizer.cc hfst-string-conversions.cc
-hfst_pair_test_SOURCES=hfst-pair-test.cc $(HFST_COMMON_SRC) \
-HfstStrings2FstTokenizer.cc 
+hfst-string-conversions.cc
+hfst_pair_test_SOURCES=hfst-pair-test.cc $(HFST_COMMON_SRC) 
 hfst_minimize_SOURCES=hfst-minimize.cc $(HFST_COMMON_SRC)
 hfst_name_SOURCES=hfst-name.cc $(HFST_COMMON_SRC)
 hfst_optimized_lookup_SOURCES=hfst-optimized-lookup.cc
@@ -287,8 +286,7 @@ hfst_reverse_SOURCES=hfst-reverse.cc $(HFST_COMMON_SRC)
 hfst_reweight_SOURCES=hfst-reweight.cc $(HFST_COMMON_SRC)
 hfst_shuffle_SOURCES=hfst-shuffle.cc $(HFST_COMMON_SRC)
 hfst_split_SOURCES=hfst-split.cc $(HFST_COMMON_SRC)
-hfst_strings2fst_SOURCES=hfst-strings2fst.cc $(HFST_COMMON_SRC) \
-HfstStrings2FstTokenizer.cc
+hfst_strings2fst_SOURCES=hfst-strings2fst.cc $(HFST_COMMON_SRC)
 #hfst_strip_header_SOURCES=hfst-strip-header.cc $(HFST_COMMON_SRC)
 hfst_substitute_SOURCES=hfst-substitute.cc $(HFST_COMMON_SRC)
 hfst_subtract_SOURCES=hfst-subtract.cc $(HFST_COMMON_SRC)
