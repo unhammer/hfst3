@@ -662,7 +662,7 @@ REGEXP2: REPLACE
     delete $3;
  }
 | REGEXP2 LENIENT_COMPOSITION REPLACE {
-    $$ = $1;
+    $$ = &$1->lenient_composition(*$3);
     delete $3;
  }
 
