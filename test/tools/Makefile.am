@@ -274,7 +274,9 @@ FST_STRINGS=cat.strings proc-caps-in.strings proc-caps-gen.strings \
 			proc-compounds-out.strings proc-compounds.strings \
 			proc-compounds2-out.strings proc-compounds2.strings \
 			utf-8.strings latin-1.strings \
-			cat2dog.strings heavycat.strings
+			cat2dog.strings heavycat.strings \
+			cat_weight_ambig_out.strings cat_weight_ambig_W_out.strings \
+			proc-cat-NUL.strings
 FST_PAIRS=cat2dog.pairs
 FST_PAIRSTRINGS=cat2dog.pairstring
 FST_SPACESTRINGS=cat2dog.spaces
