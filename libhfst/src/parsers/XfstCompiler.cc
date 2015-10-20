@@ -39,7 +39,8 @@ using std::stack;
   #include <windows.h>
 #endif  // WINDOWS
 
-#include "../hfst-string-conversions.h"
+// TODO!!!
+#include "../../../tools/src/hfst-string-conversions.h"
 
 #include "XfstCompiler.h"
 #include "xfst-utils.h"
