@@ -1239,6 +1239,7 @@ void lookup_fd_and_print(HfstBasicTransducer &t, HfstOneLevelPaths& results,
       }
     fprintf(outfile, "\n");
     }
+    fflush(outfile);
   }
 
   // Convert HfstTwoLevelPaths into HfstOneLevelPaths
@@ -1681,6 +1682,7 @@ process_stream(HfstInputStream& inputstream, FILE* outstream)
         if (! print_pairs) { 
           // printing was already done in function lookup_fd
           print_lookups(*kvs, *kv, markup, unknown, infinite, outstream);
+          fflush(outstream);
         }
         delete kv;
         delete kvs;
