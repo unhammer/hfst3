@@ -25,7 +25,3 @@ hfst-pmatch2fst --verbose test.pmatch > pmatch.hfst
 echo ^^^^
 echo test hfst-pmatch manually and copy input from test_pmatch_result.txt
 echo ^^^^
-
-
-
-

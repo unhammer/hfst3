@@ -24,7 +24,6 @@ cl /EHsc /Zc:wchar_t /Fe%1.exe ^
 ..\..\tools\src\hfst-file-to-mem.cpp ^
 ..\..\tools\src\hfst-program-options.cpp ^
 ..\..\tools\src\hfst-string-conversions.cpp ^
-..\..\tools\src\HfstStrings2FstTokenizer.cpp ^
 ..\..\tools\src\hfst-tool-metadata.cpp ^
 ..\..\tools\src\hfst-getopt.cpp ^
 ..\..\tools\src\%1.cpp ^
@@ -42,6 +41,7 @@ HfstExceptionDefs.cpp ^
 HarmonizeUnknownAndIdentitySymbols.cpp ^
 HfstLookupFlagDiacritics.cpp ^
 HfstEpsilonHandler.cpp ^
+HfstStrings2FstTokenizer.cpp ^
 implementations\HfstTransitionGraph.cpp ^
 implementations\ConvertTransducerFormat.cpp ^
 implementations\HfstTropicalTransducerTransitionData.cpp ^
@@ -69,12 +69,17 @@ parsers\pmatch_parse.cpp ^
 parsers\pmatch_lex.cpp ^
 parsers\lexc-parser.cpp ^
 parsers\lexc-lexer.cpp ^
+parsers\xfst-parser.cpp ^
+parsers\xfst-lexer.cpp ^
 parsers\LexcCompiler.cpp ^
 parsers\PmatchCompiler.cpp ^
 parsers\XreCompiler.cpp ^
+parsers\XfstCompiler.cpp ^
 parsers\lexc-utils.cpp ^
 parsers\pmatch_utils.cpp ^
 parsers\xre_utils.cpp ^
+parsers\xfst-utils.cpp ^
+parsers\xfst_help_message.cpp ^
 ..\..\back-ends\openfstwin\src\lib\compat.cpp ^
 ..\..\back-ends\openfstwin\src\lib\flags.cpp ^
 ..\..\back-ends\openfstwin\src\lib\fst.cpp ^

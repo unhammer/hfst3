@@ -7,7 +7,7 @@ rem if "%1%"=="/DEBUG" SET debug_link=/DEBUG /release
 rem copy ..\..\back-ends\foma\libfoma.* .
 rem copy ..\..\back-ends\openfstwin\src\lib\openfst.* .
 
-if not exist libhfst_win.i echo Error: missing file "libhfst_win.i" && ^
+if not exist libhfst.i echo Error: missing file "libhfst.i" && ^
 exit /B 
 
 if not exist C:\python33\libs\python33.lib echo Error: missing file "C:\python33\libs\python33.lib" && ^
@@ -26,7 +26,7 @@ move ..\..\back-ends\foma\flags.c ..\..\back-ends\foma\_flags.c
 
 copy C:\python33\libs\python33.lib .
 
-C:\swigwin-3.0.5\swig.exe -python -c++ -I"C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Include" -Wall -o _libhfst.cpp libhfst_win.i
+C:\swigwin-3.0.5\swig.exe -python -c++ -I"C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Include" -Wall -o _libhfst.cpp libhfst.i
 
 cl /EHsc /LD /Fe_libhfst.pyd ^
 /D HAVE_FOMA /D HAVE_OPENFST /D HFSTEXPORT /D OPENFSTEXPORT /D_MSC_VER /DWINDOWS /DWIN32 ^
@@ -47,6 +47,7 @@ HfstExceptionDefs.cpp ^
 HarmonizeUnknownAndIdentitySymbols.cpp ^
 HfstLookupFlagDiacritics.cpp ^
 HfstEpsilonHandler.cpp ^
+HfstStrings2FstTokenizer.cpp ^
 implementations\HfstTransitionGraph.cpp ^
 implementations\ConvertTransducerFormat.cpp ^
 implementations\HfstTropicalTransducerTransitionData.cpp ^
@@ -74,12 +75,18 @@ parsers\pmatch_parse.cpp ^
 parsers\pmatch_lex.cpp ^
 parsers\lexc-parser.cpp ^
 parsers\lexc-lexer.cpp ^
+parsers\xfst-parser.cpp ^
+parsers\xfst-lexer.cpp ^
 parsers\LexcCompiler.cpp ^
 parsers\PmatchCompiler.cpp ^
 parsers\XreCompiler.cpp ^
+parsers\XfstCompiler.cpp ^
 parsers\lexc-utils.cpp ^
 parsers\pmatch_utils.cpp ^
 parsers\xre_utils.cpp ^
+parsers\xfst-utils.cpp ^
+parsers\xfst_help_message.cpp ^
+..\..\tools\src\hfst-string-conversions.cpp ^
 ..\..\back-ends\openfstwin\src\lib\compat.cpp ^
 ..\..\back-ends\openfstwin\src\lib\flags.cpp ^
 ..\..\back-ends\openfstwin\src\lib\fst.cpp ^

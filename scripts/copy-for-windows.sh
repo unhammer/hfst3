@@ -36,6 +36,8 @@ fomalibconf.h regex.h;
 do 
     cp back-ends/foma/$file $1/back-ends/foma/;
 done
+# there is a file with the same name in openfstwin
+mv $1/back-ends/foma/flags.c $1/back-ends/foma/_flags.c
 
 # openfstwin back-end
 mkdir $1/back-ends/openfstwin
@@ -72,7 +74,7 @@ HfstDataTypes.h HfstEpsilonHandler.h HfstExceptionDefs.h \
 HfstExceptions.h HfstExtractStrings.h HfstFlagDiacritics.h \
 HfstInputStream.h HfstLookupFlagDiacritics.h HfstOutputStream.h \
 HfstSymbolDefs.h HfstTokenizer.h HfstTransducer.h HfstXeroxRules.h \
-hfst.h hfst.hpp.in hfst_apply_schemas.h hfstdll.h;
+HfstStrings2FstTokenizer.h hfst.h hfst.hpp.in hfst_apply_schemas.h hfstdll.h;
 do
     cp libhfst/src/$file $1/libhfst/src/
 done
@@ -82,7 +84,7 @@ HarmonizeUnknownAndIdentitySymbols HfstApply HfstDataTypes \
 HfstEpsilonHandler HfstExceptionDefs HfstExceptions HfstFlagDiacritics \
 HfstInputStream HfstLookupFlagDiacritics HfstOutputStream HfstRules \
 HfstSymbolDefs HfstTokenizer HfstTransducer HfstXeroxRules \
-HfstXeroxRulesTest;
+HfstStrings2FstTokenizer HfstXeroxRulesTest;
 do
     cp libhfst/src/$file.cc $1/libhfst/src/$file.cpp
 done
@@ -133,10 +135,10 @@ do
         $1/libhfst/src/implementations/optimized-lookup/$file.cpp
 done
 
-# parsers
+# libhfst/src/parsers
 for file in \
-LexcCompiler PmatchCompiler XreCompiler \
-lexc-utils pmatch_utils xre_utils;
+LexcCompiler PmatchCompiler XreCompiler XfstCompiler xfst_help_message \
+lexc-utils pmatch_utils xre_utils xfst-utils;
 do
     cp libhfst/src/parsers/$file.cc \
         $1/libhfst/src/parsers/$file.cpp
@@ -144,32 +146,28 @@ do
         $1/libhfst/src/parsers/$file.h
 done
 for file in \
-lexc-lexer pmatch_lex xre_lex;
+lexc-lexer pmatch_lex xre_lex xfst-lexer;
 do
     cp libhfst/src/parsers/$file.cc \
         $1/libhfst/src/parsers/$file.cpp
 done
 for file in \
-lexc-parser pmatch_parse xre_parse;
+lexc-parser pmatch_parse xre_parse xfst-parser;
 do
     cp libhfst/src/parsers/$file.cc \
         $1/libhfst/src/parsers/$file.cpp
     cp libhfst/src/parsers/$file.hh \
         $1/libhfst/src/parsers/$file.hh
 done
+sed -i 's/#include <unistd.h>/#include <io.h>/' $1/libhfst/src/parsers/xfst-lexer.cpp
+sed -i 's/hxfstwrap( )/hxfstwrap(void)/' $1/libhfst/src/parsers/xfst-lexer.cpp
 
-# make scripts and headers
-# cp scripts/make-foma.bat $1/back-ends/foma/
-# cp scripts/make-openfstwin.bat $1/back-ends/openfstwin/src/lib/
-# cp scripts/test-openfstwin.bat $1/back-ends/openfstwin/src/lib/
-# cp scripts/make-parsers.bat $1/libhfst/src/parsers/
-# cp scripts/make-implementations.bat $1/libhfst/src/implementations/
-# cp scripts/make-libhfst.bat $1/libhfst/src/
-# cp scripts/test-libhfst.bat $1/libhfst/src/
-# cp scripts/generate-python-bindings.bat $1/libhfst/src/
+
 cp scripts/make-python-bindings.bat $1/libhfst/src/
-cp scripts/test_libhfst_win.py $1/libhfst/src/
-cp scripts/libhfst_win.i $1/libhfst/src/
+cp new_python_api/test_hfst.py $1/libhfst/src/
+cp new_python_api/examples.py $1/libhfst/src/
+cp new_python_api/foobar.hfst $1/libhfst/src/
+cp new_python_api/libhfst.i $1/libhfst/src/
 cp scripts/make-hfst-xfst.bat $1/libhfst/src/
 cp scripts/make-hfst-proc.bat $1/libhfst/src/
 cp scripts/make-hfst-lexc.bat $1/libhfst/src/
@@ -197,7 +195,8 @@ for file in \
 $1/libhfst/src/parsers/pmatch_lex.cpp \
 $1/libhfst/src/parsers/xre_lex.cpp \
 $1/libhfst/src/parsers/lexc-lexer.cpp \
-$1/back-ends/foma/lex.cmatrix.c;
+$1/back-ends/foma/lex.cmatrix.c \
+$1/back-ends/foma/lex.yy.c
 do
     sed -i 's/#include <unistd.h>/#include <io.h>/' $file
 done
@@ -221,24 +220,19 @@ mkdir $1/tools/src/hfst-twolc/src/rule_src
 mkdir $1/tools/src/hfst-twolc/src/string_src
 mkdir $1/tools/src/hfst-twolc/src/variable_src
 
-
-for file in \
-xfst-utils XfstCompiler hfst-xfst xfst-parser xfst-lexer \
-init_help  xfst_help_message;
+# tools/src/parsers
+for file in hfst-xfst init_help;
 do
     cp tools/src/parsers/$file.cc $1/tools/src/parsers/$file.cpp
 done
-
-cp tools/src/parsers/xfst_help_message.h $1/tools/src/parsers/
-
-sed -i 's/#include <unistd.h>/#include <io.h>/' $1/tools/src/parsers/xfst-lexer.cpp
-sed -i 's/hxfstwrap( )/hxfstwrap(void)/' $1/tools/src/parsers/xfst-lexer.cpp
-#sed -i 's/#include "help_message.cc"/#include "help_message.cpp"/' $1/tools/src/parsers/XfstCompiler.cpp
-
+for file in cmd.h abbrcmd.h;
+do
+    cp tools/src/parsers/$file $1/tools/src/parsers/
+done
 
 # compare, strings2fst and txt2fst are needed for testing hfst-xfst
 for file in \
-hfst-program-options hfst-commandline hfst-tool-metadata HfstStrings2FstTokenizer \
+hfst-program-options hfst-commandline hfst-tool-metadata \
 hfst-file-to-mem hfst-string-conversions hfst-getopt \
 hfst-lexc-compiler hfst-compare hfst-strings2fst hfst-txt2fst hfst-pmatch hfst-pmatch2fst \
 hfst-lookup hfst-optimized-lookup;
@@ -262,16 +256,10 @@ done
 
 for file in \
 hfst-commandline.h hfst-program-options.h hfst-tool-metadata.h \
-HfstStrings2FstTokenizer.h hfst-string-conversions.h \
+hfst-string-conversions.h \
 hfst-file-to-mem.h hfst-getopt.h hfst-optimized-lookup.h;
 do
     cp tools/src/$file $1/tools/src/
-done
-
-for file in \
-XfstCompiler.h xfst-utils.h xfst-parser.hh cmd.h abbrcmd.h;
-do
-    cp tools/src/parsers/$file $1/tools/src/parsers/
 done
 
 for file in \
