@@ -163,20 +163,20 @@ class NotTransducerStreamException(HfstException):
 
 ## The stream is not in valid AT&T format. 
 # 
-#     An example: (TODO throws HfstException ???)
-# NotValidAttFormatException
-# f = open('testfile.att', 'w')
-# f.write('0 1 a b\n')
-# f.write('1 2 c\n')
-# f.write('2\n')
+#     An example: (TESTED)
+# \verbatim
+# f = open('testfile1.att', 'w')
+# f.write('0 1 a b\n\
+# 1 2 c\n\
+# 2\n')
 # f.close()
-# f = libhfst.hfst_open('testfile.att', 'r')
+# f = libhfst.hfst_open('testfile1.att', 'r')
 # try:
 #     tr = libhfst.read_att(f)
-# except NotValidAttformatException:
+# except libhfst.NotValidAttFormatException:
 #     print('Could not read file: it is not in valid ATT format.')
 # f.close()
-
+# \endverbatim
 #     thrown by 
 #     #libhfst.HfstTransducer.__init__
 class NotValidAttFormatException(HfstException):
@@ -542,8 +542,7 @@ def compile_lexc_file(filename):
     # @throws StreamNotReadableException
     # @throws StreamIsClosedException
     # @throws EndOfStreamException
-    # @see #write_in_att_format 
-    # TODO: move this to read_att
+    # @see #write_att
 def read_att(f, epsilonstr=libhfst.EPSILON):
     pass
 
@@ -1446,11 +1445,16 @@ class HfstTransducer:
     def set_final_weights(self, weight):
         pass
     
-    ## Push weights towards initial or final state(s) 
-    # as defined by \a type.
+    ## Push weights towards initial or final state(s) as defined by \a type.
+    # @param PushType defining if weights are pushed towards initial state or final states, possible values are libhfst.TO_INITIAL_STATE and libhst.TO_FINALSTATE
     # 
-    # If the HfstTransducer is of unweighted type 
-    # (#SFST_TYPE or #FOMA_TYPE), nothing is done.
+    # If the HfstTransducer is of unweighted type (#SFST_TYPE or #FOMA_TYPE), nothing is done.
+    #
+    # An example:
+    # \verbatim
+
+    # \endverbatim
+    #
     # @see #libhfst.TO_INITIAL_STATE #libhfst.TO_FINAL_STATE
     # 
     def push_weights(self, PushType type):

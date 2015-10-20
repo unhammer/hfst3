@@ -974,11 +974,11 @@ FORMULA_FONTSIZE       = 10
 # there is already a search function so this one should typically
 # be disabled.
 
-SEARCHENGINE           = YES
+SEARCHENGINE = YES
 
 SERVER_BASED_SEARCH = YES
 
-EXTERNAL_SEARCH = YES
+EXTERNAL_SEARCH = NO
 
 #---------------------------------------------------------------------------
 # configuration options related to the LaTeX output

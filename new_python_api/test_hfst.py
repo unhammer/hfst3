@@ -153,13 +153,12 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
 
     # reading and writing in text format
     f = open('testfile.att', 'w')
-    f.write('0 1 foo bar 0.5\n')
-    f.write('0 1 fo ba 0.2\n')
-    f.write('0 1 f b 0\n')
-    f.write('1 2 baz baz\n')
-    f.write('2 0.1\n')
-    f.write('--\n')
-    f.write('\n')
+    f.write('0 1 foo bar 0.5\n\
+0 1 fo ba 0.2\n\
+0 1 f b 0\n\
+1 2 baz baz\n\
+2 0.1\n\
+--\n')
     f.close()
 
     numtr = 0

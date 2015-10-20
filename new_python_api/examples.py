@@ -34,19 +34,17 @@ try:
 except libhfst.NotTransducerStreamException:
     print("Could not print transducer: the file does not contain binary transducers.")
 
-# TODO: segfaults
-# NotValidAttFormatException
-# f = open('testfile1.att', 'w')
-# f.write('0 1 a b\n')
-# f.write('1 2 c\n')
-# f.write('2\n')
-# f.close()
-# f = libhfst.hfst_open('testfile1.att', 'r')
-# try:
-#     tr = libhfst.read_att(f)
-# except NotValidAttFormatException:
-#     print('Could not read file: it is not in valid ATT format.')
-# f.close()
+f = open('testfile1.att', 'w')
+f.write('0 1 a b\n\
+1 2 c\n\
+2\n')
+f.close()
+f = libhfst.hfst_open('testfile1.att', 'r')
+try:
+    tr = libhfst.read_att(f)
+except libhfst.NotValidAttFormatException:
+    print('Could not read file: it is not in valid ATT format.')
+f.close()
 
 # StateIsNotFinalException
 tr = libhfst.HfstBasicTransducer()
@@ -222,21 +220,23 @@ transducer1.reverse().determinize().reverse().determinize()
 tropical_transducer = libhfst.regex('foo').convert(libhfst.TROPICAL_OPENFST_TYPE)
 foma_transducer = libhfst.regex('foo').convert(libhfst.FOMA_TYPE)
 # TODO: segfaults
-# try:
-#     tropical_transducer.compare(foma_transducer)
-# except TransducerTypeMismatchException:
-#    print('Implementation types of transducers must be the same.')
+try:
+    tropical_transducer.compare(foma_transducer)
+except libhfst.TransducerTypeMismatchException:
+   print('Implementation types of transducers must be the same.')
 
-# read_att
+# read_att from file
 f = open('testfile2.att', 'w')
-f.write('0 1 foo bar 0.3\n')
-f.write('1 0.5\n')
-f.write('--\n')
-f.write('0 0.0\n')
-f.write('--\n')
-f.write('--\n')
-f.write('0 0.0\n')
-f.write('0 0 a <eps> 0.2\n')
+f.write(
+"""0 1 foo bar 0.3
+1 0.5
+--
+0 0.0
+--
+--
+0 0.0
+0 0 a <eps> 0.2
+""")
 f.close()
 
 transducers = []
@@ -251,6 +251,15 @@ except libhfst.NotValidAttFormatException:
 ifile.close()
 print("Read %i transducers in total" % len(transducers))
 
+# read_att from string
+#att_str = """0 1 a b
+#1 2 c d
+#2
+#"""
+#print(att_str)
+#tr = libhfst.read_att(att_str, '@0@')
+#print(tr)
+#exit(0)
 
 # write_att
 tr1 = libhfst.regex('[foo:bar baz:0 " "]::0.3')
@@ -294,6 +303,11 @@ for tr in transducers:
     if not tr.compare(libhfst.regex(res[i])):
         raise RuntimeError('')
     i+=1
+
+# push_weights
+tr = libhfst.HfstBasicTransducer()
+
+print(tr)
 
 # Foma issue
 

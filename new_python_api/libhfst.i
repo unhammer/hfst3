@@ -131,9 +131,9 @@ hfst::HfstTransducer * compile_lexc_file(const std::string & filename) /* throw 
     return comp.compileLexical();
 }
 
-hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(NotValidAttFormatException)
+hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@")
 {
-      return new HfstTransducer(f.get_file(), type, epsilon);
+      return new hfst::HfstTransducer(f.get_file(), type, epsilon);
 }
 
 hfst::HfstTransducer * read_prolog(hfst::HfstFile & f)
@@ -988,7 +988,7 @@ class HfstBasicTransducer {
   void write_att(hfst::HfstFile & f, bool write_weights=true) {
     $self->write_in_att_format(f.get_file(), write_weights);
   }
-  static HfstBasicTransducer read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(NotValidAttFormatException) {
+  static HfstBasicTransducer read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException, NotValidAttFormatException) {
     unsigned int linecount = 0;
     return hfst::implementations::HfstBasicTransducer::read_in_att_format(f.get_file(), epsilon, linecount);
   }
@@ -1219,19 +1219,18 @@ namespace lexc {
 
 
 
-hfst::HfstTransducer * regex(const std::string & regex_string);
-hfst::HfstTransducer * compile_lexc_file(const std::string & filename);
+hfst::HfstTransducer * hfst::regex(const std::string & regex_string);
+hfst::HfstTransducer * hfst::compile_lexc_file(const std::string & filename);
 
-void set_default_fst_type(hfst::ImplementationType t);
-hfst::ImplementationType get_default_fst_type();
-std::string fst_type_to_string(hfst::ImplementationType t);
+void hfst::set_default_fst_type(hfst::ImplementationType t);
+hfst::ImplementationType hfst::get_default_fst_type();
+std::string hfst::fst_type_to_string(hfst::ImplementationType t);
 
-hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(NotValidAttFormatException);
-//hfst::HfstTransducer * read_att(FILE * f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException);
-hfst::HfstTransducer * read_prolog(hfst::HfstFile & f) throw(EndOfStreamException);
+hfst::HfstTransducer * hfst::read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@") throw(EndOfStreamException, NotValidAttFormatException);
+hfst::HfstTransducer * hfst::read_prolog(hfst::HfstFile & f) throw(EndOfStreamException);
 
-std::string one_level_paths_to_string(const HfstOneLevelPaths &);
-std::string two_level_paths_to_string(const HfstTwoLevelPaths &);
+std::string hfst::one_level_paths_to_string(const HfstOneLevelPaths &);
+std::string hfst::two_level_paths_to_string(const HfstTwoLevelPaths &);
 
 }
 
