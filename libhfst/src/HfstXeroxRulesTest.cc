@@ -4,6 +4,72 @@ using namespace implementations;
 using namespace hfst::xeroxRules;
 
 
+
+
+// echo ' a ->  "@P.FOO.BAR@" || a _ "@u.a.b@" ' | ../../tools/src/./hfst-regexp2fst | hfst-fst2txt
+void test11( ImplementationType type )
+{
+    HfstTokenizer TOK;
+    TOK.add_multichar_symbol("@P.FOO.BAR@");
+    TOK.add_multichar_symbol("@u.a.b@");
+    TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
+    HfstTransducer a("a", TOK, type);
+    HfstTransducer b("@P.FOO.BAR@", TOK, type);    
+    HfstTransducer c("@u.a.b@", TOK, type);
+
+    // Mapping
+    HfstTransducerPair mappingPair( a, b);
+
+    HfstTransducerPairVector mappingPairVector;
+    mappingPairVector.push_back(mappingPair);
+
+       // Context
+   // HfstTransducerPair Context(HfstTransducer("$P.FOO.BAR$", TOK, type), HfstTransducer("@_EPSILON_SYMBOL_@", TOK, type));
+    HfstTransducerPair Context( a, c);
+
+    HfstTransducerPairVector ContextVector;
+    ContextVector.push_back(Context);
+
+    // Rule
+    Rule rule(mappingPairVector, ContextVector, REPL_UP);
+    
+    // result
+    HfstBasicTransducer bt;
+    bt.add_transition(0, HfstBasicTransition(0, "@_IDENTITY_SYMBOL_@", "@_IDENTITY_SYMBOL_@", 0) );
+    bt.add_transition(0, HfstBasicTransition(1, "a", "a", 0) );
+    bt.add_transition(0, HfstBasicTransition(0, "@P.FOO.BAR@", "@P.FOO.BAR@", 0) );
+    bt.add_transition(0, HfstBasicTransition(0, "@u.a.b@", "@u.a.b@", 0) );
+    bt.set_final_weight(0, 0);
+    bt.add_transition(1, HfstBasicTransition(0, "@_IDENTITY_SYMBOL_@", "@_IDENTITY_SYMBOL_@", 0) );
+    bt.add_transition(1, HfstBasicTransition(2, "a", "a", 0) );
+    bt.add_transition(1, HfstBasicTransition(0, "@P.FOO.BAR@", "@P.FOO.BAR@", 0) );
+    bt.add_transition(1, HfstBasicTransition(0, "@u.a.b@", "@u.a.b@", 0) );
+    bt.add_transition(1, HfstBasicTransition(3, "a", "@P.FOO.BAR@", 0) );
+    bt.set_final_weight(1, 0);
+    bt.add_transition(2, HfstBasicTransition(0, "@_IDENTITY_SYMBOL_@", "@_IDENTITY_SYMBOL_@", 0) );
+    bt.add_transition(2, HfstBasicTransition(2, "a", "a", 0) );
+    bt.add_transition(2, HfstBasicTransition(0, "@P.FOO.BAR@", "@P.FOO.BAR@", 0) );
+    bt.add_transition(2, HfstBasicTransition(3, "a", "@P.FOO.BAR@", 0) );
+    bt.set_final_weight(2, 0);
+    bt.add_transition(3, HfstBasicTransition(0, "@u.a.b@", "@u.a.b@", 0) );
+
+    HfstTransducer result1(bt, type);
+
+    HfstTransducer replaceTr(type);
+    replaceTr = replace(rule, false);
+
+    // printf("replaceTr: \n");
+    // replaceTr.write_in_att_format(stdout, 1);
+    
+    // printf("-----\nresult1: \n");
+    // result1.write_in_att_format(stdout, 1);
+
+    assert(replaceTr.compare(result1));
+}
+
+
+
+
 // a -> b || ? - a _
 void test8( ImplementationType type )
 {
