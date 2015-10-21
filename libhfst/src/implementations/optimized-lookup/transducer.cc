@@ -666,55 +666,53 @@ Transducer::~Transducer()
     delete encoder;
 }
 
-TransducerTable<TransitionWIndex> & Transducer::copy_windex_table()
+TransducerTable<TransitionWIndex> Transducer::copy_windex_table()
 {
     if (!header->probe_flag(Weighted)) {
         HFST_THROW(TransducerHasWrongTypeException);
     }
-    TransducerTable<TransitionWIndex> * another =
-        new TransducerTable<TransitionWIndex>;
+    TransducerTable<TransitionWIndex> another;
     for (unsigned int i = 0; i < header->index_table_size(); ++i) {
-        another->append(TransitionWIndex(tables->get_index_input(i),
+        another.append(TransitionWIndex(tables->get_index_input(i),
                                          tables->get_index_target(i)));
     }
-    return *another;
+    return another;
 }
-TransducerTable<TransitionW> & Transducer::copy_transitionw_table()
+TransducerTable<TransitionW> Transducer::copy_transitionw_table()
 {
     if (!header->probe_flag(Weighted)) {
         HFST_THROW(TransducerHasWrongTypeException);
     }
-    TransducerTable<TransitionW> * another = new TransducerTable<TransitionW>;
+    TransducerTable<TransitionW> another;
     for (unsigned int i = 0; i < header->target_table_size(); ++i) {
-        another->append(TransitionW(tables->get_transition_input(i),
+        another.append(TransitionW(tables->get_transition_input(i),
                                     tables->get_transition_output(i),
                                     tables->get_transition_target(i),
                                     tables->get_weight(i)));
     }
-    return *another;
+    return another;
 }
-TransducerTable<TransitionIndex> & Transducer::copy_index_table()
+TransducerTable<TransitionIndex> Transducer::copy_index_table()
 {
     if (header->probe_flag(Weighted)) {
         HFST_THROW(TransducerHasWrongTypeException);
     }
-    TransducerTable<TransitionIndex> * another =
-        new TransducerTable<TransitionIndex>;
+    TransducerTable<TransitionIndex> another;
     for (unsigned int i = 0; i < header->index_table_size(); ++i) {
-        another->append(tables->get_index(i));
+        another.append(tables->get_index(i));
     }
-    return *another;
+    return another;
 }
-TransducerTable<Transition> & Transducer::copy_transition_table()
+TransducerTable<Transition> Transducer::copy_transition_table()
 {
     if (header->probe_flag(Weighted)) {
         HFST_THROW(TransducerHasWrongTypeException);
     }
-    TransducerTable<Transition> * another = new TransducerTable<Transition>();
+    TransducerTable<Transition> another;
     for (unsigned int i = 0; i < header->target_table_size(); ++i) {
-        another->append(tables->get_transition(i));
+        another.append(tables->get_transition(i));
     }
-    return *another;
+    return another;
 }
 
 

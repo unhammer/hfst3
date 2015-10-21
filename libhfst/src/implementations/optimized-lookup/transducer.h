@@ -769,10 +769,17 @@ private:
     SymbolNumberVector symbols;
     
 public:
-    OlLetterTrie(void):
+    OlLetterTrie():
         letters(UCHAR_MAX, static_cast<OlLetterTrie*>(NULL)),
         symbols(UCHAR_MAX,NO_SYMBOL_NUMBER)
         {}
+
+    ~OlLetterTrie() {
+        for (size_t i=0 ; i<letters.size() ; ++i) {
+            delete letters[i];
+            letters[i] = 0;
+        }
+    }
     
     void add_string(const char * p,SymbolNumber symbol_key);
     bool has_key_starting_with(const char c) const;
@@ -936,10 +943,10 @@ public:
     bool is_lookup_infinitely_ambiguous(const StringVector & s);
     bool is_lookup_infinitely_ambiguous(const std::string & input);
     
-    TransducerTable<TransitionWIndex> & copy_windex_table();
-    TransducerTable<TransitionW> & copy_transitionw_table();
-    TransducerTable<TransitionIndex> & copy_index_table();
-    TransducerTable<Transition> & copy_transition_table();
+    TransducerTable<TransitionWIndex> copy_windex_table();
+    TransducerTable<TransitionW> copy_transitionw_table();
+    TransducerTable<TransitionIndex> copy_index_table();
+    TransducerTable<Transition> copy_transition_table();
 
     // state_index must be an index to a state which is defined as either:
     // (1) the start of a set of entries in the transition index table, or

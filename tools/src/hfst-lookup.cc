@@ -1368,6 +1368,7 @@ lookup_cascading(const HfstOneLevelPath& s, vector<HfstBasicTransducer> cascade,
         {
           results->insert(*it);
         }
+      delete result;
     }
   // all transducers gone through
 
@@ -1771,6 +1772,7 @@ int main( int argc, char **argv ) {
     {
         fclose(outfile);
     }
+    delete instream;
     free(inputfilename);
     free(outfilename);
     return EXIT_SUCCESS;
