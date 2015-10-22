@@ -666,7 +666,7 @@ class XfstCompiler
   std::map<std::string,std::string> aliases_;
   std::map<std::string,std::string> variables_;
   std::map<std::string,std::string> properties_;
-  std::map<std::string,std::set<string> > lists_;
+  std::map<std::string,std::set<std::string> > lists_;
   hfst::HfstTransducer* last_defined_;
   hfst::ImplementationType format_;
   bool verbose_;
