@@ -124,14 +124,6 @@ hfst::HfstOutputStream * create_hfst_output_stream(const std::string & filename,
         else { return new hfst::HfstOutputStream(filename, type, hfst_format); }
 }
 
-hfst::HfstTransducer * compile_lexc_file(const std::string & filename) /* throw ... */
-{
-    hfst::lexc::LexcCompiler comp(type /*, withFlags?*/);
-    comp.setVerbosity(0);
-    comp.parse(filename.c_str());
-    return comp.compileLexical();
-}
-
 hfst::HfstTransducer * read_att(hfst::HfstFile & f, std::string epsilon="@_EPSILON_SYMBOL_@")
 {
       return new hfst::HfstTransducer(f.get_file(), type, epsilon);
@@ -1246,7 +1238,6 @@ namespace xfst {
 
 
 hfst::HfstTransducer * hfst::regex(const std::string & regex_string);
-hfst::HfstTransducer * hfst::compile_lexc_file(const std::string & filename);
 
 void hfst::set_default_fst_type(hfst::ImplementationType t);
 hfst::ImplementationType hfst::get_default_fst_type();
@@ -1266,15 +1257,45 @@ EPSILON='@_EPSILON_SYMBOL_@'
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
-def compile_xfst_file(filename):
+def compile_xfst_file(filename, **kvargs):
+    verbosity=False
+    quit_on_fail='ON'
+
+    for k,v in kvargs.items():
+      if k == 'verbosity':
+        verbosity=v
+      elif k == 'quit_on_fail':
+        if v == False:
+          quit_on_fail='OFF'
+      else:
+        print('Warning: ignoring unknown argument %s.' % (k))
+
     xfstcomp = XfstCompiler(_libhfst.get_default_fst_type())
-    xfstcomp.setVerbosity(0)
-    xfstcomp.set('quit-on-fail', 'ON')
+    xfstcomp.setVerbosity(verbosity)
+    xfstcomp.set('quit-on-fail', quit_on_fail)
     f = open(filename, 'r')
     data = f.read()
     f.close()
     retval = xfstcomp.parse_line(data)
     return retval
+
+def compile_lexc_file(filename, **kvargs):
+    verbosity=0
+    withflags=True
+
+    for k,v in kvargs.items():
+      if k == 'verbosity':
+        verbosity=v
+      elif k == 'with_flags':
+        if v == False:
+          withflags = v
+      else:
+        print('Warning: ignoring unknown argument %s.' % (k))
+
+    lexccompiler = LexcCompiler(_libhfst.get_default_fst_type(), withflags)
+    lexccompiler.setVerbosity(verbosity)
+    lexccompiler.parse(filename)
+    return lexccompiler.compileLexical()
 
 def is_weighted_word(arg):
     if isinstance(arg, tuple) and len(arg) == 2 and isinstance(arg[0], str) and isinstance(arg[1], (int, float)):

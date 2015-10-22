@@ -469,7 +469,18 @@ def regex(regexp):
 
 ## Compile lexc file \a filename into a transducer.
 # @param filename The name of the lexc file.
-def compile_lexc_file(filename):
+# @param kvargs Arguments recognized are: verbosity, with_flags.
+# @param verbosity The verbosity of the compiler, defaults to 0 (silent). Possible values are: 0, 1, 2.
+# @param with_flags Whether lexc flags are used when compiling, defaults to True.
+def compile_lexc_file(filename, **kvargs):
+    pass
+
+## Compile (is 'run' a better term?) xfst file \a filename.
+# @param filename The name of the xfst file.
+# @param kvargs Arguments recognized are: verbosity, quit_on_fail.
+# @param verbosity The verbosity of the compiler, defaults to False.
+# @param quit_on_fail Whether the script is exited on any error, defaults to True.
+def compile_xfst_file(filename, **kvargs):
     pass
 
 ## Read next transducer from AT&T file pointed by \a f. \a epsilonstr defines the symbol used for epsilon in the file.
@@ -1452,7 +1463,7 @@ class HfstTransducer:
     #
     # An example:
     # \verbatim
-
+    #
     # \endverbatim
     #
     # @see #libhfst.TO_INITIAL_STATE #libhfst.TO_FINAL_STATE
