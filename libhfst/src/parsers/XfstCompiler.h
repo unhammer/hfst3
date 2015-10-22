@@ -178,6 +178,8 @@ class XfstCompiler
   XfstCompiler& set(const char* name, const char* text);
   //! @brief Set variable @c name = @c number
   XfstCompiler& set(const char* name, unsigned int number);
+  //! @brief Get variable \a name.
+  std::string get(const char* name);
   //! @brief Show named variable
   XfstCompiler& show(const char* name);
   //! @brief Show all variables
@@ -502,6 +504,13 @@ class XfstCompiler
   //! @brief Get the prompt string.
   char* get_prompt() const;
 
+  //! @brief Whether it has been requested to quit the program.
+  //  Needed in interactive mode where user input is read line by line.
+  bool quit_requested() const;
+  //! @brief Handle unknown command \a s.
+  //  @return Whether the parser should go on, 0 signifying true. 
+  int unknown_command(const char * s);
+
  protected:
   //! @brief Get the prompt that is used when applying up or down 
   //! (as specified by \a direction).
@@ -676,6 +685,9 @@ class XfstCompiler
      where they end before giving them to the actual parser. By storing the result
      in this variable, there is no need to parse a regexp again on the parse level. */
   hfst::HfstTransducer * latest_regex_compiled;
+  // Whether the script has encountered the quit command ('quit', 'exit', etc.).
+  // Needed in interactive mode, where user input is read line by line.
+  bool quit_requested_;
 }
 ;
 

@@ -474,6 +474,14 @@ int main(int argc, char** argv)
           if (0 != comp.parse_line((expression + "\n").c_str()))
             {
               fprintf(stderr, "expression '%s' could not be parsed\n", expression.c_str());
+              if (comp.get("quit-on-fail") == "ON")
+                {
+                  return EXIT_FAILURE;
+                }
+            }
+          if (comp.quit_requested())
+            {
+              break;
             }
 
           expression = "";
@@ -514,6 +522,14 @@ int main(int argc, char** argv)
           if (0 != comp.parse_line((expression + "\n").c_str()))
             {
               fprintf(stderr, "expression '%s' could not be parsed\n", expression.c_str());
+              if (comp.get("quit-on-fail") == "ON")
+                {
+                  return EXIT_FAILURE;
+                }
+            }
+          if (comp.quit_requested())
+            {
+              break;
             }
           
           expression = "";

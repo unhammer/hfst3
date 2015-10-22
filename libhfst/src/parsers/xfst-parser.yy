@@ -1122,8 +1122,11 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             hfst::xfst::xfst_->prompt();
        }
        | NAMETOKEN END_COMMAND {
-            fprintf(stderr, "Command %s is not recognised.\n", $1);
-            hfst::xfst::xfst_->prompt();
+            if ( hfst::xfst::xfst_->unknown_command($1) != 0) 
+              { 
+                hxfsterror("Command not recognized.\n");
+                YYABORT;
+              }
        }
        ;
 

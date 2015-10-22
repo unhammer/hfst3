@@ -21,6 +21,7 @@
 #include "parsers/XreCompiler.h"
 #include "parsers/LexcCompiler.h"
 #include "parsers/PmatchCompiler.h"
+#include "parsers/XfstCompiler.h"
 #include "implementations/HfstTransitionGraph.h"
 
 // todo instead: #include "hfst_extensions.h"
@@ -1182,7 +1183,7 @@ namespace lexc {
       LexcCompiler();
       LexcCompiler(hfst::ImplementationType impl);
       LexcCompiler(hfst::ImplementationType impl, bool withFlags);
-      LexcCompiler& parse(FILE* infile); // todo: HfstFile
+      LexcCompiler& parse(FILE* infile);
       LexcCompiler& parse(const char* filename);
       LexcCompiler& setVerbosity(unsigned int verbose);
       bool isQuiet();
@@ -1218,6 +1219,31 @@ namespace lexc {
 }
 
 
+namespace xfst {
+  class XfstCompiler
+  {
+    public:
+      XfstCompiler();
+      XfstCompiler(hfst::ImplementationType impl);
+      //XfstCompiler& compile_regex(const char * indata, unsigned int & chars_read);
+      //int parse(FILE * infile);
+      //int parse(const char * filename);
+      //int parse_line(char line []);
+      int parse_line(std::string line);
+      //XfstCompiler& setReadline(bool readline);
+      //XfstCompiler& setReadInteractiveTextFromStdin(bool value);
+      //XfstCompiler& setOutputToConsole(bool value);
+      //bool getReadline();
+      //bool getReadInteractiveTextFromStdin();
+      //bool getOutputToConsole();
+      XfstCompiler& setVerbosity(bool verbosity);
+      //XfstCompiler& setPromptVerbosity(bool verbosity);
+      //const XfstCompiler& prompt() const;
+      //char* get_prompt() const;
+      XfstCompiler& set(const char* name, const char* text);
+  };
+}
+
 
 hfst::HfstTransducer * hfst::regex(const std::string & regex_string);
 hfst::HfstTransducer * hfst::compile_lexc_file(const std::string & filename);
@@ -1239,6 +1265,16 @@ std::string hfst::two_level_paths_to_string(const HfstTwoLevelPaths &);
 EPSILON='@_EPSILON_SYMBOL_@'
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
+
+def compile_xfst_file(filename):
+    xfstcomp = XfstCompiler(_libhfst.get_default_fst_type())
+    xfstcomp.setVerbosity(0)
+    xfstcomp.set('quit-on-fail', 'ON')
+    f = open(filename, 'r')
+    data = f.read()
+    f.close()
+    retval = xfstcomp.parse_line(data)
+    return retval
 
 def is_weighted_word(arg):
     if isinstance(arg, tuple) and len(arg) == 2 and isinstance(arg[0], str) and isinstance(arg[1], (int, float)):

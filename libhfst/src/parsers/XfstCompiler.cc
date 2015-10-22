@@ -138,7 +138,8 @@ namespace xfst {
         lexc_(hfst::TROPICAL_OPENFST_TYPE),
         format_(hfst::TROPICAL_OPENFST_TYPE),
         verbose_(false),
-        latest_regex_compiled(NULL)
+        latest_regex_compiled(NULL),
+        quit_requested_(false)
     {       
         xre_.set_expand_definitions(true);
         xre_.set_verbosity(true, stderr);
@@ -191,7 +192,8 @@ namespace xfst {
         lexc_(impl),
         format_(impl),
         verbose_(false),
-        latest_regex_compiled(NULL)
+        latest_regex_compiled(NULL),
+        quit_requested_(false)
     {       
         xre_.set_expand_definitions(true);
         xre_.set_verbosity(true, stderr);
@@ -872,6 +874,26 @@ namespace xfst {
       return "apply down> ";
     }
     return "";
+  }
+
+  int XfstCompiler::unknown_command(const char * s)
+  {
+    if (this->variables_["quit-on-fail"] == "ON")
+      {
+        if (verbose_)
+          {
+            fprintf(stderr, "Command %s is not recognised.\n", s);
+          }
+        return 1;
+      }
+    fprintf(stderr, "Command %s is not recognised.\n", s);
+    this->prompt();
+    return 0;
+  }
+
+  bool XfstCompiler::quit_requested() const
+  {
+    return this->quit_requested_;
   }
 
   // HERE
@@ -1784,7 +1806,7 @@ namespace xfst {
         }
       else
         ;
-      exit(EXIT_SUCCESS);
+      this->quit_requested_ = true;
       return *this;
     }
 
@@ -1880,6 +1902,14 @@ namespace xfst {
       variables_[name] = num;
       PROMPT_AND_RETURN_THIS;
     }
+
+  std::string
+  XfstCompiler::get(const char* name)
+  {
+    if (variables_.find(name) == variables_.end())
+      return std::string("");
+    return std::string(variables_[name]);
+  }
 
   XfstCompiler& 
   XfstCompiler::show(const char* name)

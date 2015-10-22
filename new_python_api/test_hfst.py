@@ -339,6 +339,12 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     if not len(result) == 1:
         raise RuntimeError(get_linenumber())
 
+    # XfstCompiler
+    if libhfst.compile_xfst_file('test_pass.xfst') != 0:
+        raise RuntimeError(get_linenumber())
+    if libhfst.compile_xfst_file('test_fail.xfst') == 0:
+        raise RuntimeError(get_linenumber())
+
 print('\n--- Testing HfstBasicTransducer ---\n')
 
 # Create basic transducer, write it to file, read it, and test equivalence
