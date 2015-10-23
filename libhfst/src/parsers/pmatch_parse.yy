@@ -87,8 +87,8 @@ REPLACE REGEXP3 FUNCALL MAP FUNCALL_ARG
 %type <mappingWithArrow> MAPPINGPAIR
 
 %type <contextWithMark> CONTEXTS_WITH_MARK
-%type <transducerPairVector> CONTEXTS_VECTOR
-%type <transducerPair> CONTEXT
+%type <transducerPairVector> CONTEXTS_VECTOR RESTR_CONTEXTS_VECTOR
+%type <transducerPair> CONTEXT RESTR_CONTEXT
 %type <replType>  CONTEXT_MARK
 
 %type <transducer> OPTCAP TOLOWER TOUPPER INSERT ANONYMOUS_DEFINITION RIGHT_CONTEXT LEFT_CONTEXT NEGATIVE_RIGHT_CONTEXT NEGATIVE_LEFT_CONTEXT P_CONTEXT CONTEXT_CONDITION OR_CONTEXT AND_CONTEXT
@@ -665,7 +665,6 @@ REGEXP2: REPLACE
     $$ = &$1->lenient_composition(*$3);
     delete $3;
  }
-
 ;
 
 ////////////////////////////
@@ -959,43 +958,83 @@ REPLACE_ARROW: REPLACE_RIGHT
 
 REGEXP3: REGEXP4 { }
 | REGEXP3 SHUFFLE REGEXP4 {
-    pmatcherror("No shuffle");
-    $$ = $1;
+    try {
+        $$ = & $1->shuffle(*$3);
+    } catch (const TransducersAreNotAutomataException & e) {
+        pmatchwarning("tried to shuffle with non-automaton transducers,\n"
+                      "    shuffling with their input projection instead.");
+        $1->input_project();
+        $3->input_project();
+        $$ = & $1->shuffle(*$3);
+    }
     delete $3;
  }
 | REGEXP3 BEFORE REGEXP4 {
-    pmatcherror("No before");
-    $$ = $1;
-    delete $3;
- }
+    $$ = new HfstTransducer( before (*$1, *$3) );
+    delete $1, $3;
+}
 | REGEXP3 AFTER REGEXP4 {
-    pmatcherror("No after");
-    $$ = $1;
-    delete $3;
- }
-
+    $$ = new HfstTransducer( after (*$1, *$3) );
+    delete $1, $3;
+}
 ;
 
 REGEXP4: REGEXP5 { }
-| REGEXP4 LEFT_ARROW REGEXP5 CENTER_MARKER REGEXP5 {
-    pmatcherror("No Arrows");
-    $$ = $1;
+| REGEXP4 RIGHT_ARROW RESTR_CONTEXTS_VECTOR {
+    $$ = new HfstTransducer( restriction(*$1, *$3) ) ;
+    delete $1;
     delete $3;
-    delete $5;
- }
-| REGEXP4 RIGHT_ARROW REGEXP5 CENTER_MARKER REGEXP5 {
-    pmatcherror("No Arrows");
+}
+| REGEXP4 LEFT_ARROW REGEXP5 CENTER_MARKER REGEXP5 {
+    pmatcherror("Left arrow with contexts not implemented");
     $$ = $1;
     delete $3;
     delete $5;
  }
 | REGEXP4 LEFT_RIGHT_ARROW REGEXP5 CENTER_MARKER REGEXP5 {
-    pmatcherror("No Arrows");
+    pmatcherror("Left-right arrow with contexts not implemented");
     $$ = $1;
     delete $3;
     delete $5;
  }
 ;
+
+RESTR_CONTEXTS_VECTOR: RESTR_CONTEXT
+{
+    HfstTransducerPairVector * ContextVector = new HfstTransducerPairVector();
+    ContextVector->push_back(*$1);
+    $$ = ContextVector;
+    delete $1; 
+}
+| RESTR_CONTEXTS_VECTOR COMMA RESTR_CONTEXT
+{
+    $1->push_back(*$3);
+    $$ = $1;
+    delete $3; 
+};
+      
+RESTR_CONTEXT: REGEXP4 CENTER_MARKER REGEXP4 
+{
+    $$ = new HfstTransducerPair(*$1, *$3);
+    delete $1, $3; 
+}
+| REGEXP4 CENTER_MARKER
+{
+    HfstTransducer epsilon(hfst::internal_epsilon, hfst::pmatch::format);
+    $$ = new HfstTransducerPair(*$1, epsilon);
+    delete $1; 
+}
+| CENTER_MARKER REGEXP4
+{
+    HfstTransducer epsilon(hfst::internal_epsilon, hfst::pmatch::format);
+    $$ = new HfstTransducerPair(epsilon, *$2);
+    delete $2; 
+}
+| CENTER_MARKER
+{
+    HfstTransducer empty(hfst::pmatch::format);
+    $$ = new HfstTransducerPair(empty, empty);
+};
 
 REGEXP5: REGEXP6 { }
 | REGEXP5 UNION REGEXP6 {
@@ -1021,14 +1060,16 @@ REGEXP5: REGEXP6 { }
     delete $3;
  }
 | REGEXP5 UPPER_PRIORITY_UNION REGEXP6 {
-    pmatcherror("No upper priority union");
-    $$ = $1;
+    $$ = & $1->priority_union(*$3);
     delete $3;
  }
 | REGEXP5 LOWER_PRIORITY_UNION REGEXP6 {
-    pmatcherror("No lower priority union");
-    $$ = $1;
-    delete $3;
+    HfstTransducer* left = new HfstTransducer(*$1);
+    HfstTransducer* right =  new HfstTransducer(*$3);
+    right->invert();
+    left->invert();
+    $$ = & (left->priority_union(*right).invert());
+    delete $1, $3;
  }
 ;
 
@@ -1268,10 +1309,49 @@ REGEXP12: LABEL_PAIR { }
   free($1);
   }
 | READ_SPACED {
-    pmatcherror("no read spaced");
+    FILE * f = NULL;
+    f = fopen($1, "r");
+    if (f == NULL) {
+        pmatcherror("File cannot be opened.\n");
+    }
+    else {
+        HfstTokenizer tok;
+        HfstBasicTransducer tmp;
+        char line [1000];
+        
+        while( fgets(line, 1000, f) != NULL )
+        {
+            hfst::pmatch::strip_newline(line);
+            StringPairVector spv = HfstTokenizer::tokenize_space_separated(line);
+            tmp.disjunct(spv, 0);
+        }
+        fclose(f);
+        HfstTransducer * retval = new HfstTransducer(tmp, hfst::pmatch::format); 
+        retval->minimize();
+        $$ = retval;
+    }
   }
 | READ_PROLOG {
-    pmatcherror("no read prolog");
+    FILE * f = NULL;
+    f = fopen($1, "r");
+    if (f == NULL) {
+        pmatcherror("File cannot be opened.\n");
+    }
+    else {
+        try {
+            unsigned int linecount = 0;
+            HfstBasicTransducer tmp = HfstBasicTransducer::read_in_prolog_format(f, linecount);
+            fclose(f);
+            HfstTransducer * retval = new HfstTransducer(tmp, hfst::pmatch::format);
+            retval->minimize();
+            $$ = retval;
+        }
+        catch (const HfstException & e) {
+            (void) e;
+            fclose(f);
+            pmatcherror("Error reading prolog file.\n");
+        }
+    }
   }
 | READ_RE {
     pmatcherror("Definitely no read regex");

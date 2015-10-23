@@ -14,6 +14,8 @@
 #include <iomanip>
 #include "HfstTransducer.h"
 
+void pmatchwarning(const char *msg);
+
 namespace hfst { namespace pmatch {
 
 class PmatchFunction;
@@ -70,6 +72,11 @@ char* strip_percents(const char *s);
  * @brief add percents to string to form valid PMATCH symbol.
  */
 char* add_percents(const char* s);
+
+/**
+ * @brief remove final newline or CR.
+ */
+char* strip_newline(char *s);
 
 /**
  * @brief get a transition name for use in Ins, RC and LC statements

@@ -45,6 +45,13 @@ pmatcherror(const char *msg)
 
 }
 
+void pmatchwarning(const char *msg)
+{
+    if (hfst::pmatch::verbose) {
+        std::cerr << "pmatch: "<< msg << std::endl;
+    }
+}
+
 namespace hfst 
 { 
 namespace pmatch 
@@ -195,6 +202,17 @@ add_percents(const char *s)
     *p = '\0';
     return ns;
   }
+
+char*
+strip_newline(char *s)
+{
+  for (unsigned int pos = 0; s[pos] != '\0'; pos++)
+    {
+      if (s[pos] == '\n' || s[pos] == '\r')
+        s[pos] = '\0';
+    }
+  return s;
+}
 
 char *
 get_Ins_transition(const char *s)
