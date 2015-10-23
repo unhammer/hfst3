@@ -169,7 +169,7 @@ public:
             {
                 std::string::size_type next_diacritic_pos 
                   = FdOperation::find_diacritic(remaining, length);
-                if(next_diacritic_pos == std::string::npos) // fixed
+                if(next_diacritic_pos == std::string::npos)
                     break;
         
                 std::string diacritic = remaining.substr(0, length);
