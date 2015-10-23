@@ -305,11 +305,74 @@ for tr in transducers:
     i+=1
 
 # push_weights
-tr = libhfst.HfstBasicTransducer()
 
-print(tr)
+# QuickStart (1/3)
+
+tr1 = libhfst.regex('foo:bar')
+tr2 = libhfst.regex('bar:baz')
+tr1.compose(tr2)
+print(tr1)
+
+# QuickStart (2/3)
+
+# Create as HFST basic transducer [a:b] with transition weight 0.3 and final weight 0.5.
+t = libhfst.HfstBasicTransducer()
+t.add_state(1)
+t.add_transition(0, 1, 'a', 'b', 0.3)
+t.set_final_weight(1, 0.5)
+
+# Convert to tropical OpenFst format (the default) and push weights toward final state.
+T = libhfst.HfstTransducer(t)
+T.push_weights(libhfst.TO_FINAL_STATE)
+
+# Convert back to HFST basic transducer.
+tc = libhfst.HfstBasicTransducer(T)
+try:
+    # Rounding might affect the precision.
+    if (0.79 < tc.get_final_weight(1)) and (tc.get_final_weight(1) < 0.81):
+        print("TEST PASSED")
+    else:
+        raise RuntimeError('')
+# If the state does not exist or is not final
+except libhfst.HfstException:
+    print("TEST FAILED: An exception thrown.")
+    raise RuntimeError('')
+
+# QuickStart (3/3)
+
+libhfst.set_default_fst_type(libhfst.FOMA_TYPE)
+
+# Create a simple lexicon transducer [[foo bar foo] | [foo bar baz]].
+tok = libhfst.HfstTokenizer()
+tok.add_multichar_symbol('foo')
+tok.add_multichar_symbol('bar')
+tok.add_multichar_symbol('baz')
+
+words = libhfst.tokenized_fst(tok.tokenize('foobarfoo'))
+t = libhfst.tokenized_fst(tok.tokenize('foobarbaz'))
+words.disjunct(t)
+
+# Create a rule transducer that optionally replaces 'bar' with 'baz' between 'foo' and 'foo'.
+rule = libhfst.regex('bar (->) baz || foo _ foo')
+
+# Apply the rule transducer to the lexicon.
+words.compose(rule).minimize()
+
+# Extract all string pairs from the result and print them to standard output.
+results = 0
+try:
+    # Extract paths and remove tokenization
+    results = words.extract_paths(output='dict')
+except libhfst.TransducerIsCyclicException:
+    # This should not happen because transducer is not cyclic.
+    print("TEST FAILED")
+    exit(1)
+
+for input,outputs in results.items():
+    print('%s:' % input)
+    for output in outputs:
+        print('  %s\t%f' % (output[0], output[1]))
+
 
 # Foma issue
-
-# Quick start
 

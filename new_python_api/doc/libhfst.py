@@ -74,11 +74,11 @@ class ImplementationTypeNotAvailableException(HfstException):
 class FunctionNotImplementedException(HfstException):
     pass
 
-## TODO
+## Flag diacritics encountered on one but not the other side of a transition.
 class FlagDiacriticsAreNotIdentitiesException(HfstException):
     pass
 
-## TODO
+## The input is not in valid prolog format.
 class NotValidPrologFormatException(HfstException):
     pass
 
@@ -207,7 +207,8 @@ class NotValidLexcFormatException(HfstException):
 class StateIsNotFinalException(HfstException):
     pass
 
-# TODO
+## Transducers given as rule context are not automata.
+# @see libhfst.HfstTransducer.is_automaton()
 class ContextTransducersAreNotAutomataException(HfstException):
     pass
 
@@ -282,7 +283,7 @@ class MissingOpenFstInputSymbolTableException(HfstException):
 class TransducerTypeMismatchException(HfstException):
     pass
 
-## TODO: The set of transducer pairs is empty. 
+## The set of transducer pairs is empty. 
 # 
 #     Thrown by rule functions.
 class EmptySetOfContextsException(HfstException):
@@ -2287,7 +2288,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # 
 # After <a href="InstallHfst.html">installing</a> HFST on your computer, start python and execute <code>import libhfst</code>.
 # 
-# For example, the following simple program
+# For example, the following simple program (TESTED)
 #
 # \verbatim
 # import libhfst
@@ -2324,20 +2325,20 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # \section hfst_examples Examples of HFST functionalities
 # 
 # An example of creating a simple transducer from scratch and converting between transducer formats and testing
-# transducer properties and handling exceptions:
+# transducer properties and handling exceptions: (TESTED)
 # 
 # \verbatim
 # import libhfst
-# # Create a HFST basic transducer [a:b] with transition weight 0.3 and final weight 0.5.
+# # Create as HFST basic transducer [a:b] with transition weight 0.3 and final weight 0.5.
 # t = libhfst.HfstBasicTransducer()
 # t.add_state(1)
 # t.add_transition(0, 1, 'a', 'b', 0.3)
 # t.set_final_weight(1, 0.5)
-# #
+#
 # # Convert to tropical OpenFst format (the default) and push weights toward final state.
-# T = libhfst.HfstTransducer(t, libhfst.get_default_fst_type())
+# T = libhfst.HfstTransducer(t)
 # T.push_weights(libhfst.TO_FINAL_STATE)
-# #
+#
 # # Convert back to HFST basic transducer.
 # tc = libhfst.HfstBasicTransducer(T)
 # try:
@@ -2348,7 +2349,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 #     else:
 #         print("TEST FAILED")
 #         exit(1)
-# # If the state does not exist or is not final */
+# # If the state does not exist or is not final
 # except libhfst.HfstException:
 #     print("TEST FAILED: An exception thrown.")
 #     exit(1)
@@ -2356,73 +2357,51 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # 
 # 
 # An example of creating transducers from strings, applying rules to them and printing the string pairs recognized by the resulting transducer.
-# 
+# (TESTED) 
 # \verbatim
 # import libhfst
 # libhfst.set_default_fst_type(libhfst.FOMA_TYPE)
 # 
 # # Create a simple lexicon transducer [[foo bar foo] | [foo bar baz]].
-# 
 # tok = libhfst.HfstTokenizer()
 # tok.add_multichar_symbol('foo')
 # tok.add_multichar_symbol('bar')
 # tok.add_multichar_symbol('baz')
-#   
-# words = libhfst.HfstTransducer("foobarfoo", tok, type)
-# t = libhfst.HfstTransducer("foobarbaz", tok, type);
+# 
+# words = libhfst.tokenized_fst(tok.tokenize('foobarfoo'))
+# t = libhfst.tokenized_fst(tok.tokenize('foobarbaz'))
 # words.disjunct(t)
 # 
-#   
 # # Create a rule transducer that optionally replaces 'bar' with 'baz' between 'foo' and 'foo'.
+# rule = libhfst.regex('bar (->) baz || foo _ foo')
 # 
-# context = (libhfst.HfstTransducer('foo', type), libhfst.HfstTransducer('foo', type) )
-# mapping = libhfst.HfstTransducer('bar', 'baz', type)
-# optional = True
-# alphabet = (('foo','foo'), ('bar','bar'), ('baz','baz'))
-#   
-# rule = libhfst.replace_up(context, mapping, optional, alphabet)
-# 
-# 
-# # Apply the rule transducer to the lexicon. 
+# # Apply the rule transducer to the lexicon.
 # words.compose(rule).minimize()
-#   
-#   
-# # Extract all string pairs from the result and print them to standard output.
 # 
+# # Extract all string pairs from the result and print them to standard output.
 # results = 0
 # try:
 #     # Extract paths and remove tokenization
-#     results = libhfst.detokenize_paths(libhfst.extract_paths(words))
+#     results = words.extract_paths(output='dict')
 # except libhfst.TransducerIsCyclicException:
 #     # This should not happen because transducer is not cyclic.
-#     print "TEST FAILED"
+#     print("TEST FAILED")
 #     exit(1)
 # 
-# # Go through all paths and print them.
-# for path in results:
-#     print "%s : %s   %f" % (path.input, path.output, path.weight)
+# for input,outputs in results.items():
+#     print('%s:' % input)
+#     for output in outputs:
+#         print('  %s\t%f' % (output[0], output[1]))
 # \endverbatim
-# 
-# An example of reading binary transducers from standard input, converting them to SFST format and writing them 
-# in binary format to standard output as well as in AT&T format to file 'testfile.att':
-# 
+#
+# The output:
+#
 # \verbatim
-# instr = libhfst.HfstInputStream()
-# outstr = libhfst.HfstOutputStream(libhfst.SFST_TYPE)
-# att_file = open('testfile.att', 'wb')
-# first_transducer = True
-# 
-# while not instr.is_eof():
-#     if not first_transducer:
-#         att_file.write("--") # AT&T format separator
-#     t = libhfst.HfstTransducer(instr)
-#     tc = libhfst.HfstTransducer(t, libhfst.SFST_TYPE)
-#     outstr.redirect(tc)
-#     tc.write_in_att_format(att_file)
-#     first_transducer = False
-# instr.close()
-# outstr.close()
-# att_file.close()
+# foobarfoo:
+#   foobarfoo     0.000000
+#   foobazfoo     0.000000
+# foobarbaz:
+#   foobarbaz     0.000000
 # \endverbatim
 # 
 # <BR>
@@ -2433,34 +2412,79 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # <a href="https://kitwiki.csc.fi/twiki/bin/view/KitWiki/HfstTransducerHeader">
 # wiki pages</a>) and the transducer of the backend implementation. 
 # If you want to write backend transducers as such, you can specify it with 
-# the <i>hfst_format</i> argument of HfstOutputStream constructor:
+# the <i>hfst_format</i> keyword argument of HfstOutputStream constructor:
 # 
 # \verbatim
-#    HfstOutputStream(type, hfst_format=True)
+#    HfstOutputStream(hfst_format=True)
 # \endverbatim
 # 
 # The following piece of code will write a native OpenFst transducer 
-# with tropical weights to standard output:
+# with tropical weights to standard output: (TESTED)
 # 
+# test.py:
 # \verbatim
-#    ab = libhfst.HfstTransducer('a', 'b', libhfst.TROPICAL_OFST_TYPE)
-#    out = libhfst.HfstOutputStream(ab.get_type(), False)
-#    out.redirect(ab)
+# import libhfst
+# ab = libhfst.regex('a:b::2.8')
+# out = libhfst.HfstOutputStream(hfst_format=False)
+# out.write(ab)
+# out.flush()
+# out.close()
 # \endverbatim
-# 
-# An HfstInputStream can also read backend transducers that do not have an
-# HFST header. If the standard input contains an SFST transducer, the following
-# piece of code will read it successfully and convert it into an HFST transducer
-# of type SFST_TYPE and write it to standard output (with the HFST header 
-# included).
-# 
+#
+# run on command line (fstprint is native OpenFst tool):
 # \verbatim
-#    instr = HfstInputStream()
-#    tr = libhfst.HfstTransducer(instr)
-#    outstr = libhfst.HfstOutputStream(tr.get_type(), True)
-#    outstr.redirect(tr)
+# python3 test.py > ab.fst
+# fstprint ab.fst
 # \endverbatim
-# 
+#
+# output:
+# \verbatim
+# 0       1       a       b       2.79980469
+# 1
+# \endverbatim
+#
+# An libhfst.HfstInputStream can also read backend transducers that do not have an HFST header.
+# If we have the following files
+#
+# symbols.txt:
+# \verbatim
+# EPSILON 0
+# a 1
+# b 2
+# \endverbatim
+#
+# ab.txt:
+# \verbatim
+# 0 1 a b 0.5
+# 1 0.3
+# \endverbatim
+#
+# test.py:
+# \verbatim
+# import libhfst
+# istr = libhfst.HfstInputStream()
+# while not istr.is_eof():
+#     tr = istr.read()
+#     print('Read transducer:')
+#     print(tr)
+# istr.close()
+# \endverbatim
+#
+# the commands
+#
+# \verbatim
+# cat ab.txt | fstcompile --isymbols=symbols.txt --osymbols=symbols.txt --keep_isymbols --keep_osymbols | python3 test.py
+# \endverbatim
+#
+# will compile a native OpenFst transducer (fstcompile is a native OpenFst tool), read it with HFST tools and print it to standard output in AT&T text format:
+#
+# \verbatim
+# Read transducer:
+# 0       1       a       b       0.500000
+# 1       0.300000
+#
+# \endverbatim
+#
 # For more information on HFST transducer formats and conversions, see the
 # <a href="https://kitwiki.csc.fi/twiki/bin/view/KitWiki/HfstTransducerFormats">
 # wiki pages</a>.
@@ -2474,9 +2498,10 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # read from standard in with gz tools (foma tools do not write to or read
 # from standard streams). So we choose to write, and accordingly read, 
 # foma transducers unzipped when writing or reading binary HfstTransducers 
-# of FOMA_TYPE. As a result, when we write an HfstTransducer of FOMA_TYPE
+# of libhfst.FOMA_TYPE. As a result, when we write an HfstTransducer of FOMA_TYPE
 # in its plain backend format, the user must zip it themselves before it 
-# can be used by foma tools. Similarily, a foma transducer must be unzipped 
+# can be used by foma tools. (update: at least the newest releases of foma
+# are able to read also unzipped transducers.) Similarily, a foma transducer must be unzipped 
 # before it can be read by HFST tools.
 # 
 # Suppose we have written a FOMA_TYPE HfstTransducer and want to use it with
@@ -2484,9 +2509,13 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # with the following piece of code:
 # 
 # \verbatim
-#    ab = libhfst.HfstTransducer ab('a', 'b', libhfst.FOMA_TYPE)
-#    out = libhfst.HfstOutputStream('ab.foma', libhfst.FOMA_TYPE, False)
-#    out.redirect(ab)
+# import libhfst
+# libhfst.set_default_fst_type(libhfst.FOMA_TYPE)
+# ab = libfst.regex('a:b')
+# out = libhfst.HfstOutputStream(hfst_format=False)
+# out.write(ab)
+# out.flush()
+# out.close()
 # \endverbatim
 # 
 # The command 
@@ -2495,7 +2524,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # gzip ab.foma
 # \endverbatim
 # 
-# will create a file 'ab.foma.gz' that can be used by foma tools.
+# will create a file 'ab.foma.gz' that can be used by (older) foma tools.
 # 
 # The same with command line tools:
 # 
@@ -2508,7 +2537,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # An example of the opposite case follows. Suppose we have a foma transducer
 # 'transducer.foma' and want to read it inside an HFST program.
 # The name of the file must be appended a .gz extension so that the program 
-# 'gunzip' knows it is a zipped file. The commands
+# 'gunzip' (todo: in windows?) knows it is a zipped file. The commands
 # 
 # \verbatim
 # mv transducer.foma transducer.foma.gz
@@ -2519,8 +2548,9 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # same file. Now the file can be used by HFST:
 # 
 # \verbatim
-#    instr = libhfst.HfstInputStream('transducer.foma')
-#    tr = libhfst.HfstTransducer(instrOA)
+# instr = libhfst.HfstInputStream('transducer.foma')
+# tr = instr.read()
+# instr.close()
 # \endverbatim
 # 
 # The same with command line tools:
