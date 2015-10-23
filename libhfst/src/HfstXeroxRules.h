@@ -26,6 +26,11 @@ namespace hfst
     {
         enum ReplaceType {REPL_UP, REPL_DOWN, REPL_RIGHT, REPL_LEFT};
 
+
+
+
+
+
         // this enum is used in xre_parse.yy for the regex2pfst tool
         // it is not in the xre_parse.yy file because we couldn't make it work there
         enum ReplaceArrow {    E_REPLACE_RIGHT,
@@ -53,18 +58,14 @@ namespace hfst
             ReplaceType replType;
 
           public:
+        //    Rule ( const HfstTransducer& ); // mapping
+        //    Rule ( const HfstTransducer&, const HfstTransducerPairVector&, ReplaceType); // mapping, context
             Rule ( const HfstTransducerPairVector& );
             Rule ( const HfstTransducerPairVector&, const HfstTransducerPairVector&, ReplaceType );
-            
-            //copy
-            Rule ( const Rule& );
 
             HfstTransducerPairVector get_mapping() const;
             HfstTransducerPairVector get_context() const;
             ReplaceType get_replType() const;
-            
-            void encodeFlags();
-             
             friend std::ostream& operator<<(std::ostream &out, const Rule &r);
         };
 
@@ -86,29 +87,11 @@ namespace hfst
             StringPair get_marks() const;
         };
 
-
-         /**
-         *  \brief  In the transducer \tr, change all flag diacritics to "non-special" multichar symbols
-         *  It means that @ sign will be changed to $ sign
-         *  ie. @P.FOO.BAR@ will be changed into $P.FOO.BAR$
-         *  */
-         HfstTransducer encodeFlagDiacritics( const HfstTransducer &tr );
-         
-         /**
-         *  \brief  In the transducer \tr, change back all "non-special" flag diacritics to normal, 
-         * functional flag diacritics
-         *  It means that $ sign will be changed to @ sign
-         *  ie. $P.FOO.BAR$ will be changed into @P.FOO.BAR@
-         *  */
-        HfstTransducer decodeFlagDiacritics( const HfstTransducer &tr );
-         
-         
         // Disjunct all transducers from TransducerVector
         HfstTransducer disjunctVectorMembers( const HfstTransducerVector &trVector );
 
         /**
          *  \brief Remove makers used in replace functions from a \a tr.
-         *  Additionally, decode flag diacritics.
          *  */
         HfstTransducer removeMarkers( const HfstTransducer &tr );
 
@@ -154,6 +137,7 @@ namespace hfst
 
         /**  \brief Bracketed replace for parallel rules */
         HfstTransducer parallelBracketedReplace( const std::vector<Rule> &ruleVector, bool optional);
+
 
 
 
