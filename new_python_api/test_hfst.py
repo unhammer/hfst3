@@ -344,7 +344,7 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
         raise RuntimeError(get_linenumber())
     if libhfst.compile_xfst_file('test_fail.xfst') == 0:
         raise RuntimeError(get_linenumber())
-    if libhfst.compile_xfst_file('test_fail.xfst', quit_on_fail=False) != 0:
+    if libhfst.compile_xfst_file('test_fail.xfst', quit_on_fail=False, verbosity=1) != 0:
         raise RuntimeError(get_linenumber())
 
 print('\n--- Testing HfstBasicTransducer ---\n')

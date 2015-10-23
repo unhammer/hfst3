@@ -471,14 +471,14 @@ def regex(regexp):
 # @param filename The name of the lexc file.
 # @param kvargs Arguments recognized are: verbosity, with_flags.
 # @param verbosity The verbosity of the compiler, defaults to 0 (silent). Possible values are: 0, 1, 2.
-# @param with_flags Whether lexc flags are used when compiling, defaults to True.
+# @param with_flags Whether lexc flags are used when compiling, defaults to False.
 def compile_lexc_file(filename, **kvargs):
     pass
 
 ## Compile (is 'run' a better term?) xfst file \a filename.
 # @param filename The name of the xfst file.
 # @param kvargs Arguments recognized are: verbosity, quit_on_fail.
-# @param verbosity The verbosity of the compiler, defaults to False.
+# @param verbosity The verbosity of the compiler, defaults to 0 (silent). Possible values are: 0, 1, 2.
 # @param quit_on_fail Whether the script is exited on any error, defaults to True.
 def compile_xfst_file(filename, **kvargs):
     pass
@@ -1073,11 +1073,12 @@ class HfstTransducer:
     def get_name(self):
         pass
 
-    ## TODO
+    ## An AT&T representation of the transducer.
+    # @todo Works only for small transducers.
     def __str__(self):
         pass
 
-    ## TODO
+    ## Make transducer coaccessible.
     def prune(self):
         pass
 
@@ -1128,15 +1129,23 @@ class HfstTransducer:
     def remove_from_alphabet(self, symbol):
         pass
 
-    ## TODO
+    ## Eliminate flag diacritic \a symbol from the transducer.
+    # @param symbol The flag to be eliminated. TODO: explain more.
+    #
+    # An equivalent transducer with no flags \a symbol.
     def eliminate_flag(self, symbol):
         pass
 
-    ## TODO
+    ## Eliminate flag diacritics listed in \a symbols from the transducer.
+    # @param symbols The flags to be eliminated. TODO: explain more.
+    #
+    # An equivalent transducer with no flags listed in \a symbols.
     def eliminate_flags(self, symbols):
         pass
 
-    ## TODO
+    ## Whether each transition in the transducer has equivalent input and output symbols.
+    # @note Transition with libhfst.UNKNOWN on both sides IS NOT a transition with equivalent input and output symbols.
+    # @note Transition with libhfst.IDENTITY on both sides IS a transition with equivalent input and output symbols.
     def is_automaton(self):
         pass
 
@@ -1144,7 +1153,8 @@ class HfstTransducer:
     def is_cyclic(self):
         pass
 
-    ## The implementation type of the transducer. 
+    ## The implementation type of the transducer.
+    # @return libhfst.ImplementationType
     def get_type(self):
         pass
  
@@ -1171,23 +1181,29 @@ class HfstTransducer:
     def determinize(self):
         pass
     
-    ## TODO
+    ## The number of states in the transducer.
     def number_of_states(self):
         pass
 
-    ## TODO
+    ## The number of transitions in the transducer.
     def number_of_arcs(self):
         pass
 
-    ## TODO
+    ## Write the transducer in binary format to \a ostr.
+    # @param ostr A libhfst.HfstOutputStream where the transducer is written.
     def write(self, ostr):
         pass
 
-    ## TODO
+    ## Write the transducer in AT&T format to file \a f, \a write_weights defined whether weights are written.
+    # @param f An libhfst.HfstFile where the transducer is written.
+    # @param write_weights Whether weights are written.
     def write_att(self, f, write_weights=True):
         pass
 
-    ## TODO
+    ## Write the transducer in prolog format with name \a name to file \a f, \a write_weights defined whether weights are written.
+    # @param f An libhfst.HfstFile where the transducer is written.
+    # @param name The name of the transducer that must be given in a prolog file.
+    # @param write_weights Whether weights are written.
     def write_prolog(f, name, write_weights=True):
         pass
 
@@ -1271,11 +1287,13 @@ class HfstTransducer:
     def output_project(self):
         pass
     
-    ## Compose this transducer with \a another. 
+    ## Compose this transducer with \a another.
+    # @param another The second argument in the composition. Not modified.
     def compose(self, another):
         pass
 
-    ## TODO
+    ## Perform a lenient composition on this transducer and \a another.
+    # TODO: explain more.
     def lenient_composition(self, another):
         pass
     
@@ -1582,7 +1600,7 @@ class HfstTransducer:
     # def lookup(tok_input, limit=-1):
     #    pass
     
-    # @brief Lookup or apply a single string \a input and return a maximum of \a limit results.
+    ## Lookup or apply a single string \a input and return a maximum of \a limit results.
     # 
     # This is an overloaded lookup function that leaves tokenizing to the transducer.
     # @return HfstOneLevelPaths pointer
@@ -1646,11 +1664,14 @@ class HfstTransducer:
     def is_lookup_infinitely_ambiguous(self, tok_input):
         pass
 
-    ## TODO
+    ## Whether the transducer is infinitely ambiguous.
+    #
+    # A transducer is infinitely ambiguous if there exists an input that will yield infinitely many results,
+    # i.e. there are input epsilon loops that are traversed with that input.
     def is_infinitely_ambiguous(self):
         pass
 
-    ## TODO
+    ## Whether the transducer has flag diacritics in its transitions.
     def has_flag_diacritics(self):
         pass
 
@@ -1896,7 +1917,7 @@ class LexcCompiler:
   def parse(filename):
       pass
 
-  # @brief Set verbosity options. When \a verbose is true, LexcCompiler will output the messages that Xerox lexc compiler does.
+  ## Set verbosity options. When \a verbose is true, LexcCompiler will output the messages that Xerox lexc compiler does.
   def setVerbosity(verbose):
       pass
 

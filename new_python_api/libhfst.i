@@ -114,6 +114,7 @@ HfstTransducer * copy_hfst_transducer_from_basic_transducer(const hfst::implemen
 hfst::HfstTransducer * regex(const std::string & regex_string)
 {
         hfst::xre::XreCompiler comp(type);
+        comp.set_verbosity(false, NULL);
         return comp.compile(regex_string);
 }
 
@@ -1258,8 +1259,9 @@ UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
 def compile_xfst_file(filename, **kvargs):
-    verbosity=False
+    verbosity=0
     quit_on_fail='ON'
+    type = _libhfst.get_default_fst_type()
 
     for k,v in kvargs.items():
       if k == 'verbosity':
@@ -1270,32 +1272,50 @@ def compile_xfst_file(filename, **kvargs):
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
-    xfstcomp = XfstCompiler(_libhfst.get_default_fst_type())
-    xfstcomp.setVerbosity(verbosity)
+    if verbosity > 1:
+      print('Compiling with %s implementation...' % _libhfst.fst_type_to_string(type))
+    xfstcomp = XfstCompiler(type)
+    xfstcomp.setVerbosity(verbosity > 0)
     xfstcomp.set('quit-on-fail', quit_on_fail)
+    if verbosity > 1:
+      print('Opening xfst file %s...' % filename)
     f = open(filename, 'r')
     data = f.read()
     f.close()
+    if verbosity > 1:
+      print('File closed...')
     retval = xfstcomp.parse_line(data)
+    if verbosity > 1:
+      print('Parsed file with return value %i (0 indicating succesful parsing).' % retval)
     return retval
 
 def compile_lexc_file(filename, **kvargs):
     verbosity=0
-    withflags=True
+    withflags=False
+    type = _libhfst.get_default_fst_type()
 
     for k,v in kvargs.items():
       if k == 'verbosity':
         verbosity=v
       elif k == 'with_flags':
-        if v == False:
+        if v == True:
           withflags = v
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
-    lexccompiler = LexcCompiler(_libhfst.get_default_fst_type(), withflags)
+    if verbosity > 1:
+      print('Compiling with %s implementation...' % _libhfst.fst_type_to_string(type))
+    lexccompiler = LexcCompiler(type, withflags)
     lexccompiler.setVerbosity(verbosity)
+    if verbosity > 1:
+      print('Parsing the lexc file...')
     lexccompiler.parse(filename)
-    return lexccompiler.compileLexical()
+    if verbosity > 1:
+      print('Compiling...')
+    retval = lexccompiler.compileLexical()
+    if verbosity > 1:
+      print('Compilation done.')
+    return retval
 
 def is_weighted_word(arg):
     if isinstance(arg, tuple) and len(arg) == 2 and isinstance(arg[0], str) and isinstance(arg[1], (int, float)):
