@@ -1224,15 +1224,17 @@ namespace xfst {
       //int parse_line(char line []);
       int parse_line(std::string line);
       //XfstCompiler& setReadline(bool readline);
-      //XfstCompiler& setReadInteractiveTextFromStdin(bool value);
+      XfstCompiler& setReadInteractiveTextFromStdin(bool value);
       //XfstCompiler& setOutputToConsole(bool value);
       //bool getReadline();
       //bool getReadInteractiveTextFromStdin();
       //bool getOutputToConsole();
       XfstCompiler& setVerbosity(bool verbosity);
-      //XfstCompiler& setPromptVerbosity(bool verbosity);
-      //const XfstCompiler& prompt() const;
-      //char* get_prompt() const;
+      XfstCompiler& setPromptVerbosity(bool verbosity);
+      bool quit_requested();
+      std::string get(const char *);
+      const XfstCompiler& prompt() const;
+      char* get_prompt() const;
       XfstCompiler& set(const char* name, const char* text);
   };
 }
@@ -1257,6 +1259,37 @@ std::string hfst::two_level_paths_to_string(const HfstTwoLevelPaths &);
 EPSILON='@_EPSILON_SYMBOL_@'
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
+
+def start_xfst(**kvargs):
+    type = _libhfst.get_default_fst_type()
+    quit_on_fail = 'OFF'
+    for k,v in kvargs.items():
+      if k == 'type':
+        type = v
+      elif k == 'quit_on_fail':
+        if v == True:
+          quit_on_fail='ON'
+      else:
+        print('Warning: ignoring unknown argument %s.' % (k))
+
+    comp = XfstCompiler(type)
+    comp.setReadInteractiveTextFromStdin(True)
+    comp.set('quit-on-fail', quit_on_fail)
+
+    expression=""
+    import sys
+    while True:
+        expression += input(comp.get_prompt()).rstrip()
+        if expression[-1] == '\\':
+           expression = expression[:-2] + '\n'
+           continue
+        if 0 != comp.parse_line(expression + "\n"):
+           print("expression '%s' could not be parsed" % expression)
+           if comp.get("quit-on-fail") == "ON":
+              return
+        if comp.quit_requested():
+           break
+        expression = ""
 
 def compile_xfst_file(filename, **kvargs):
     verbosity=0

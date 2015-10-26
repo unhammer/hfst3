@@ -478,10 +478,18 @@ def compile_lexc_file(filename, **kvargs):
 
 ## Compile (is 'run' a better term?) xfst file \a filename.
 # @param filename The name of the xfst file.
-# @param kvargs Arguments recognized are: verbosity, quit_on_fail.
+# @param kvargs Arguments recognized are: verbosity, quit_on_fail, type.
 # @param verbosity The verbosity of the compiler, defaults to 0 (silent). Possible values are: 0, 1, 2.
 # @param quit_on_fail Whether the script is exited on any error, defaults to True.
+# @param type Implementation type of the compiler, defaults to libhfst.get_default_fst_type().
 def compile_xfst_file(filename, **kvargs):
+    pass
+
+## Start interactive xfst compiler.
+# @param kvargs Arguments recognized are: type, quit_on_fail.
+# @param quit_on_fail Whether the compiler exits on any error, defaults to False.
+# @param type Implementation type of the compiler, defaults to libhfst.get_default_fst_type().
+def start_xfst(**kvargs):
     pass
 
 ## Read next transducer from AT&T file pointed by \a f. \a epsilonstr defines the symbol used for epsilon in the file.
