@@ -2339,7 +2339,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # matches a symbol of an input string, it is consumed and an output symbol equal to the output symbol
 # of the transition is produced.
 #
-# There are some special symbols: the epsilon, unknown and identity. 
+# There are some special symbols: the epsilon, unknown and identity.
 # Epsilon on input side consumes no symbol, epsilon on output side produces no symbol.
 # The unknown on input side matches any symbol, the unknown on output side produces any symbol.
 # If unknown is on both sides of a transition, it matches any symbol and produces any symbol other than the one that was matched on the input side.
@@ -2353,14 +2353,40 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # These strings are used when referring to those symbols in individual transitions, e.g.
 #
 # \verbatim
+# fsm = libhfst.HfstBasicTransducer()
+# fsm.add_state(1)
+# fsm.add_state(2)
+# fsm.set_final_weight(2, 0.5)
 # fsm.add_transition(0, 1, libhfst.EPSILON, libhfst.UNKNOWN)
+# fsm.add_transition(1, 2, libhfst.IDENTITY, libhfst.IDENTITY)
 # \endverbatim
 #
 # or reading and printing transitions in AT&& format:
 #
 # \verbatim
+# 0 1 @_EPSILON_SYMBOL@ @_UNKNOWN_SYMBOL_@ 0.0
+# 1 2 @_IDENTITY_SYMBOL@ @_IDENTITY_SYMBOL_@ 0.0
+# 2 0.5
 # \endverbatim
-# AT&T, xfst, lookup and extract_strings
+#
+# There is also a shorter string for epsilon in AT&T format, "@0@".
+#
+# However, these reserved strings are not used in regular expressions. The syntax of regular expressions follows the Xerox formalism,
+# where the following symbols are used instead: "0" for epsilon, and "?" for unknown and identity.
+# On either side of a transition, "?" means the unknown. As a single symbol, "?" means identity-to-identity transition.
+# On both sides of a transition "?" means the combination of unknown-to-unknown AND identity-to-identity transitions.
+# If unknown-to-unknown transition is needed, it can be given as the subtraction [?:? - ?]. Some examples:
+# 
+# \verbatim
+# libhfst.regex('0:foo') # epsilon to "foo"
+# libhfst.regex('0:foo') # "foo" to epsilon
+# libhfst.regex('?:foo') # any symbol to "foo"
+# libhfst.regex('?:foo') # "foo" to any symbol
+# libhfst.regex('?:?')   # any symbol to any symbol
+# libhfst.regex('?')     # any symbol to the same symbol
+# libhfst.regex('?:? - ?')     # any symbol to any other symbol
+# \endverbatim
+
 
 ## @page QuickStart.html Quick Start to HFST
 # 

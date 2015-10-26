@@ -1260,6 +1260,14 @@ EPSILON='@_EPSILON_SYMBOL_@'
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
+def replace_symbols(symbol):
+    if symbol == "@0@":
+       return EPSILON
+    symbol = symbol.replace("@_SPACE_@", " ")
+    symbol = symbol.replace("@_TAB_@", "\t")
+    symbol = symbol.replace("@_COLON_@", ":")
+    return symbol
+
 def parse_att_line(line, fsm):
     # get rid of extra whitespace
     line = line.replace('\t',' ')
@@ -1272,9 +1280,9 @@ def parse_att_line(line, fsm):
            fsm.add_state(int(fields[0]))
            fsm.set_final_weight(int(fields[0]), float(fields[1]))
     elif len(fields) == 4:
-           fsm.add_transition(int(fields[0]), int(fields[1]), fields[2], fields[3], 0)
+           fsm.add_transition(int(fields[0]), int(fields[1]), replace_symbols(fields[2]), replace_symbols(fields[3]), 0)
     elif len(fields) == 5:
-           fsm.add_transition(int(fields[0]), int(fields[1]), fields[2], fields[3], float(fields[4]))
+           fsm.add_transition(int(fields[0]), int(fields[1]), replace_symbols(fields[2]), replace_symbols(fields[3]), float(fields[4]))
     else:
            return False
     return True
