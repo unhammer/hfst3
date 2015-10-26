@@ -1225,7 +1225,7 @@ namespace xfst {
       int parse_line(std::string line);
       //XfstCompiler& setReadline(bool readline);
       XfstCompiler& setReadInteractiveTextFromStdin(bool value);
-      //XfstCompiler& setOutputToConsole(bool value);
+      XfstCompiler& setOutputToConsole(bool value);
       //bool getReadline();
       //bool getReadInteractiveTextFromStdin();
       //bool getOutputToConsole();
@@ -1260,6 +1260,43 @@ EPSILON='@_EPSILON_SYMBOL_@'
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
+def parse_att_line(line, fsm):
+    # get rid of extra whitespace
+    line = line.replace('\t',' ')
+    line = " ".join(line.split())
+    fields = line.split(' ')
+    if len(fields) == 1:
+           fsm.add_state(int(fields[0]))
+           fsm.set_final_weight(int(fields[0]), 0)
+    elif len(fields) == 2:
+           fsm.add_state(int(fields[0]))
+           fsm.set_final_weight(int(fields[0]), float(fields[1]))
+    elif len(fields) == 4:
+           fsm.add_transition(int(fields[0]), int(fields[1]), fields[2], fields[3], 0)
+    elif len(fields) == 5:
+           fsm.add_transition(int(fields[0]), int(fields[1]), fields[2], fields[3], float(fields[4]))
+    else:
+           return False
+    return True
+
+def read_att_string(att):
+    fsm = HfstBasicTransducer()
+    lines = att.split('\n')
+    for line in lines:
+        if not parse_att_line(line, fsm):
+           raise NotValidAttFormatException()
+    return HfstTransducer(fsm, _libhfst.get_default_fst_type())
+
+def read_att_input():
+    fsm = HfstBasicTransducer()
+    while True:
+        line = input().rstrip()
+        if line == "":
+           break
+        if not parse_att_line(line, fsm):
+           raise NotValidAttFormatException()
+    return HfstTransducer(fsm, _libhfst.get_default_fst_type())
+
 def start_xfst(**kvargs):
     type = _libhfst.get_default_fst_type()
     quit_on_fail = 'OFF'
@@ -1274,6 +1311,7 @@ def start_xfst(**kvargs):
 
     comp = XfstCompiler(type)
     comp.setReadInteractiveTextFromStdin(True)
+    comp.setOutputToConsole(True) # no effect on linux
     comp.set('quit-on-fail', quit_on_fail)
 
     expression=""

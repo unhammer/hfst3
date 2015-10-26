@@ -181,6 +181,14 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     TR.write_prolog(f, 'FOOBAR_TRANSDUCER')
     f.close()
 
+    fsm = libhfst.read_att_string(' 0\t 1 a b\n\
+                                1 2 c   d 0.5\n\
+2 \n\
+2 3 \t\te f\n\
+                                    3   0.3 ')
+    if not fsm.compare(libhfst.regex('a:b c:d::0.5 (e:f::0.3)')):
+        raise RuntimeError('read_att_string failed')
+
     # Lookup and path extraction
     tr = libhfst.regex('foo:bar::0.5 | foo:baz')
 
@@ -344,7 +352,7 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
         raise RuntimeError(get_linenumber())
     if libhfst.compile_xfst_file('test_fail.xfst') == 0:
         raise RuntimeError(get_linenumber())
-    if libhfst.compile_xfst_file('test_fail.xfst', quit_on_fail=False, verbosity=1) != 0:
+    if libhfst.compile_xfst_file('test_fail.xfst', quit_on_fail=False, verbosity=0) != 0:
         raise RuntimeError(get_linenumber())
 
 print('\n--- Testing HfstBasicTransducer ---\n')

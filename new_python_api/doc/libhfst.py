@@ -1,5 +1,5 @@
 ## @package libhfst 
-# This package contains all HFST functionalities.
+# HFST API for Python3.
 
 ## @mainpage
 #
@@ -7,17 +7,18 @@
 # We are moving from Sourceforge to <a href="http://www.github.com/hfst">Github</a> during autumn 2015.</p>
 #
 # HFST - The Helsinki Finite-State Transducer technology is intended for creating and manipulating weighted or unweighted synchronic transducers implementing regular relations.
-# UTF-8 is chosen as the character encoding used in the HFST software. Currently, HFST has been implemented using the
+# UTF-8 is chosen as the character encoding used in HFST software. Currently, HFST has been implemented using the
 # <a href="http://www.ims.uni-stuttgart.de/projekte/gramotron/SOFTWARE/SFST.html">SFST</a>, 
 # <a href="http://www.openfst.org">OpenFst</a> and 
 # <a href="http://code.google.com/p/foma/">foma</a> software libraries.
 # Other versions may be added in some future release. SFST and foma implementations are unweighted and OpenFst implementation is weighted.
 #
-# Some of the HFST interface functionalities have also been implemented for HFST's own two transducer formats, HfstBasicTransducer and optimized lookup format.
-# The previous is useful for converting between transducer formats and storing transducersin an implementation-independent format. The latter is used for fast lookup
-# of strings in a transducer.
+# Part of HFST interface has been implemented for HFST's own two transducer formats, HfstBasicTransducer and optimized lookup format.
+# The previous is useful for accessing individual states and transitions of a transducer, converting between transducer formats and storing transducers in an implementation-independent format. 
+# The latter is used for fast lookup of strings in a transducer.
 #
-# All back-end implementations (SFST, OpenFst and foma) work according to the same interface, so it is possible to compile the same piece of code using different back-end libraries.
+# All back-end implementations - SFST, OpenFst and foma - work according to the same interface, so it is possible to compile the same piece of code using different back-end libraries.
+# There are some differences related to weights, as only OpenFst supports them.
 #
 # For a quick start to the HFST interface with examples, see <a href="QuickStart.html">here</a>.
 #
@@ -60,7 +61,12 @@
 
 ## Base class for HfstExceptions. Holds its own name and the file and line number where it was thrown.
 class HfstException:
-    pass
+    ## The name of the exception. 
+    name
+    ## The source file where the exception originated.
+    file
+    ## The line of the source file where the exception originated.
+    line    
 
 ## Two or more HfstTransducers are not of the same type. Same as HfstTransducerTypeMismatchException ???
 class HfstTransducerTypeMismatchException(HfstException):
@@ -83,15 +89,12 @@ class NotValidPrologFormatException(HfstException):
     pass
 
 ## Stream cannot be read. 
-# 
-# Thrown by (TODO)
 class StreamNotReadableException(HfstException):
     pass
 
 ## Stream cannot be written. 
 # 
 # Thrown by #libhfst.HfstOutputStream.write and #libhfst.HfstTransducer.write_att
-# 
 class StreamCannotBeWrittenException(HfstException):
     pass
 
@@ -100,7 +103,7 @@ class StreamCannotBeWrittenException(HfstException):
 # Thrown by #libhfst.HfstTransducer.write_att
 # #libhfst.HfstOutputStream.write
 # 
-# An example: (TESTED)
+# An example: 
 # 
 # \verbatim
 # try:
@@ -124,7 +127,7 @@ class EndOfStreamException(HfstException):
 
 ## Transducer is cyclic. 
 # 
-#     Thrown by #libhfst.HfstTransducer.extract_paths. An example (TESTED)
+#     Thrown by #libhfst.HfstTransducer.extract_paths. An example 
 # \verbatim
 # transducer = libhfst.regex('[a:b]*')
 # try:
@@ -145,7 +148,7 @@ class TransducerIsCyclicException(HfstException):
 #     #libhfst.HfstTransducer
 #     #libhfst.HfstInputStream.__init__
 # 
-#     An example. (TESTED)
+#     An example. 
 # \verbatim
 # f = open('foofile', 'w')
 # f.write('This is an ordinary text file.\n')
@@ -163,7 +166,7 @@ class NotTransducerStreamException(HfstException):
 
 ## The stream is not in valid AT&T format. 
 # 
-#     An example: (TESTED)
+#     An example: 
 # \verbatim
 # f = open('testfile1.att', 'w')
 # f.write('0 1 a b\n\
@@ -188,7 +191,7 @@ class NotValidLexcFormatException(HfstException):
 
 ## State is not final (and cannot have a final weight). 
 # 
-#     An example (TESTED):
+#     An example :
 # 
 # \verbatim
 # tr = libhfst.HfstBasicTransducer()
@@ -214,7 +217,7 @@ class ContextTransducersAreNotAutomataException(HfstException):
 
 ## Transducers are not automata.
 #
-# Example: (TESTED)
+# Example: 
 # \verbatim
 # tr1 = libhfst.regex('foo:bar')
 # tr2 = libhfst.regex('bar:baz')
@@ -232,7 +235,7 @@ class TransducersAreNotAutomataException(HfstException):
 
 ## The state number argument is not valid.
 # 
-#     An example (TESTED):
+#     An example :
 # 
 # \verbatim
 # tr = libhfst.HfstBasicTransducer()
@@ -411,10 +414,42 @@ def fst_type_to_string(type):
     pass
 
 ## The string for epsilon symbol.
+# An example:
+# \verbatim
+# fsm = libhfst.HfstBasicTransducer()
+# fsm.add_state(1)
+# fsm.set_final_weight(1, 2.0)
+# fsm.add_transition(0, 1, "foo", libhfst.EPSILON)
+# if not libhfst.HfstTransducer(fsm).compare(libhfst.regex('foo:0::2.0')):
+#     raise RuntimeError('')
+# \endverbatim
+# @note In regular expressions, "0" is used for the epsilon.
+# @see 
 EPSILON='@_EPSILON_SYMBOL_@'
 ## The string for unknown symbol.
+# An example:
+# \verbatim
+# fsm = libhfst.HfstBasicTransducer()
+# fsm.add_state(1)
+# fsm.set_final_weight(1, -0.5)
+# fsm.add_transition(0, 1, "foo", libhfst.UNKNOWN)
+# fsm.add_transition(0, 1, "foo", "foo")
+# if not libhfst.HfstTransducer(fsm).compare(libhfst.regex('foo:?::-0.5')):
+#     raise RuntimeError('')
+# \endverbatim
+# @note In regular expressions, "?" on either or both sides of a transition is used for the unknown symbol.
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 ## The string for identity symbol.
+# An example:
+# \verbatim
+# fsm = libhfst.HfstBasicTransducer()
+# fsm.add_state(1)
+# fsm.set_final_weight(1, 1.5)
+# fsm.add_transition(0, 1, libhfst.IDENTITY, libhfst.IDENTITY)
+# if not libhfst.HfstTransducer(fsm).compare(libhfst.regex('?::1.5')):
+#     raise RuntimeError('')
+# \endverbatim
+# @note In regular expressions, a single "?" is used for the identity symbol.
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
 ## Get a transducer that recognizes one or more paths.
@@ -442,7 +477,7 @@ def fst(arg):
 ## Get a transducer that recognizes the concatenation of symbols or symbol pairs in \a arg.
 # @param arg The symbols or symbol pairs that form the path to be recognized.
 #
-# Example (TESTED)
+# Example 
 # \verbatim
 # import libhfst
 # tok = libhfst.HfstTokenizer()
@@ -492,6 +527,20 @@ def compile_xfst_file(filename, **kvargs):
 def start_xfst(**kvargs):
     pass
 
+## Read AT&T input from the user and return a transducer.
+# @return An HfstTransducer whose type is libhfst.get_default_fst_type().
+# Read one AT&T line at a time from standard input and create an equivalent transducer.
+# An empty line signals the end of input.
+def read_att_input():
+    pass
+
+## Read a multiline string \a att and return a transducer.
+# @param att A string in AT&& format that defines the transducer.
+# @return An HfstTransducer whose type is libhfst.get_default_fst_type().
+# Read \a att and create a transducer as defined in it.
+def read_att_string(att):
+    pass
+
 ## Read next transducer from AT&T file pointed by \a f. \a epsilonstr defines the symbol used for epsilon in the file.
 # @param f A file pointer (#libhfst.HfstFile) to the file.
 # @param epsilonstr How epsilon is represented in the file. By default, "@_EPSILON_SYMBOL_@" and "@0@" are both recognized.
@@ -522,7 +571,7 @@ def start_xfst(**kvargs):
     # epsilons.
     # 
     # 
-    # An example: (TESTED)
+    # An example: 
     # \verbatim
     # 0      1      foo      bar      0.3
     # 1      0.5
@@ -573,7 +622,7 @@ def read_att(f, epsilonstr=libhfst.EPSILON):
 def read_prolog(f):
     pass
 
-## A simple transducer class with tropical weights. (TESTED)
+## A simple transducer class with tropical weights. 
 #
 #    An example of creating an HfstBasicTransducer [foo:bar baz:baz] 
 #    with weight 0.4 from scratch:
@@ -628,7 +677,7 @@ class HfstBasicTransducer:
     # static HfstBasicTransducer read_in_att_format(std::istream &is, std::string epsilon_symbol, unsigned int & linecount);
     # HfstBasicTransducer & substitute(bool (*func)(const HfstSymbolPair &sp, HfstSymbolPairSet &sps) );
 
-    # ONE FUNCTION WITH KVARGS HANDLES ALL THESE
+    # ONE FUNCTION WITH KEYWORD ARGUMENTS HANDLES ALL THESE
     # HfstBasicTransducer &substitute(const HfstSymbol &old_symbol, const HfstSymbol  &new_symbol, bool input_side=true, bool output_side=true);
     # HfstBasicTransducer &substitute_symbols(const HfstSymbolSubstitutions &substitutions);
     # HfstBasicTransducer &substitute_symbol_pairs(const HfstSymbolPairSubstitutions &substitutions);
@@ -690,7 +739,7 @@ class HfstBasicTransducer:
     def add_state(self, state):
         pass
 
-    ## The states of the transducer (TESTED)
+    ## The states of the transducer 
     # @return A tuple of state numbers.
     #
     # An example:
@@ -754,7 +803,7 @@ class HfstBasicTransducer:
     #
     # There is no way to test whether a graph is a trie, so the use
     # of this function is probably limited to fast construction of a lexicon.
-    # Here is an example: (TESTED)
+    # Here is an example: 
     # 
     # \verbatim
     # lexicon = libhfst.HfstBasicTransducer()
@@ -858,7 +907,7 @@ class HfstBasicTransducer:
     def is_final_state(self, state):
         pass
     
-    ## Get the transitions of state \a state in this transducer. (TESTED)
+    ## Get the transitions of state \a state in this transducer. 
     # If the state does not exist, a @a StateIndexOutOfBoundsException is thrown.
     # @return A tuple of HfstBasicTransitions.
     #
@@ -926,7 +975,7 @@ class HfstBasicTransducer:
     # (5) substitute(dict): perform several symbol-to-symbol substitutions
     # (6) substitute(dict): perform several transition-to-transition substitutions
     #
-    # Examples: (TESTED)
+    # Examples: 
     #
     # (1) tr.substitute('a', 'A', input=True, output=False): substitute lowercase a:s with uppercase ones
     # (2) tr.substitute(('a','b'),('A','B')): substitute transitions that map lowercase a into lowercase b with transitions that map uppercase a into uppercase b 
@@ -942,7 +991,7 @@ class HfstBasicTransducer:
     def substitute(self, s, S=None, **kvargs):
         pass
 
-    ## Return an enumeration of the states and transitions of the transducer. (TESTED)
+    ## Return an enumeration of the states and transitions of the transducer. 
     #
     # \verbatim
     # for state, arcs in enumerate(fsm):
@@ -1037,12 +1086,6 @@ class HfstBasicTransition:
 # Transducers can also be created from scratch with #libhfst.HfstBasicTransducer
 # and converted to an HfstTransducer.
 # More complex transducers can be combined from simple ones with various functions.
-# 
-# <a name="symbols"></a> 
-# \section special_symbols Special symbols
-# 
-# The HFST transducers support transitions with epsilon, unknown and identity symbols.
-# The special symbols are explained in TODO
 class HfstTransducer:
 
     ## Whether HFST is linked to the transducer library needed by implementation type \a type.
@@ -1362,7 +1405,7 @@ class HfstTransducer:
     def convert(self, type, options=''):
         pass
     
-    ## Write the transducer in AT&T format to file \a ofile, \a write_weights defines whether weights are written. (TESTED)
+    ## Write the transducer in AT&T format to file \a ofile, \a write_weights defines whether weights are written. 
     # 
     # The fields in the resulting AT&T format are separated by tabulator characters.
     # 
@@ -1520,7 +1563,7 @@ class HfstTransducer:
     def lookup(self, input, **kvargs):
         pass
 
-    ## Extract paths that are recognized by the transducer. (TESTED)
+    ## Extract paths that are recognized by the transducer. 
     #
     # @param kvargs Arguments recognized are filter_flags, max_cycles, max_number, obey_flags, output, random.
     # @param filter_flags Whether flags diacritics are filtered out from the result (default True).
@@ -1762,7 +1805,7 @@ class HfstInputStream:
 
 ## A stream for writing binary transducers. 
 #
-#  An example: (TESTED)
+#  An example: 
 # \verbatim
 # res = ['foo:bar','0','0 - 0','"?":?','a* b+']
 # ostr = libhfst.HfstOutputStream(filename='testfile1.hfst')
@@ -2038,7 +2081,7 @@ class XreCompiler:
 # 
 # will yield the paths <CODE>[foo foo]</CODE> and <CODE>[bar bar]</CODE>.
 # <CODE>[foo bar]</CODE> and <CODE>[bar foo]</CODE> are invalidated
-# by the flag diacritics so thay will not be included in \a results.
+# by the flag diacritics so they will not be included in \a results.
 
 ## Whether symbol \a symbol is a flag diacritic.
 #
@@ -2289,6 +2332,35 @@ def deep_coercion(contexts, mapping, alphabet):
 def deep_restriction_and_coercion(contexts, mapping, alphabet):
     pass
 
+## @page Symbols.html Symbols in HFST
+#
+# A transducer maps strings into strings. Strings are tokenized (i.e. divided) into symbols.
+# Each transition in a transducer has an input and output symbol. If the input symbol of a transition
+# matches a symbol of an input string, it is consumed and an output symbol equal to the output symbol
+# of the transition is produced.
+#
+# There are some special symbols: the epsilon, unknown and identity. 
+# Epsilon on input side consumes no symbol, epsilon on output side produces no symbol.
+# The unknown on input side matches any symbol, the unknown on output side produces any symbol.
+# If unknown is on both sides of a transition, it matches any symbol and produces any symbol other than the one that was matched on the input side.
+# The identity matches any symbol and produces the same symbol. It must always occur on both sides of a transition.
+# There is also a class of special symbols, called flag diacritics. They are of form 
+# \verbatim
+# @[PNDRCU][.][A-Z]+([.][A-Z]+)?@
+# \endverbatim
+#
+# The internal string representation for epsilon is "@_EPSILON_SYMBOL_@" (libhfst.EPSILON), for unknown "@_UNKNOWN_SYMBOL_@" (libhfst.UNKNOWN) and for identity "@_IDENTITY_SYMBOL_@" (libhfst.IDENTITY).
+# These strings are used when referring to those symbols in individual transitions, e.g.
+#
+# \verbatim
+# fsm.add_transition(0, 1, libhfst.EPSILON, libhfst.UNKNOWN)
+# \endverbatim
+#
+# or reading and printing transitions in AT&& format:
+#
+# \verbatim
+# \endverbatim
+# AT&T, xfst, lookup and extract_strings
 
 ## @page QuickStart.html Quick Start to HFST
 # 
@@ -2296,7 +2368,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # 
 # After <a href="InstallHfst.html">installing</a> HFST on your computer, start python and execute <code>import libhfst</code>.
 # 
-# For example, the following simple program (TESTED)
+# For example, the following simple program 
 #
 # \verbatim
 # import libhfst
@@ -2333,7 +2405,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # \section hfst_examples Examples of HFST functionalities
 # 
 # An example of creating a simple transducer from scratch and converting between transducer formats and testing
-# transducer properties and handling exceptions: (TESTED)
+# transducer properties and handling exceptions: 
 # 
 # \verbatim
 # import libhfst
@@ -2365,7 +2437,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # 
 # 
 # An example of creating transducers from strings, applying rules to them and printing the string pairs recognized by the resulting transducer.
-# (TESTED) 
+#  
 # \verbatim
 # import libhfst
 # libhfst.set_default_fst_type(libhfst.FOMA_TYPE)
@@ -2427,7 +2499,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # \endverbatim
 # 
 # The following piece of code will write a native OpenFst transducer 
-# with tropical weights to standard output: (TESTED)
+# with tropical weights to standard output:
 # 
 # test.py:
 # \verbatim
@@ -2503,7 +2575,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # 
 # Foma writes its binary transducers in gzipped format using the gz tools.
 # However, we experienced problems when trying to write to standard output or
-# read from standard in with gz tools (foma tools do not write to or read
+# read from standard input with gz tools (foma tools do not write to or read
 # from standard streams). So we choose to write, and accordingly read, 
 # foma transducers unzipped when writing or reading binary HfstTransducers 
 # of libhfst.FOMA_TYPE. As a result, when we write an HfstTransducer of FOMA_TYPE
@@ -2526,7 +2598,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # out.close()
 # \endverbatim
 # 
-# The command 
+# The command
 # 
 # \verbatim
 # gzip ab.foma
@@ -2545,7 +2617,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # An example of the opposite case follows. Suppose we have a foma transducer
 # 'transducer.foma' and want to read it inside an HFST program.
 # The name of the file must be appended a .gz extension so that the program 
-# 'gunzip' (todo: in windows?) knows it is a zipped file. The commands
+# 'gunzip' knows it is a zipped file. The commands
 # 
 # \verbatim
 # mv transducer.foma transducer.foma.gz
