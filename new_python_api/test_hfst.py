@@ -251,13 +251,13 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
             raise RuntimeError(get_linenumber())
 
     # Tokenized input
-    def test_tokenized(tok, pathin, pathout, exp):
+    def test_tokenized(tok, pathin, pathout, exp, weight=0):
         tokenized = None
         if (pathout == None):
             tokenized = tok.tokenize_one_level(pathin)
         else:
             tokenized = tok.tokenize(pathin, pathout)
-        if not libhfst.tokenized_fst(tokenized).compare(libhfst.regex(exp)):
+        if not libhfst.tokenized_fst(tokenized, weight).compare(libhfst.regex(exp)):
             if pathout == None:
                 raise RuntimeError('test_tokenized failed with input: ' + pathin)
             else:
@@ -270,7 +270,7 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     test_tokenized(tok, 'foobar', 'foobaz', '[f o o b a r:z]')
     test_tokenized(tok, 'fööbär?', None, '[f ö ö b ä r "?"]')
     test_tokenized(tok, 'fööbär?', 'fööbär?', '[f ö ö b ä r "?"]')
-    test_tokenized(tok, 'fööbär?', 'fööbäz!', '[f ö ö b ä r:z "?":"!"]')
+    test_tokenized(tok, 'fööbär?', 'fööbäz!', '[f ö ö b ä r:z "?":"!"]::0.5', 0.5)
 
     test_tokenized(tok, 'foo', None, '[f o o]')
     test_tokenized(tok, 'foobar', 'foo', '[f o o b:0 a:0 r:0]')

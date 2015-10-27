@@ -1442,7 +1442,7 @@ def fst(arg):
        return retval
     return fsa(arg)
 
-def tokenized_fst(arg):
+def tokenized_fst(arg, weight=0):
     exp = '[ '
     if isinstance(arg, list) or isinstance(arg, tuple):
        for token in arg:
@@ -1456,7 +1456,7 @@ def tokenized_fst(arg):
               else:
                  raise RuntimeError('Symbol or symbol pair must be given.')
        exp += ']'
-       return _libhfst.regex(exp)
+       return _libhfst.regex("[" + exp + "]::" + str(weight))
     else:
        raise RuntimeError('Argument must be a list or a tuple')
 

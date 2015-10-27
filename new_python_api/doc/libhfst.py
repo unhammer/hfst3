@@ -185,7 +185,7 @@ class NotTransducerStreamException(HfstException):
 class NotValidAttFormatException(HfstException):
     pass
 
-## documentation (todo)
+## The input is not in valid LexC format.
 class NotValidLexcFormatException(HfstException):
     pass
 
@@ -369,7 +369,8 @@ TO_INITIAL_STATE = _libhfst.TO_INITIAL_STATE
 TO_FINAL_STATE = _libhfst.TO_FINAL_STATE
 
 
-## A wrapper for file, possibly needed in Windows
+## A wrapper class for file operations.
+# @see libhfst.hfst_open, libhfst.hfst_stdin, libhfst.hfst_stdout, libhfst.hfst_stderr
 class HfstFile:
     ## Close the file. 
     def close(self):
@@ -406,6 +407,7 @@ def hfst_stderr():
 def set_default_fst_type(impl):
     pass
 ## Get default transducer implementation type.
+# If the default type is not set, it defaults to libhfst.TROPICAL_OPENFST_TYPE
 def get_default_fst_type():
     pass
 ## Get a string representation of transducer implementation type \a type.
@@ -424,7 +426,7 @@ def fst_type_to_string(type):
 #     raise RuntimeError('')
 # \endverbatim
 # @note In regular expressions, "0" is used for the epsilon.
-# @see 
+# @see <a href="Symbols.html">Symbols</a>
 EPSILON='@_EPSILON_SYMBOL_@'
 ## The string for unknown symbol.
 # An example:
@@ -438,6 +440,7 @@ EPSILON='@_EPSILON_SYMBOL_@'
 #     raise RuntimeError('')
 # \endverbatim
 # @note In regular expressions, "?" on either or both sides of a transition is used for the unknown symbol.
+# @see <a href="Symbols.html">Symbols</a>
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 ## The string for identity symbol.
 # An example:
@@ -450,6 +453,7 @@ UNKNOWN='@_UNKNOWN_SYMBOL_@'
 #     raise RuntimeError('')
 # \endverbatim
 # @note In regular expressions, a single "?" is used for the identity symbol.
+# @see <a href="Symbols.html">Symbols</a>
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
 ## Get a transducer that recognizes one or more paths.
@@ -486,15 +490,17 @@ def fst(arg):
 # tr = libhfst.tokenized_fst(tok.tokenize('foobar', 'foobaz'))
 # \endverbatim
 # will create the transducer [foo:foo bar:b 0:a 0:z]
-def tokenized_fst(arg):
+def tokenized_fst(arg, weight=0):
     pass
 
 ## Get an empty transducer.
+# Empty transducer has one state that is not final, i.e. it does not recognize any string.
 def empty_fst():
     pass
 
 ## Get an epsilon transducer.
-# @param weight ...
+# @param weight The weight of the final state.
+# Epsilon transducer has one state that is final (with final weight \a weight), i.e. it recognizes the empty string.
 def epsilon_fst(weight=0):
     pass
 
@@ -1126,11 +1132,19 @@ class HfstTransducer:
         pass
 
     ## An AT&T representation of the transducer.
+    # Defined for print command. An example:
+    # \verbatim
+    # >>> print(libhfst.regex('[foo:bar::2]+'))
+    # 0       1       foo     bar     2.000000
+    # 1       1       foo     bar     2.000000
+    # 1       0.000000
+    # \endverbatim
     # @todo Works only for small transducers.
     def __str__(self):
         pass
 
     ## Make transducer coaccessible.
+    # A transducer is coaccessible iff there is a path from every state to a final state.
     def prune(self):
         pass
 
@@ -1201,7 +1215,7 @@ class HfstTransducer:
     def is_automaton(self):
         pass
 
-    ## Whether the transducer is cyclic. 
+    ## Whether the transducer is cyclic.
     def is_cyclic(self):
         pass
 
@@ -1533,12 +1547,29 @@ class HfstTransducer:
     #
     # An example:
     # \verbatim
-    #
+    # >>> import libhfst
+    # >>> tr = libhfst.regex('[a::1 a:b::0.3 (b::0)]::0.7;')
+    # >>> tr.push_weights(libhfst.TO_INITIAL_STATE)
+    # >>> print(tr)
+    # 0       1       a       a       2.000000
+    # 1       2       a       b       0.000000
+    # 2       3       b       b       0.000000
+    # 2       0.000000
+    # 3       0.000000
+    # 
+    # >>> tr.push_weights(libhfst.TO_FINAL_STATE)
+    # >>> print(tr)
+    # 0       1       a       a       0.000000
+    # 1       2       a       b       0.000000
+    # 2       3       b       b       0.000000
+    # 2       2.000000
+    # 3       2.000000
+    # 
     # \endverbatim
     #
     # @see #libhfst.TO_INITIAL_STATE #libhfst.TO_FINAL_STATE
     # 
-    def push_weights(self, PushType type):
+    def push_weights(self, type):
         pass
 
     ## Substitute symbols or transitions in the transducer.
@@ -1576,31 +1607,19 @@ class HfstTransducer:
     #
     # @pre The transducer must be acyclic, if both \a max_number and \a max_cycles have unlimited values. Else a libhfst.TransducerIsCyclicException will be thrown.
     #
-    # This example
+    # An example:
     # 
     # \verbatim
-    # tr = libhfst.regex('a:b+ (a:c+)')
-    # \endverbatim
-    #
-    # \verbatim
+    # >>> tr = libhfst.regex('a:b+ (a:c+)')
+    # >>> print(tr)
     # 0       1       a       b       0.000000
     # 1       1       a       b       0.000000
     # 1       2       a       c       0.000000
     # 1       0.000000
     # 2       2       a       c       0.000000
     # 2       0.000000
-    # \endverbatim
     #
-    #
-    #
-    # \verbatim
-    # print(tr.extract_paths(max_cycles=1, output='text'))
-    # print(tr.extract_paths(max_number=4, output='text'))
-    # print(tr.extract_paths(max_cycles=1, max_number=4, output='text'))
-    # \endverbatim
-    #
-    #
-    # \verbatim
+    # >>> print(tr.extract_paths(max_cycles=1, output='text'))
     # a:b     0
     # aa:bb   0
     # aaa:bbc 0
@@ -1608,19 +1627,23 @@ class HfstTransducer:
     # aa:bc   0
     # aaa:bcc 0
     #
+    # >>> print(tr.extract_paths(max_number=4, output='text'))
     # a:b     0
     # aa:bc   0
     # aaa:bcc 0
     # aaaa:bccc       0
     # 
+    # >>> print(tr.extract_paths(max_cycles=1, max_number=4, output='text'))
     # a:b     0
     # aa:bb   0
     # aa:bc   0
     # aaa:bcc 0
+    #
     # \endverbatim
     #
     # @throws TransducerIsCyclicException
-    # @see #libhfst.HfstTransducer.n_best 
+    # @see #libhfst.HfstTransducer.n_best
+    # @note <a href="Symbols.html">Special symbols</a> are printed as such.
     # @todo a link to flag diacritics
     def extract_paths(self, **kvargs):
         pass
@@ -2334,8 +2357,8 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 
 ## @page Symbols.html Symbols in HFST
 #
-# A transducer maps strings into strings. Strings are tokenized (i.e. divided) into symbols.
-# Each transition in a transducer has an input and output symbol. If the input symbol of a transition
+# A transducer maps strings into strings.Strings are tokenized (i.e. divided) into symbols. Each transition
+# in a transducer has an input and output symbol. If the input symbol of a transition
 # matches a symbol of an input string, it is consumed and an output symbol equal to the output symbol
 # of the transition is produced.
 #
@@ -2371,7 +2394,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 #
 # There is also a shorter string for epsilon in AT&T format, "@0@".
 #
-# However, these reserved strings are not used in regular expressions. The syntax of regular expressions follows the Xerox formalism,
+# The syntax of regular expressions follows the Xerox formalism,
 # where the following symbols are used instead: "0" for epsilon, and "?" for unknown and identity.
 # On either side of a transition, "?" means the unknown. As a single symbol, "?" means identity-to-identity transition.
 # On both sides of a transition "?" means the combination of unknown-to-unknown AND identity-to-identity transitions.
@@ -2386,7 +2409,31 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # libhfst.regex('?')     # any symbol to the same symbol
 # libhfst.regex('?:? - ?')     # any symbol to any other symbol
 # \endverbatim
-
+#
+# Note that unknowns and identities are expanded with the symbols that the expression becomes aware of during its compilation:
+#
+# \verbatim
+# libhfst.regex('?')              # equal to [?]
+# libhfst.regex('? foo')          # equal to [[?|foo] foo]
+# libhfst.regex('? foo bar:?')    # equal to [[?|foo|bar] foo [bar:?|bar:bar|bar:foo]]
+# \endverbatim
+#
+# In lookup, the epsilon is printed as empty string and unknowns and identities as those symbols that they are matched with:
+# \verbatim
+# >>> tr = libhfst.regex('foo:0 bar:? ?')
+# >>> print(tr.lookup('foobara'))
+# (('bara', 0.0), ('fooa', 0.0))
+# \endverbatim
+#
+# In extract_paths, epsilon, unknown and identity are printed as such:
+# \verbatim
+# >>> tr = libhfst.regex('foo:0 bar:? ?')
+# >>> print(tr.extract_paths())
+# {'foobar@_IDENTITY_SYMBOL_@': [('@_EPSILON_SYMBOL_@@_UNKNOWN_SYMBOL_@@_IDENTITY_SYMBOL_@', 0.0), ('@_EPSILON_SYMBOL_@bar@_IDENTITY_SYMBOL_@', 0.0), ('@_EPSILON_SYMBOL_@foo@_IDENTITY_SYMBOL_@', 0.0)],
+#  'foobarfoo': [('@_EPSILON_SYMBOL_@@_UNKNOWN_SYMBOL_@foo', 0.0), ('@_EPSILON_SYMBOL_@barfoo', 0.0), ('@_EPSILON_SYMBOL_@foofoo', 0.0)], 
+#  'foobarbar': [('@_EPSILON_SYMBOL_@@_UNKNOWN_SYMBOL_@bar', 0.0), ('@_EPSILON_SYMBOL_@barbar', 0.0), ('@_EPSILON_SYMBOL_@foobar', 0.0)]}
+# \endverbatim
+# TODO: a argument to handle this?
 
 ## @page QuickStart.html Quick Start to HFST
 # 
