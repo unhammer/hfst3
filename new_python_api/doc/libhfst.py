@@ -62,11 +62,11 @@
 ## Base class for HfstExceptions. Holds its own name and the file and line number where it was thrown.
 class HfstException:
     ## The name of the exception. 
-    name
+    self.name
     ## The source file where the exception originated.
-    file
+    self.file
     ## The line of the source file where the exception originated.
-    line    
+    self.line
 
 ## Two or more HfstTransducers are not of the same type. Same as HfstTransducerTypeMismatchException ???
 class HfstTransducerTypeMismatchException(HfstException):
@@ -2401,12 +2401,12 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # If unknown-to-unknown transition is needed, it can be given as the subtraction [?:? - ?]. Some examples:
 # 
 # \verbatim
-# libhfst.regex('0:foo') # epsilon to "foo"
-# libhfst.regex('0:foo') # "foo" to epsilon
-# libhfst.regex('?:foo') # any symbol to "foo"
-# libhfst.regex('?:foo') # "foo" to any symbol
-# libhfst.regex('?:?')   # any symbol to any symbol
-# libhfst.regex('?')     # any symbol to the same symbol
+# libhfst.regex('0:foo')       # epsilon to "foo"
+# libhfst.regex('0:foo')       # "foo" to epsilon
+# libhfst.regex('?:foo')       # any symbol to "foo"
+# libhfst.regex('?:foo')       # "foo" to any symbol
+# libhfst.regex('?:?')         # any symbol to any symbol
+# libhfst.regex('?')           # any symbol to the same symbol
 # libhfst.regex('?:? - ?')     # any symbol to any other symbol
 # \endverbatim
 #
@@ -2433,7 +2433,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 #  'foobarfoo': [('@_EPSILON_SYMBOL_@@_UNKNOWN_SYMBOL_@foo', 0.0), ('@_EPSILON_SYMBOL_@barfoo', 0.0), ('@_EPSILON_SYMBOL_@foofoo', 0.0)], 
 #  'foobarbar': [('@_EPSILON_SYMBOL_@@_UNKNOWN_SYMBOL_@bar', 0.0), ('@_EPSILON_SYMBOL_@barbar', 0.0), ('@_EPSILON_SYMBOL_@foobar', 0.0)]}
 # \endverbatim
-# TODO: a argument to handle this?
+
 
 ## @page QuickStart.html Quick Start to HFST
 # 
