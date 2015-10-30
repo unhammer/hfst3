@@ -570,12 +570,11 @@ const char * get_function_xre(const char * name)
   return it->second.c_str();
 }
 
-void define_function_args(const char * name, const std::vector<HfstTransducer> * args)
+bool define_function_args(const char * name, const std::vector<HfstTransducer> * args)
 {
   if (! is_valid_function_call(name, args))
     {
-      fprintf(stderr, "Could not define function args\n");
-      exit(1);
+      return false;
     }
   unsigned int arg_number = 1;
   for (std::vector<HfstTransducer>::const_iterator it = args->begin();
@@ -589,6 +588,7 @@ void define_function_args(const char * name, const std::vector<HfstTransducer> *
       //std::cerr << *it << std::endl;
       arg_number++;
     }
+  return true;
 }
 
 void undefine_function_args(const char * name)

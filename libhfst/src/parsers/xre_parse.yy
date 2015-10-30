@@ -1188,7 +1188,11 @@ LABEL: HALFARC {
               YY_BUFFER_STATE bs = xre_scan_string(hfst::xre::get_function_xre($1),scanner);
 
               // define special variables so that function arguments get the values given in regexp list
-              hfst::xre::define_function_args($1, $2);
+              if (! hfst::xre::define_function_args($1, $2))
+              {
+                xreerror("Could not define function args.\n");  // TODO: more informative message
+                YYABORT;
+              }
 
               // if we are scanning a function definition for argument symbols, 
               // do not include the characters read when evaluating functions inside it 

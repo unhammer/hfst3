@@ -103,7 +103,7 @@ HfstTransducer* expand_definition(HfstTransducer* tr, const char* symbol);
 // the same but simpler..
 HfstTransducer* expand_definition(const char* symbol);
 
- void define_function_args(const char * name, const std::vector<HfstTransducer> * args);
+ bool define_function_args(const char * name, const std::vector<HfstTransducer> * args);
  void undefine_function_args(const char * name);
 
  const char * get_function_xre(const char * name);
