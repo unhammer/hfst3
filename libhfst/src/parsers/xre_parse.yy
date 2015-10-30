@@ -384,6 +384,7 @@ REPLACE : REGEXP3 { }
                case E_REPLACE_RIGHT_MARKUP:
                default:
                 xreerror("Unhandled arrow stuff I suppose");
+                YYABORT;
                 break;
             }
        
@@ -443,7 +444,7 @@ MAPPINGPAIR_VECTOR: MAPPINGPAIR_VECTOR COMMA MAPPINGPAIR
 
          if ($1->first != $3->first)
          {
-            xreerror("Replace arrows should be the same. Calculated as if all replacements had the first arrow.");
+            hfst::xre::warn("Replace arrows should be the same. Calculated as if all replacements had the first arrow.");
             //exit(1);
          }
  
@@ -675,8 +676,9 @@ REPLACE_ARROW: REPLACE_RIGHT
 REGEXP3: REGEXP4 { }
        | REGEXP3 SHUFFLE REGEXP4 {
             xreerror("No shuffle");
-            $$ = $1;
+            //$$ = $1;
             delete $3;
+            YYABORT;
         }
        | REGEXP3 BEFORE REGEXP4 {
             $$ = new HfstTransducer( before (*$1, *$3) );
@@ -699,16 +701,18 @@ REGEXP4: REGEXP5 { }
        // doesn't exist in xfst
        | REGEXP4 LEFT_ARROW REGEXP5 CENTER_MARKER REGEXP5 {
             xreerror("No Arrows");
-            $$ = $1;
+            //$$ = $1;
             delete $3;
             delete $5;
+            YYABORT;
         }
        // doesn't exist in xfst
        | REGEXP4 LEFT_RIGHT_ARROW REGEXP5 CENTER_MARKER REGEXP5 {
             xreerror("No Arrows");
-            $$ = $1;
+            //$$ = $1;
             delete $3;
             delete $5;
+            YYABORT;
         }
        ;
 
@@ -774,13 +778,15 @@ REGEXP5: REGEXP6 { }
         }
        | REGEXP5 UPPER_MINUS REGEXP6 {
             xreerror("No upper minus");
-            $$ = $1;
+            //$$ = $1;
             delete $3;
+            YYABORT;
         }
        | REGEXP5 LOWER_MINUS REGEXP6 {
             xreerror("No lower minus");
-            $$ = $1;
+            //$$ = $1;
             delete $3;
+            YYABORT;
         }
        | REGEXP5 UPPER_PRIORITY_UNION REGEXP6 {
             $$ = & $1->priority_union(*$3);
@@ -810,13 +816,15 @@ REGEXP7: REGEXP8 { }
         }
        | REGEXP7 IGNORE_INTERNALLY REGEXP8 {
             xreerror("No ignoring internally");
-            $$ = $1;
+            //$$ = $1;
             delete $3;
+            YYABORT;
         }
        | REGEXP7 LEFT_QUOTIENT REGEXP8 {
             xreerror("No left quotient");
-            $$ = $1;
+            //$$ = $1;
             delete $3;
+            YYABORT;
         }
        ;
 
@@ -909,7 +917,8 @@ REGEXP10: REGEXP11 { }
         /*
        | SUBSTITUTE_LEFT REGEXP10 COMMA REGEXP10 COMMA REGEXP10 RIGHT_BRACKET {
             xreerror("no substitute");
-            $$ = $2;
+            //$$ = $2;
+            YYABORT;
         }
         */
        ;

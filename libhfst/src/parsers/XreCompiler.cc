@@ -39,17 +39,21 @@ XreCompiler::XreCompiler(hfst::ImplementationType impl) :
     format_(args.format)
 {}
 
-void
+
+bool
 XreCompiler::define(const std::string& name, const std::string& xre)
 {
   HfstTransducer* compiled = compile(xre);
   if (compiled == NULL)
     {
-      fprintf(stderr, "error in XreCompiler::define: xre '%s' could not be parsed, leaving %s undefined\n", 
-              xre.c_str(), name.c_str());
-      return;
+      //fprintf(stderr, "error in XreCompiler::define: xre '%s' could not be parsed, leaving %s undefined\n", 
+      //        xre.c_str(), name.c_str());
+      //*errorstream_ << "error in XreCompiler::define: xre '" << xre << "' could not be parsed, leaving " << name << "undefined" << std::endl;
+      error_message += "error: could not parse '" + xre + "', leaving '" + name + "' undefined\n"; 
+      return false;
     }
   definitions_[name] = compiled;
+  return true;
 }
 
 void 

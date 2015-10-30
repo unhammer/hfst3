@@ -510,6 +510,8 @@ class XfstCompiler
   //! @brief Handle unknown command \a s.
   //  @return Whether the parser should go on, 0 signifying true. 
   int unknown_command(const char * s);
+  // For xfst parser.
+  bool get_fail_flag() const;
 
  protected:
   //! @brief Get the prompt that is used when applying up or down 
@@ -571,11 +573,11 @@ class XfstCompiler
   //! In both cases, a warning message is printed.
   XfstCompiler& add_loaded_definition(HfstTransducer * t);
 
-  //! @brief Exit with failure status if quit-on-fail is ON, 
+  //! @brief Set fail flag to true if quit-on-fail is ON, 
   //! else do nothing.
   void xfst_fail();
 
-  //! @brief Exit with failure status if quit-on-fail is ON and hfst-xfst
+  //! @brief Set fail flag to true if quit-on-fail is ON and hfst-xfst
   //! is not used in interactive mode, else do nothing.
   void xfst_lesser_fail();
 
@@ -688,6 +690,11 @@ class XfstCompiler
   // Whether the script has encountered the quit command ('quit', 'exit', etc.).
   // Needed in interactive mode, where user input is read line by line.
   bool quit_requested_;
+  // Whether the compiler has encountered an error when compiling input given to
+  // 'parse' or 'parse_line' function that should quit the compilation and make
+  // the function return a non-zero value. Note that if the variable 'quit-on-fail'
+  // is false, fail_flag_ will always be false.
+  bool fail_flag_;
 }
 ;
 

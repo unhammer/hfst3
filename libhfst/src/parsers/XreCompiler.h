@@ -77,7 +77,8 @@ class XreCompiler
   //! @brief Add a definition macro.
   //!        Compilers will replace arcs labeled @a name, with the transducer
   //!        defined by @a xre in later phases of compilation.
-  void define(const std::string& name, const std::string& xre);
+  //! @return Whether parsing \a xre was succesful.
+  bool define(const std::string& name, const std::string& xre);
 
   void define_list(const std::string& name, const std::set<std::string>& symbol_list);
 

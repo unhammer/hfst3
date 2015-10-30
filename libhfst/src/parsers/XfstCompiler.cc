@@ -72,10 +72,10 @@ using hfst::hfst_fprintf;
 #define GET_TOP(x) HfstTransducer * x = this->top(); if ((x) == NULL) { xfst_lesser_fail(); return *this; }
 #define PROMPT_AND_RETURN_THIS prompt(); return *this;
 #define PRINT_INFO_PROMPT_AND_RETURN_THIS print_transducer_info(); prompt(); return *this;
-#define IF_NULL_PROMPT_AND_RETURN_THIS(x) if (x == NULL) { if(variables_["quit-on-fail"] == "ON") { exit(EXIT_FAILURE); } prompt(); return *this; }
+#define IF_NULL_PROMPT_AND_RETURN_THIS(x) if (x == NULL) { if(variables_["quit-on-fail"] == "ON") { /*exit(EXIT_FAILURE);*/ this->fail_flag_ = true; } prompt(); return *this; }
 #define MAYBE_MINIMIZE(x) if (variables_["minimal"] == "ON") { x->minimize(); }
-#define MAYBE_ASSERT(assertion, value) if (!value && ((variables_["assert"] == "ON" || assertion) && (variables_["quit-on-fail"] == "ON"))) { exit(EXIT_FAILURE); }
-#define MAYBE_QUIT if(variables_["quit-on-fail"] == "ON") { exit(EXIT_FAILURE); }
+#define MAYBE_ASSERT(assertion, value) if (!value && ((variables_["assert"] == "ON" || assertion) && (variables_["quit-on-fail"] == "ON"))) { /*exit(EXIT_FAILURE);*/ this->fail_flag_ = true; }
+#define MAYBE_QUIT if(variables_["quit-on-fail"] == "ON") { /*exit(EXIT_FAILURE);*/ this->fail_flag_ = true; }
 
 #define WEIGHT_PRECISION "5"
 #define LOOKUP_CYCLE_CUTOFF "5"
@@ -139,7 +139,8 @@ namespace xfst {
         format_(hfst::TROPICAL_OPENFST_TYPE),
         verbose_(false),
         latest_regex_compiled(NULL),
-        quit_requested_(false)
+        quit_requested_(false),
+        fail_flag_(false)
     {       
         xre_.set_expand_definitions(true);
         xre_.set_verbosity(true, stderr);
@@ -193,7 +194,8 @@ namespace xfst {
         format_(impl),
         verbose_(false),
         latest_regex_compiled(NULL),
-        quit_requested_(false)
+        quit_requested_(false),
+        fail_flag_(false)
     {       
         xre_.set_expand_definitions(true);
         xre_.set_verbosity(true, stderr);
@@ -249,7 +251,8 @@ namespace xfst {
   {
     if (variables_["quit-on-fail"] == "ON") 
       {
-        exit(EXIT_FAILURE); 
+        this->fail_flag_ = true;
+        //exit(EXIT_FAILURE); 
       }
   }
 
@@ -257,7 +260,8 @@ namespace xfst {
   {
     if (variables_["quit-on-fail"] == "ON" && !read_interactive_text_from_stdin_) 
       {
-        exit(EXIT_FAILURE); 
+        this->fail_flag_ = true;
+        //exit(EXIT_FAILURE); 
       }
   }
 
@@ -891,6 +895,11 @@ namespace xfst {
     return 0;
   }
 
+  bool XfstCompiler::get_fail_flag() const
+  {
+    return this->fail_flag_;
+  }
+
   bool XfstCompiler::quit_requested() const
   {
     return this->quit_requested_;
@@ -1171,7 +1180,12 @@ namespace xfst {
         {
           bool was_defined = xre_.is_definition(name);
           //if (!was_defined)
-            xre_.define(name, xre);
+          if (! xre_.define(name, xre))  // todo: equal to latest_regex_compiled ?
+            {
+              hfst_fprintf(errorstream_, "Could not define variable %s:\n%s\n", 
+                           name, xre_.get_error_message().c_str());
+              xfst_fail();
+            }
           HfstTransducer * nu = new HfstTransducer(*latest_regex_compiled); 
           if (variables_["name-nets"] == "ON")
             nu->set_name(name);
@@ -1191,6 +1205,7 @@ namespace xfst {
         {
           hfst_fprintf(errorstream_, "Could not define variable %s:\n%s\n", 
                   name, xre_.get_error_message().c_str());
+          xfst_fail();
         }
       PROMPT_AND_RETURN_THIS;
     }
@@ -2422,8 +2437,9 @@ namespace xfst {
         }
       else
         {
-          hfst_fprintf(errorstream_, "fatal error in substitution, exiting program\n");
-          exit(EXIT_FAILURE);
+          hfst_fprintf(errorstream_, "fatal error in substitution\n");
+          this->fail_flag_ = true;
+          //exit(EXIT_FAILURE);
         }
       PROMPT_AND_RETURN_THIS;
     }
@@ -4693,10 +4709,10 @@ namespace xfst {
     YY_BUFFER_STATE bs = hxfst_scan_string(line);
     int rv = hxfstparse();
     hxfst_delete_buffer(bs);
-    if (rv != 0)
+    /*if (rv != 0)
       {
         prompt();
-      }
+        }*/
     return rv;
   }
   int
