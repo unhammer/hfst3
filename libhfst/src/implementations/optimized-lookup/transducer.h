@@ -32,6 +32,7 @@
 #include <deque>
 #include <queue>
 #include <stdexcept>
+#include <time.h>
 
 #include "../../HfstExceptionDefs.h"
 #include "../../HfstFlagDiacritics.h"
@@ -855,6 +856,8 @@ protected:
 
     ssize_t max_lookups;
     unsigned int recursion_depth_left;
+    double max_time;
+    clock_t max_clock;
 
     void try_epsilon_transitions(unsigned int input_tape_pos,
                                  unsigned int output_tape_pos,
@@ -959,13 +962,16 @@ public:
 
 
     bool initialize_input(const char * input_str);
-    HfstOneLevelPaths * lookup_fd(const StringVector & s, ssize_t limit = -1);
+    HfstOneLevelPaths * lookup_fd(const StringVector & s, ssize_t limit = -1,
+        double time_cutoff = 0.0);
     /* Tokenize and lookup, accounting for flag diacritics, the surface string
        \a s. The return value, a pointer to HfstOneLevelPaths
        (which is a set) of analyses, is newly allocated.
     */
-    HfstOneLevelPaths * lookup_fd(const std::string & s, ssize_t limit = -1);
-    HfstOneLevelPaths * lookup_fd(const char * s, ssize_t limit = -1);
+    HfstOneLevelPaths * lookup_fd(const std::string & s, ssize_t limit = -1,
+                                  double time_cutoff = 0.0);
+    HfstOneLevelPaths * lookup_fd(const char * s, ssize_t limit = -1,
+                                  double time_cutoff = 0.0);
     void note_analysis(void);
 
     // Methods for supporting ospell

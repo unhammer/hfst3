@@ -645,25 +645,25 @@ void HfstTransducer::print_alphabet()
 // -----------------------------------------------------------------------
 
 HfstOneLevelPaths * HfstTransducer::lookup(const StringVector& s,
-                ssize_t limit) const
+                                           ssize_t limit, double time_cutoff) const
 {
     return lookup_fd(s, limit);
 }
 
 HfstOneLevelPaths * HfstTransducer::lookup(const std::string & s,
-                       ssize_t limit) const
+                                           ssize_t limit, double time_cutoff) const
 {
     return lookup_fd(s, limit);
 }
 
 HfstOneLevelPaths * HfstTransducer::lookup_fd(const StringVector& s,
-                          ssize_t limit) const
+                          ssize_t limit, double time_cutoff) const
 {
     switch(this->type) {
 
     case (HFST_OL_TYPE):
     case (HFST_OLW_TYPE):
-        return this->implementation.hfst_ol->lookup_fd(s, limit);
+        return this->implementation.hfst_ol->lookup_fd(s, limit, time_cutoff);
 
     case (ERROR_TYPE):
       HFST_THROW(TransducerHasWrongTypeException);
@@ -682,13 +682,13 @@ HfstOneLevelPaths * HfstTransducer::lookup_fd(const StringVector& s,
 }
 
 HfstOneLevelPaths * HfstTransducer::lookup_fd(const std::string & s,
-                         ssize_t limit) const
+                         ssize_t limit, double time_cutoff) const
 {
     switch(this->type) {
 
     case (HFST_OL_TYPE):
     case (HFST_OLW_TYPE):
-        return this->implementation.hfst_ol->lookup_fd(s, limit);
+        return this->implementation.hfst_ol->lookup_fd(s, limit, time_cutoff);
 
     case (ERROR_TYPE):
       HFST_THROW(TransducerHasWrongTypeException);
@@ -708,10 +708,10 @@ HfstOneLevelPaths * HfstTransducer::lookup_fd(const std::string & s,
 
 HfstOneLevelPaths * HfstTransducer::lookup(const HfstTokenizer& tok,
                        const std::string &s, 
-                       ssize_t limit) const
+                       ssize_t limit, double time_cutoff) const
 {
     StringVector sv = tok.tokenize_one_level(s);
-    return lookup(sv, limit);
+    return lookup(sv, limit, time_cutoff);
 }
 
 HfstOneLevelPaths * HfstTransducer::lookdown(const StringVector& s,

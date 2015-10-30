@@ -1046,7 +1046,8 @@ ccc : ddd
     //!       lookup_fd.
     //! @sa lookup_fd
     HFSTDLL HfstOneLevelPaths * lookup(const StringVector& s,
-                   ssize_t limit = -1) const;
+                                       ssize_t limit = -1,
+                                       double time_cutoff = 0.0) const;
 
     //! @brief Lookup or apply a single string \a s and
     //! return a maximum of \a limit results.
@@ -1054,7 +1055,8 @@ ccc : ddd
     //! This is an overloaded lookup function that leaves tokenizing to the
     //! transducer.
     HFSTDLL HfstOneLevelPaths * lookup(const std::string & s,
-                   ssize_t limit = -1) const;
+                                       ssize_t limit = -1,
+                                       double time_cutoff = 0.0) const;
 
     //! @brief Lookup or apply a single string \a s minding flag diacritics
     //! properly and store a maximum of \a limit results to \a results.
@@ -1086,7 +1088,8 @@ ccc : ddd
     //! @todo Do not ignore argument \a limit.
     //!
     HFSTDLL HfstOneLevelPaths * lookup_fd(const StringVector& s,
-                  ssize_t limit = -1) const;
+                                          ssize_t limit = -1,
+                                          double time_cutoff = 0.0) const;
 
     //! @brief Lookup or apply a single string \a s minding flag diacritics
     //! properly and store a maximum of \a limit results to \a results.
@@ -1103,7 +1106,8 @@ ccc : ddd
     //!
     //!@sa lookup_fd
     HFSTDLL HfstOneLevelPaths * lookup_fd(const std::string& s,
-                  ssize_t limit = -1) const;
+                                          ssize_t limit = -1,
+                                          double time_cutoff = 0.0) const;
 
     //! @brief Lookup or apply a single string \a s and store a maximum of 
     //! \a limit results to \a results. \a tok defined how \a s is tokenized.
@@ -1113,8 +1117,10 @@ ccc : ddd
     //! #lookup(const StringVector&, ssize_t) const
     //! but lookup is not done using a string and a tokenizer instead of
     //! a StringVector.
-    HFSTDLL HfstOneLevelPaths * lookup(const HfstTokenizer& tok,
-                   const std::string &s, ssize_t limit = -1) const;
+      HFSTDLL HfstOneLevelPaths * lookup(const HfstTokenizer& tok,
+                                         const std::string &s,
+                                         ssize_t limit = -1,
+                                         double time_cutoff = 0.0) const;
 
     //! @brief Lookup or apply a single string \a s minding flag diacritics 
     //! properly and store a maximum of \a limit results to \a results. 
@@ -1125,8 +1131,9 @@ ccc : ddd
     //! but uses a tokenizer and a string instead of a StringVector.
     //!
     HFSTDLL HfstOneLevelPaths * lookup_fd(
-    const HfstTokenizer& tok,
-    const std::string &s, ssize_t limit = -1) const;
+        const HfstTokenizer& tok,
+        const std::string &s, ssize_t limit = -1,
+        double time_cutoff = 0.0) const;
 
     //! @brief (Not implemented) Lookdown a single string \a s and return 
     //! a maximum of \a limit results.

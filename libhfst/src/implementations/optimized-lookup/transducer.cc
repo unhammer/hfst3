@@ -283,18 +283,20 @@ bool Transducer::initialize_input(const char * input)
     return true;
 }
 
-HfstOneLevelPaths * Transducer::lookup_fd(const StringVector & s, ssize_t limit)
+HfstOneLevelPaths * Transducer::lookup_fd(const StringVector & s, ssize_t limit,
+                                          double time_cutoff)
 {
     std::string input_str;
     for (StringVector::const_iterator it = s.begin(); it != s.end(); ++it) {
         input_str.append(*it);
     }
-    return lookup_fd(input_str, limit);
+    return lookup_fd(input_str, limit, time_cutoff);
 }
 
-HfstOneLevelPaths * Transducer::lookup_fd(const std::string & s, ssize_t limit)
+HfstOneLevelPaths * Transducer::lookup_fd(const std::string & s, ssize_t limit,
+                                          double time_cutoff)
 {
-    return lookup_fd(s.c_str(), limit);
+    return lookup_fd(s.c_str(), limit, time_cutoff);
 }
 
 bool Transducer::is_lookup_infinitely_ambiguous(const std::string & s)
@@ -323,9 +325,16 @@ bool Transducer::is_lookup_infinitely_ambiguous(const StringVector & s)
 }
 
 
-HfstOneLevelPaths * Transducer::lookup_fd(const char * s, ssize_t limit)
+HfstOneLevelPaths * Transducer::lookup_fd(const char * s, ssize_t limit,
+                                          double time_cutoff)
 {
     max_lookups = limit;
+    max_time = 0.0;
+    if (time_cutoff > 0.0) {
+        max_time = time_cutoff;
+        max_clock = clock() + CLOCKS_PER_SEC*max_time;
+        std::cerr << "got " << max_time << ", clock() is " << clock() << ", set max_clock to " << max_clock << std::endl;
+    }
     HfstOneLevelPaths * results = new HfstOneLevelPaths;
     lookup_paths = results;
     if (!initialize_input(s)) {
@@ -339,6 +348,7 @@ HfstOneLevelPaths * Transducer::lookup_fd(const char * s, ssize_t limit)
     lookup_paths = NULL;
     return results;
 }
+
 
 void Transducer::try_epsilon_transitions(unsigned int input_pos,
                                          unsigned int output_pos,
@@ -363,7 +373,6 @@ void Transducer::try_epsilon_transitions(unsigned int input_pos,
             if (flag_state.apply_operation(
                     *(alphabet->get_operation(input)))) {
                 // flag diacritic allowed
-
                 TraversalState flag_reachable(target, flags);
                 if (traversal_states.count(flag_reachable) == 1) {
                     // We've been here before at this input, back out
@@ -471,6 +480,12 @@ void Transducer::get_analyses(unsigned int input_pos,
     if (max_lookups >= 0 && lookup_paths->size() >= max_lookups) {
         // Back out because we have enough results already
         return;
+    }
+    if (max_time > 0.0) {
+        // quit if we've overspent our time
+        if (clock() > max_clock) {
+            return;
+        }
     }
     --recursion_depth_left;
     if (indexes_transition_table(i))

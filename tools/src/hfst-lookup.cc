@@ -119,6 +119,7 @@ enum lookup_output_format
 
 static lookup_input_format input_format = UTF8_TOKEN_INPUT;
 static lookup_output_format output_format = XEROX_OUTPUT;
+static double time_cutoff = 0.0;
 
 // XFST variables for apply
 static bool show_flags = false;
@@ -246,6 +247,8 @@ print_usage()
             "  -c, --cycles=INT                 How many times to follow input epsilon cycles\n"
             "  -b, --beam=B                     Output only analyses whose weight is within B from\n"
             "                                   the best analysis\n"
+            "  -t, --time-cutoff=S              Limit search after having used S seconds per input\n"
+            "                                   (currently only works in optimized-lookup mode\n"
             "  -P, --progress                   Show neat progress bar if possible\n");
     fprintf(message_out, "\n");
     print_common_unary_program_parameter_instructions(message_out);
@@ -258,6 +261,7 @@ print_usage()
             "Input epsilon cycles are followed by default INT=5 times.\n"
             "Epsilon is printed by default as an empty string.\n"
             "B must be a non-negative float.\n"
+            "S must be a non-negative float. The default, 0.0, indicates no cutoff.\n"
             "If the input contains several transducers, a set containing\n"
             "results from all transducers is printed for each input string.\n");
     fprintf(message_out, "\n");
@@ -274,19 +278,6 @@ print_usage()
           "--pipe-mode=output is ignored on non-windows platforms.\n");
 #endif
     fprintf(message_out, "\n");
-
-/*    fprintf(message_out,
-#ifdef _MSC_VER
-          "If input file is not specified with -I, input is read interactively via the\n"
-          "console, i.e. line by line from the user. If input is redirected  from a file,\n"
-          "use -p. Output is by default printed to the console. If output is redirected\n"
-          "to a file, use -k.\n"
-#else
-          "If input file is not specified with -I, input is read interactively line by\n"
-          "line from the user. If input is redirected from a file, use -p.\n"
-#endif
-);*/
-
 
     fprintf(message_out, 
             "Todo:\n"
@@ -326,6 +317,7 @@ parse_options(int argc, char** argv)
             {"epsilon-format", required_argument, 0, 'e'},
             {"epsilon-format2", required_argument, 0, 'E'},
             {"beam", required_argument, 0, 'b'},
+            {"time-cutoff", required_argument, 0, 't'},
             {"pipe-mode", optional_argument, 0, 'p'},
             {"progress", no_argument, 0, 'P'},
             {0,0,0,0}
@@ -333,7 +325,7 @@ parse_options(int argc, char** argv)
         int option_index = 0;
         // add tool-specific options here 
         char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT
-                             HFST_GETOPT_UNARY_SHORT "I:O:F:xc:X:e:E:b:p::P",
+                             HFST_GETOPT_UNARY_SHORT "I:O:F:xc:X:e:E:b:t:p::P",
                              long_options, &option_index);
         if (-1 == c)
         {
@@ -405,6 +397,14 @@ parse_options(int argc, char** argv)
               return EXIT_FAILURE;
             }
           break;
+        case 't':
+            time_cutoff = atof(optarg);
+            if (time_cutoff < 0.0)
+            {
+                std::cerr << "Invalid argument for --time-cutoff\n";
+                return EXIT_FAILURE;
+            }
+            break;
         case 'x':
             print_statistics = true;
             break;
@@ -1106,12 +1106,12 @@ lookup_simple(const HfstOneLevelPath& s, HfstTransducer& t, bool* infinity)
     warning(0, 0, "Got infinite results, number of cycles limited to " SIZE_T_SPECIFIER "",
         infinite_cutoff);
       }
-      results = t.lookup_fd(s.second, infinite_cutoff);
+      results = t.lookup_fd(s.second, infinite_cutoff, time_cutoff);
       *infinity = true;
     }
   else
     {
-      results = t.lookup_fd(s.second);
+        results = t.lookup_fd(s.second, -1, time_cutoff);
     }
 
   if (results->size() == 0)
@@ -1197,7 +1197,7 @@ void lookup_fd_and_print(HfstBasicTransducer &t, HfstOneLevelPaths& results,
   if (is_possible_to_get_result(s, cascade_symbols_seen[transducer_number], 
                                 cascade_unknown_or_identity_seen[transducer_number]))
     {
-      t.lookup_fd(s.second, results_spv, infinite_cutoff);
+        t.lookup_fd(s.second, results_spv, infinite_cutoff);
     }
 
   if (print_pairs) {
@@ -1300,7 +1300,7 @@ lookup_simple(const HfstOneLevelPath& s, HfstBasicTransducer& t, bool* infinity)
     }
   else
     {
-      lookup_fd_and_print(t, *results, s);
+        lookup_fd_and_print(t, *results, s);
     }
 
   if (results->size() == 0)
