@@ -240,6 +240,16 @@ namespace xfst {
         prompt();
       }
 
+  std::ostringstream * XfstCompiler::new_oss()
+  {
+    std::ostringstream * oss = new std::ostringstream();
+    std::istringstream iss(variables_["precision"]);
+    int precision;
+    iss >> precision;
+    oss->precision(precision);
+    return oss;
+  }
+
   int XfstCompiler::hfst_print_weight(FILE * stream, float weight)
   {
     std::string formatter("%.");
@@ -425,6 +435,7 @@ namespace xfst {
    int n /* = -1*/)
   {
     bool retval = false; // if anything was printed
+    std::ostringstream * oss = this->new_oss();
 
     // go through at most n paths
     for (hfst::HfstOneLevelPaths::const_iterator it = paths.begin();
@@ -449,10 +460,10 @@ namespace xfst {
                 something_printed &&                  // not first symbol shown 
                 strcmp(print_symbol, "") != 0)        // something to show
               {
-                hfst_fprintf(outfile, " ");
+                *oss << " "; // hfst_fprintf(outfile, " ");
               }
 
-            hfst_fprintf(outfile, "%s", print_symbol);
+            *oss << std::string(print_symbol); // hfst_fprintf(outfile, "%s", print_symbol);
 
             if (strcmp(print_symbol, "") != 0) {
               something_printed = true;
@@ -463,14 +474,18 @@ namespace xfst {
         // if needed, print the weight
         if (variables_["print-weight"] == "ON")
           {
-            hfst_fprintf(outfile, "\t");
-            hfst_print_weight(outfile, it->first);
+            //hfst_fprintf(outfile, "\t");
+            //hfst_print_weight(outfile, it->first);
+            *oss << "\t" << std::fixed << it->first;
           }
 
-        hfst_fprintf(outfile, "\n");
+        *oss << std::endl; // hfst_fprintf(outfile, "\n");
         --n;
 
       } // at most n paths gone through
+
+    hfst_fprintf(outfile, oss->str().c_str()); // TESTING
+    delete oss;
 
     return retval;
   }
@@ -482,6 +497,7 @@ namespace xfst {
    int n /* = -1*/)
   { 
     bool retval = false; // if anything was printed
+    std::ostringstream * oss = this->new_oss();
 
     // go through at most n paths
     for (hfst::HfstTwoLevelPaths::const_iterator it = paths.begin();
@@ -510,10 +526,10 @@ namespace xfst {
                 something_printed &&                  // not first symbol shown
                 strcmp(print_symbol, "") != 0)        // something to show
               {
-                hfst_fprintf(outfile, " ");
+                *oss << " "; // hfst_fprintf(outfile, " ");
               }
 
-            hfst_fprintf(outfile, "%s", print_symbol);
+            *oss << std::string(print_symbol); // hfst_fprintf(outfile, "%s", print_symbol);
 
             if (strcmp(print_symbol, "") != 0) {
               something_printed = true;
@@ -525,7 +541,7 @@ namespace xfst {
             if (strcmp(print_symbol, "") != 0 &&   // something to show
                 p->first != p->second)             // input and output symbols differ
               {
-                hfst_fprintf(outfile, ":%s", print_symbol);
+                *oss << ":" << std::string(print_symbol); // hfst_fprintf(outfile, ":%s", print_symbol);
               }
 
           } // path gone through
@@ -533,14 +549,18 @@ namespace xfst {
         // if needed, print the weight
         if (variables_["print-weight"] == "ON")
           {
-            hfst_fprintf(outfile, "\t");
-            hfst_print_weight(outfile, it->first);
+            // hfst_fprintf(outfile, "\t");
+            // hfst_print_weight(outfile, it->first);
+            *oss << "\t" << std::fixed << it->first;
           }
 
-        hfst_fprintf(outfile, "\n");
+        *oss << std::endl; // hfst_fprintf(outfile, "\n");
         --n;
 
       } // at most n paths gone through
+
+    hfst_fprintf(outfile, oss->str().c_str()); // TESTING
+    delete oss;
 
     return retval;
   }

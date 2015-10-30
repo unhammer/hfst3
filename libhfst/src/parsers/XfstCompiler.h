@@ -514,6 +514,10 @@ class XfstCompiler
   bool get_fail_flag() const;
 
  protected:
+
+  // TESTING
+  std::ostringstream * new_oss();
+
   //! @brief Get the prompt that is used when applying up or down 
   //! (as specified by \a direction).
   const char* get_apply_prompt(ApplyDirection direction);
