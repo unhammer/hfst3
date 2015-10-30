@@ -333,7 +333,6 @@ HfstOneLevelPaths * Transducer::lookup_fd(const char * s, ssize_t limit,
     if (time_cutoff > 0.0) {
         max_time = time_cutoff;
         max_clock = clock() + CLOCKS_PER_SEC*max_time;
-        std::cerr << "got " << max_time << ", clock() is " << clock() << ", set max_clock to " << max_clock << std::endl;
     }
     HfstOneLevelPaths * results = new HfstOneLevelPaths;
     lookup_paths = results;
