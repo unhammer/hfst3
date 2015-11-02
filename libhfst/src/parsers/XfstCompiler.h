@@ -269,28 +269,28 @@ class XfstCompiler
     (const hfst::HfstTransducer* transducer, hfst::HfstTwoLevelPaths& paths);
 
   //! @brief Print shortest string of network
-  XfstCompiler& print_shortest_string(FILE* outfile);
+  XfstCompiler& print_shortest_string(std::ostream * oss);
   //! @brief Print length of shortest string
-  XfstCompiler& print_shortest_string_size(FILE* outfile);
+  XfstCompiler& print_shortest_string_size(std::ostream * oss);
   //! @brief Print longest string in network
-  XfstCompiler& print_longest_string(FILE* outfile);
+  XfstCompiler& print_longest_string(std::ostream * oss);
   //! @brief Print length of longest string
-  XfstCompiler& print_longest_string_size(FILE* outfile);
+  XfstCompiler& print_longest_string_size(std::ostream * oss);
   //! @brief Print strings of lower language
   XfstCompiler& print_lower_words(const char * name, unsigned int number,
-                                  FILE* outfile);
+                                  std::ostream * oss);
   //! @brief Print random strings of lower language
-  XfstCompiler& print_random_lower(const char * name, unsigned int number, FILE* outfile);
+  XfstCompiler& print_random_lower(const char * name, unsigned int number, std::ostream * oss);
   //! @brief Print astrings of upper language
   XfstCompiler& print_upper_words(const char * name, unsigned int number,
-                                  FILE* outfile);
+                                  std::ostream * oss);
   //! @brief Print random strings of upper language
-  XfstCompiler& print_random_upper(const char * name, unsigned int number, FILE* outfile);
+  XfstCompiler& print_random_upper(const char * name, unsigned int number, std::ostream * oss);
   //! @brief Print pair strings of language
   XfstCompiler& print_words(const char * name, unsigned int number,
-                            FILE* outfile);
+                            std::ostream * oss);
   //! @brief Print random pair strings of language
-  XfstCompiler& print_random_words(const char * name, unsigned int number, FILE* outfile);
+  XfstCompiler& print_random_words(const char * name, unsigned int number, std::ostream * oss);
   //! @brief Print name of top network
   XfstCompiler& print_name(FILE* outfile);
   //! @brief Print network
@@ -514,10 +514,6 @@ class XfstCompiler
   bool get_fail_flag() const;
 
  protected:
-
-  // TESTING
-  std::ostringstream * new_oss();
-
   //! @brief Get the prompt that is used when applying up or down 
   //! (as specified by \a direction).
   const char* get_apply_prompt(ApplyDirection direction);
@@ -527,23 +523,23 @@ class XfstCompiler
   //! @brief Print \a n first paths (or all, if n is negative) 
   //! from \a paths to \a outfile.
   bool print_paths(const hfst::HfstTwoLevelPaths &paths, 
-                            FILE* outfile=stdout, int n=-1);
+                   std::ostream * oss = &std::cout, int n=-1);
   //! @brief Print \a n first paths (or all, if n is negative) 
   //! from \a paths to \a outfile.
   bool print_paths(const hfst::HfstOneLevelPaths &paths, 
-                            FILE* outfile=stdout, int n=-1);
+                   std::ostream * oss = &std::cout, int n=-1);
   // A method used by function print_longest_string_or_its_size.
   XfstCompiler& print_one_string_or_its_size
-    (FILE* outfile, const HfstTwoLevelPaths & paths, const char * level, bool print_size);
+    (std::ostream * oss, const HfstTwoLevelPaths & paths, const char * level, bool print_size);
   //! @brief Print the longest string of topmost transducer in the stack
   //! (if print_size is false) or the size of that string (if print_size is true) 
   //! to \a outfile.
-  XfstCompiler& print_longest_string_or_its_size(FILE* outfile, bool print_size);
+  XfstCompiler& print_longest_string_or_its_size(std::ostream * oss, bool print_size);
   //! @brief Try to extract a maximum of \a number paths from topmost
   //! transducer in the stack and print them to \a outfile. \a level
   //! defines whether the input or output level is printed or both are printed.
   XfstCompiler& print_words(const char * name, unsigned int number,
-                            FILE * outfile, Level level);
+                            std::ostream * oss, Level level);
   //! @brief Read strings (with or without spaces between the symbols,
   //! as defined by \a spaces) from \a infile, disjunct them into
   //! a single transducer and push it to the stack.
@@ -639,13 +635,15 @@ class XfstCompiler
   char * remove_newline(char * str);
 
   //! @brief Print weight.
-  int hfst_print_weight(FILE * stream, float weight);
+  //int hfst_print_weight(FILE * stream, float weight);
 
   //! @brief Get current readline history index.
   int current_history_index();
 
   //! @brief Remove all readline history after \a index. 
   void ignore_history_after_index(int index);
+
+  int get_precision();
 
   private:
   /* */
@@ -699,6 +697,9 @@ class XfstCompiler
   // the function return a non-zero value. Note that if the variable 'quit-on-fail'
   // is false, fail_flag_ will always be false.
   bool fail_flag_;
+  // Where output is printed.
+  std::ostream * output_;
+  std::ostream * error_;
 }
 ;
 

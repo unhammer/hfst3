@@ -77,6 +77,8 @@ using hfst::hfst_fprintf;
 #define MAYBE_ASSERT(assertion, value) if (!value && ((variables_["assert"] == "ON" || assertion) && (variables_["quit-on-fail"] == "ON"))) { /*exit(EXIT_FAILURE);*/ this->fail_flag_ = true; }
 #define MAYBE_QUIT if(variables_["quit-on-fail"] == "ON") { /*exit(EXIT_FAILURE);*/ this->fail_flag_ = true; }
 
+#define EMPTY_STACK *error_ << "Empty stack." << std::endl
+
 #define WEIGHT_PRECISION "5"
 #define LOOKUP_CYCLE_CUTOFF "5"
 #define PRINT_WORDS_CYCLE_CUTOFF "5"
@@ -140,7 +142,9 @@ namespace xfst {
         verbose_(false),
         latest_regex_compiled(NULL),
         quit_requested_(false),
-        fail_flag_(false)
+        fail_flag_(false),
+        output_(&std::cout),
+        error_(&std::cerr)
     {       
         xre_.set_expand_definitions(true);
         xre_.set_verbosity(true, stderr);
@@ -195,7 +199,9 @@ namespace xfst {
         verbose_(false),
         latest_regex_compiled(NULL),
         quit_requested_(false),
-        fail_flag_(false)
+        fail_flag_(false),
+        output_(&std::cout),
+        error_(&std::cerr)
     {       
         xre_.set_expand_definitions(true);
         xre_.set_verbosity(true, stderr);
@@ -240,21 +246,12 @@ namespace xfst {
         prompt();
       }
 
-  std::ostringstream * XfstCompiler::new_oss()
+  int XfstCompiler::get_precision()
   {
-    std::ostringstream * oss = new std::ostringstream();
     std::istringstream iss(variables_["precision"]);
-    int precision;
-    iss >> precision;
-    oss->precision(precision);
-    return oss;
-  }
-
-  int XfstCompiler::hfst_print_weight(FILE * stream, float weight)
-  {
-    std::string formatter("%.");
-    formatter = formatter + variables_["precision"] + std::string("f");
-    return hfst_fprintf(stream, formatter.c_str(), weight);
+    int retval;
+    iss >> retval;
+    return retval;
   }
 
   void XfstCompiler::xfst_fail()
@@ -292,7 +289,8 @@ namespace xfst {
         if (*p == '\0')
           {
             assert(*p != '\0');
-            hfst_fprintf(errorstream_, "no colon in line\n");
+            //hfst_fprintf(errorstream_, "no colon in line\n");
+            *error_ << "no colon in line" << std::endl;
           }
         p++;
         while (isspace(*p))
@@ -431,11 +429,11 @@ namespace xfst {
   bool 
   XfstCompiler::print_paths
   (const hfst::HfstOneLevelPaths &paths, 
-   FILE* outfile /* =stdout */, 
+   std::ostream * oss /* =cout */, 
    int n /* = -1*/)
   {
     bool retval = false; // if anything was printed
-    std::ostringstream * oss = this->new_oss();
+    oss->precision(get_precision());
 
     // go through at most n paths
     for (hfst::HfstOneLevelPaths::const_iterator it = paths.begin();
@@ -484,8 +482,7 @@ namespace xfst {
 
       } // at most n paths gone through
 
-    hfst_fprintf(outfile, oss->str().c_str()); // TESTING
-    delete oss;
+    //hfst_fprintf(outfile, oss->str().c_str()); // TESTING
 
     return retval;
   }
@@ -493,11 +490,11 @@ namespace xfst {
   bool
   XfstCompiler::print_paths
   (const hfst::HfstTwoLevelPaths &paths, 
-   FILE* outfile /* =stdout */, 
+   std::ostream * oss /* =cout */, 
    int n /* = -1*/)
   { 
     bool retval = false; // if anything was printed
-    std::ostringstream * oss = this->new_oss();
+    oss->precision(get_precision());
 
     // go through at most n paths
     for (hfst::HfstTwoLevelPaths::const_iterator it = paths.begin();
@@ -559,8 +556,7 @@ namespace xfst {
 
       } // at most n paths gone through
 
-    hfst_fprintf(outfile, oss->str().c_str()); // TESTING
-    delete oss;
+    //hfst_fprintf(outfile, oss->str().c_str()); // TESTING
 
     return retval;
   }
@@ -600,8 +596,9 @@ namespace xfst {
             cutoff = string_to_size_t(variables_["lookup-cycle-cutoff"]);
             if (verbose_)
               {
-                hfst_fprintf(warnstream_, 
-                             "warning: lookup is infinitely ambiguous, limiting the number of cycles to " SIZE_T_SPECIFIER "\n", cutoff);
+                *error_ << "warning: lookup is infinitely ambiguous, limiting the number of cycles to " << cutoff << std::endl;
+            //hfst_fprintf(warnstream_, 
+            //                "warning: lookup is infinitely ambiguous, limiting the number of cycles to " SIZE_T_SPECIFIER "\n", cutoff);
               }
           }
 
@@ -622,7 +619,8 @@ namespace xfst {
         bool printed = this->print_paths(paths);
         if (!printed)
           {
-            hfst_fprintf(outstream_, "???\n");
+            *output_ << "???" << std::endl;
+            //hfst_fprintf(outstream_, "???\n");
           }
 
         return *this;
@@ -645,21 +643,20 @@ namespace xfst {
         bool printed = this->print_paths(*paths);
         if (!printed)
           {
-            hfst_fprintf(outstream_, "???\n");
+            *output_ << "???" << std::endl; 
+            //hfst_fprintf(outstream_, "???\n");
           }
 
         delete paths;
         return *this;
       }
 
-
-
   XfstCompiler&
   XfstCompiler::lookup_optimize()
   {
     if (stack_.size() < 1)
       {
-        hfst_fprintf(stderr, "Empty stack.\n");
+        EMPTY_STACK;
         xfst_lesser_fail();
         prompt();
         return *this;
@@ -671,7 +668,8 @@ namespace xfst {
     if (t->get_type() == hfst::HFST_OL_TYPE ||
         t->get_type() == hfst::HFST_OLW_TYPE)
       {
-        hfst_fprintf(warnstream_, "Network is already optimized for lookup.\n");
+        *error_ << "Network is already optimized for lookup." << std::endl;
+        //hfst_fprintf(warnstream_, "Network is already optimized for lookup.\n");
         prompt();
         return *this;
       }
@@ -687,9 +685,11 @@ namespace xfst {
 
     if (verbose_)
       {
-        hfst_fprintf(warnstream_, "converting transducer type from %s to %s, this might take a while...\n",
-                     hfst::implementation_type_to_format(t->get_type()),
-                     hfst::implementation_type_to_format(to_format));
+        *error_ << "converting transducer type from " << hfst::implementation_type_to_format(t->get_type()) << " to " 
+                << hfst::implementation_type_to_format(to_format) << ", this might take a while..." << std::endl;
+    //hfst_fprintf(warnstream_, "converting transducer type from %s to %s, this might take a while...\n",
+    //                hfst::implementation_type_to_format(t->get_type()),
+    //                hfst::implementation_type_to_format(to_format));
       }
 
     std::stack<HfstTransducer*> temp;
@@ -714,7 +714,7 @@ namespace xfst {
   {
     if (stack_.size() < 1)
       {
-        hfst_fprintf(stderr, "Empty stack.\n");
+        EMPTY_STACK;
         xfst_lesser_fail();
         prompt();
         return *this;
@@ -724,19 +724,23 @@ namespace xfst {
     if (t->get_type() != hfst::HFST_OL_TYPE &&
         t->get_type() != hfst::HFST_OLW_TYPE)
       {
-        hfst_fprintf(warnstream_, "Network is already in ordinary format.\n");
+        *error_ << "Network is already in ordinary format." << std::endl;
+        //hfst_fprintf(warnstream_, "Network is already in ordinary format.\n");
         prompt();
         return *this;
       }
 
     if (verbose_)
       {
-        hfst_fprintf(warnstream_, "converting transducer type from %s to %s, this might take a while...\n",
-                     hfst::implementation_type_to_format(t->get_type()),
-                     hfst::implementation_type_to_format(format_));
+        *error_ << "converting transducer type from " << hfst::implementation_type_to_format(t->get_type()) << " to " 
+                << hfst::implementation_type_to_format(format_) << ", this might take a while..." << std::endl;
+        //hfst_fprintf(warnstream_, "converting transducer type from %s to %s, this might take a while...\n",
+        //             hfst::implementation_type_to_format(t->get_type()),
+        //             hfst::implementation_type_to_format(format_));
         if (! hfst::HfstTransducer::is_safe_conversion(t->get_type(), format_))
           {
-            hfst_fprintf(warnstream_, "warning: converting from weighted to unweighted format, loss of information is possible\n");
+            *error_ << "warning: converting from weighted to unweighted format, loss of information is possible" << std::endl;
+            //hfst_fprintf(warnstream_, "warning: converting from weighted to unweighted format, loss of information is possible\n");
           }
       }
 
@@ -763,7 +767,7 @@ namespace xfst {
       {
         if (stack_.size() < 1)
           {
-            hfst_fprintf(stderr, "Empty stack.\n");
+            EMPTY_STACK;
             xfst_lesser_fail();
             prompt();
             return *this;
@@ -783,8 +787,9 @@ namespace xfst {
             ol_cutoff = string_to_size_t(variables_["lookup-cycle-cutoff"]);;
             if (verbose_)
               {
-                hfst_fprintf(warnstream_, 
-                             "warning: transducer is infinitely ambiguous, limiting number of cycles to " SIZE_T_SPECIFIER "\n", ol_cutoff);
+                *error_ << "warning: transducer is infinitely ambiguous, limiting number of cycles to " << ol_cutoff << std::endl;
+            //hfst_fprintf(warnstream_, 
+            //                "warning: transducer is infinitely ambiguous, limiting number of cycles to " SIZE_T_SPECIFIER "\n", ol_cutoff);
               }
           }
         
@@ -798,9 +803,11 @@ namespace xfst {
         // lookdown not yet implemented in HFST
         if (verbose_)
           {
-            hfst_fprintf(warnstream_, 
-                         "warning: lookdown not implemented, inverting transducer and performing lookup\n"
-                         "for faster performance, invert and minimize top network and do lookup instead\n\n");
+            *error_ << "warning: lookdown not implemented, inverting transducer and performing lookup" << std::endl
+                    << "for faster performance, invert and minimize top network and do lookup instead" << std::endl << std::endl;
+        //hfst_fprintf(warnstream_, 
+        //                 "warning: lookdown not implemented, inverting transducer and performing lookup\n"
+        //                 "for faster performance, invert and minimize top network and do lookup instead\n\n");
           }
         t = new HfstTransducer(*(stack_.top()));
         t->invert().minimize();
@@ -816,6 +823,7 @@ namespace xfst {
     XfstCompiler&
     XfstCompiler::apply_med_line(char* /*line*/)
       {
+        *error_ << "Missing apply med" << std::endl;
         hfst_fprintf(errorstream_, "Missing apply med %s:%d\n", __FILE__, __LINE__);
 #if 0
         char* token = strstrip(line);
@@ -845,7 +853,8 @@ namespace xfst {
         if (*p == '\0')
           {
             assert(*p != '\0');
-            hfst_fprintf(errorstream_, "no colon in line\n");
+            *error_ << "no colon in line" << std::endl;
+            //hfst_fprintf(errorstream_, "no colon in line\n");
           }
         p++;
         while (isspace(*p))
@@ -906,11 +915,13 @@ namespace xfst {
       {
         if (verbose_)
           {
-            fprintf(stderr, "Command %s is not recognised.\n", s);
+            *error_ << "Command " << std::string(s) << " is not recognised." << std::endl;
+            //fprintf(stderr, "Command %s is not recognised.\n", s);
           }
         return 1;
       }
-    fprintf(stderr, "Command %s is not recognised.\n", s);
+    *error_ << "Command " << std::string(s) << " is not recognised." << std::endl;
+    //fprintf(stderr, "Command %s is not recognised.\n", s);
     this->prompt();
     return 0;
   }
@@ -931,7 +942,7 @@ namespace xfst {
       {
         if (stack_.size() < 1)
           {
-            hfst_fprintf(stderr, "Empty stack.\n");
+            EMPTY_STACK;
             xfst_lesser_fail();
             prompt();
             return *this;
@@ -947,8 +958,9 @@ namespace xfst {
             if (t->get_type() == hfst::HFST_OL_TYPE ||
                 t->get_type() == hfst::HFST_OLW_TYPE)
               {
-                hfst_fprintf(stderr, "Operation not supported for optimized lookup format. "
-                             "Consider 'remove-optimization' to convert into ordinary format.\n");
+                *error_ << "Operation not supported for optimized lookup format. Consider 'remove-optimization' to convert into ordinary format." << std::endl; 
+                //hfst_fprintf(stderr, "Operation not supported for optimized lookup format. "
+                //             "Consider 'remove-optimization' to convert into ordinary format.\n");
                 prompt();
                 return *this;
               }
@@ -956,9 +968,11 @@ namespace xfst {
             // lookdown not yet implemented in HFST
             if (verbose_)
               {
-                hfst_fprintf(warnstream_, 
-                             "warning: lookdown not implemented, inverting transducer and performing lookup\n"
-                             "for faster performance, invert and minimize top network and do lookup instead\n\n");
+                *error_ << "warning: lookdown not implemented, inverting transducer and performing lookup" << std::endl
+                        << "for faster performance, invert and minimize top network and do lookup instead" << std::endl << std::endl;
+                //hfst_fprintf(warnstream_, 
+                //             "warning: lookdown not implemented, inverting transducer and performing lookup\n"
+                //             "for faster performance, invert and minimize top network and do lookup instead\n\n");
               }
             t = new HfstTransducer(*(stack_.top()));
             t->invert().minimize();
@@ -976,8 +990,9 @@ namespace xfst {
                 ol_cutoff = string_to_size_t(variables_["lookup-cycle-cutoff"]);
                 if (verbose_)
                   {
-                    hfst_fprintf(warnstream_, 
-                                 "warning: transducer is infinitely ambiguous, limiting number of cycles to " SIZE_T_SPECIFIER "\n", ol_cutoff);
+                    *error_ << "warning: transducer is infinitely ambiguous, limiting number of cycles to " << ol_cutoff << std::endl;
+                //hfst_fprintf(warnstream_, 
+                //                 "warning: transducer is infinitely ambiguous, limiting number of cycles to " SIZE_T_SPECIFIER "\n", ol_cutoff);
                   }
               }
           }
@@ -998,7 +1013,8 @@ namespace xfst {
               {
                 // the next command must start on a fresh line
                 if (infile == stdin) {
-                  hfst_fprintf(outstream_, "\n");
+                  *output_ << std::endl;
+                  //hfst_fprintf(outstream_, "\n");
                 }
                 break;
               }
@@ -1108,7 +1124,8 @@ namespace xfst {
       {
         if ((strlen(start) > 1) || (strlen(end) > 1))
           {
-            hfst_fprintf(errorstream_, "unsupported unicode range %s-%s\n", start, end);
+            *error_ << "unsupported unicode range " << std::string(start) << "-" << std::string(end) << std::endl;
+        //hfst_fprintf(errorstream_, "unsupported unicode range %s-%s\n", start, end);
           }
         std::set<string> l;
         for (char c = *start; c < *end; c++)
@@ -1127,9 +1144,12 @@ namespace xfst {
       {
         if (definitions_.find(name) != definitions_.end())
           {
-            fprintf(warnstream_, "Error: '%s' has already been defined as a transducer variable.\n"
-                    "It cannot have an incompatible definition as a list.\n"
-                    "Please undefine the definition first.\n", name);
+            *error_ << "Error: '" << std::string(name) << "' has already been defined as a transducer variable." << std::endl
+                    << "It cannot have an incompatible definition as a list." << std::endl
+                    << "Please undefine the definition first." << std::endl;
+            //fprintf(warnstream_, "Error: '%s' has already been defined as a transducer variable.\n"
+            //        "It cannot have an incompatible definition as a list.\n"
+            //        "Please undefine the definition first.\n", name);
             MAYBE_QUIT;
             PROMPT_AND_RETURN_THIS;
           }
@@ -1165,10 +1185,10 @@ namespace xfst {
     if (verbose_) 
       {
         if (was_defined)
-          hfst_fprintf(outstream_, "Redefined");
+          *output_ << "Redefined"; // hfst_fprintf(outstream_, "Redefined");
         else
-          hfst_fprintf(outstream_, "Defined");
-        hfst_fprintf(outstream_, " '%s'\n", name); 
+          *output_ << "Defined"; // hfst_fprintf(outstream_, "Defined");
+        *output_ << " '" << std::string(name) << "'" << std::endl; // hfst_fprintf(outstream_, " '%s'\n", name); 
       }          
     original_definitions_[name] = "<net taken from stack>";
     PROMPT_AND_RETURN_THIS;
@@ -1189,9 +1209,12 @@ namespace xfst {
 
         if (lists_.find(name) != lists_.end())
           {
-            fprintf(warnstream_, "Error: '%s' has already been defined as a list variable.\n"
-                    "It cannot have an incompatible definition as a transducer.\n"
-                    "Please undefine the variable first.\n", name);
+            *error_ << "Error: '" << std::string(name) << "' has already been defined as a list variable." << std::endl
+                    << "It cannot have an incompatible definition as a transducer." << std::endl
+                    << "Please undefine the variable first." << std::endl;
+            //fprintf(warnstream_, "Error: '%s' has already been defined as a list variable.\n"
+            //        "It cannot have an incompatible definition as a transducer.\n"
+            //        "Please undefine the variable first.\n", name);
             MAYBE_QUIT;
             PROMPT_AND_RETURN_THIS;
           }
@@ -1202,8 +1225,10 @@ namespace xfst {
           //if (!was_defined)
           if (! xre_.define(name, xre))  // todo: equal to latest_regex_compiled ?
             {
-              hfst_fprintf(errorstream_, "Could not define variable %s:\n%s\n", 
-                           name, xre_.get_error_message().c_str());
+              *error_ << "Could not define variable '" << std::string(name) << "'" << std::endl
+                      << xre_.get_error_message() << std::endl;
+              //hfst_fprintf(errorstream_, "Could not define variable %s:\n%s\n", 
+              //             name, xre_.get_error_message().c_str());
               xfst_fail();
             }
           HfstTransducer * nu = new HfstTransducer(*latest_regex_compiled); 
@@ -1214,17 +1239,19 @@ namespace xfst {
           if (verbose_) 
             {
               if (was_defined)
-                hfst_fprintf(outstream_, "Redefined");
+                *output_ << "Redefined" << std::endl; // hfst_fprintf(outstream_, "Redefined");
               else
-                hfst_fprintf(outstream_, "Defined");
-              hfst_fprintf(outstream_, " '%s'\n", name); 
+                *output_ << "Defined" << std::endl; // hfst_fprintf(outstream_, "Defined");
+              *output_ << " '" << std::string(name) << "'" << std::endl; // hfst_fprintf(outstream_, " '%s'\n", name); 
             }          
           original_definitions_[name] = xre;
         }
       else
         {
-          hfst_fprintf(errorstream_, "Could not define variable %s:\n%s\n", 
-                  name, xre_.get_error_message().c_str());
+          *error_ << "Could not define variable '" << std::string(name) << "'" << std::endl
+                  << xre_.get_error_message() << std::endl;
+          //hfst_fprintf(errorstream_, "Could not define variable %s:\n%s\n", 
+          //        name, xre_.get_error_message().c_str());
           xfst_fail();
         }
       PROMPT_AND_RETURN_THIS;
@@ -2706,7 +2733,7 @@ namespace xfst {
   }
 
   XfstCompiler& 
-  XfstCompiler::print_shortest_string(FILE* outfile)
+  XfstCompiler::print_shortest_string(std::ostream * oss)
     {
       GET_TOP(topmost);
 
@@ -2715,16 +2742,17 @@ namespace xfst {
 
       if (paths.size() == 0)
         {
-          hfst_fprintf(outstream_, "transducer is empty\n");
+          *output_ << "transducer is empty" << std::endl;
+          //hfst_fprintf(outstream_, "transducer is empty\n");
         }
       else
         {
-          print_paths(paths, outfile);
+          print_paths(paths, oss);
         }
       PROMPT_AND_RETURN_THIS;
     }
   XfstCompiler& 
-  XfstCompiler::print_shortest_string_size(FILE* outfile)
+  XfstCompiler::print_shortest_string_size(std::ostream * oss)
     {
       GET_TOP(topmost);
 
@@ -2732,33 +2760,37 @@ namespace xfst {
       this->shortest_string(topmost, paths);
 
       if (paths.size() == 0) {
-        hfst_fprintf(outstream_, "transducer is empty\n");
+        *output_ << "transducer is empty" << std::endl;
+        //hfst_fprintf(outstream_, "transducer is empty\n");
       }
       else {
-        hfst_fprintf(outfile, "%i\n", (int)(paths.begin()->second.size()));
+        *oss << (int)(paths.begin()->second.size()) << std::endl;
+        //hfst_fprintf(outfile, "%i\n", (int)(paths.begin()->second.size()));
       }
       PROMPT_AND_RETURN_THIS;
     }
 
   XfstCompiler&
   XfstCompiler::print_one_string_or_its_size
-  (FILE* outfile, const HfstTwoLevelPaths & paths, const char * level, bool print_size)
+  (std::ostream * oss, const HfstTwoLevelPaths & paths, const char * level, bool print_size)
   {
     assert(level != NULL);
-    hfst_fprintf(outfile, "%s: ", level);
+    *oss << std::string(level) << ": ";
+    //hfst_fprintf(outfile, "%s: ", level);
     if (print_size)
       {
-        hfst_fprintf(outfile, "%i\n", (int)paths.begin()->second.size());
+        *oss << (int)paths.begin()->second.size() << std::endl;
+        //hfst_fprintf(outfile, "%i\n", (int)paths.begin()->second.size());
       }
     else
       {
-        print_paths(paths, outfile, 1);
+        print_paths(paths, oss, 1);
       }
     return *this;
   }
 
   XfstCompiler&
-  XfstCompiler::print_longest_string_or_its_size(FILE* outfile, bool print_size)
+  XfstCompiler::print_longest_string_or_its_size(std::ostream * oss, bool print_size)
   {
     GET_TOP(topmost);
 
@@ -2813,40 +2845,42 @@ namespace xfst {
       
       // print one longest string of the upper level, if not cyclic
       if (upper_is_cyclic) {
-        hfst_fprintf(outfile, "Upper level is cyclic.\n"); }
+        //hfst_fprintf(outfile, "Upper level is cyclic.\n"); }
+        *oss << "Upper level is cyclic." << std::endl; }
       else {
-        print_one_string_or_its_size(outfile, paths_upper, "Upper", print_size); }
+        print_one_string_or_its_size(oss, paths_upper, "Upper", print_size); }
       
       // print one longest string of the lower level, if not cyclic
         if (lower_is_cyclic) {
-          hfst_fprintf(outfile, "Lower level is cyclic.\n"); }
+          //hfst_fprintf(outfile, "Lower level is cyclic.\n"); }
+          *oss << "Lower level is cyclic." << std::endl; }
         else {
-          print_one_string_or_its_size(outfile, paths_lower, "Lower", print_size); }
+          print_one_string_or_its_size(oss, paths_lower, "Lower", print_size); }
     }
 
     PROMPT_AND_RETURN_THIS;
   }
 
   XfstCompiler& 
-  XfstCompiler::print_longest_string(FILE* outfile)
+  XfstCompiler::print_longest_string(std::ostream * oss)
     {
-      return print_longest_string_or_its_size(outfile, false);
+      return print_longest_string_or_its_size(oss, false);
     }
 
   XfstCompiler& 
-  XfstCompiler::print_longest_string_size(FILE* outfile)
+  XfstCompiler::print_longest_string_size(std::ostream * oss)
     {
-      return print_longest_string_or_its_size(outfile, true);
+      return print_longest_string_or_its_size(oss, true);
     }
 
   XfstCompiler& 
   XfstCompiler::print_lower_words(const char * name, unsigned int number,
-                                  FILE* outfile)
+                                  std::ostream * oss)
     {
-      return print_words(name, number, outfile, LOWER_LEVEL);
+      return print_words(name, number, oss, LOWER_LEVEL);
     }
   XfstCompiler& 
-  XfstCompiler::print_random_lower(const char * name, unsigned int number, FILE* outfile)
+  XfstCompiler::print_random_lower(const char * name, unsigned int number, std::ostream * oss)
     {
       hfst::HfstTwoLevelPaths paths;
 
@@ -2864,7 +2898,8 @@ namespace xfst {
             = definitions_.find(name);
           if (it == definitions_.end())
             {
-              hfst_fprintf(outfile, "no such definition '%s'\n", name);
+              //hfst_fprintf(outfile, "no such definition '%s'\n", name);
+              *oss << "no such definition '" << std::string(name) << "'" << std::endl;
               prompt();
               return *this;
             }
@@ -2876,17 +2911,17 @@ namespace xfst {
 
       tmp.output_project();
       tmp.extract_random_paths(paths, number);
-      print_paths(paths, outfile);
+      print_paths(paths, oss);
       PROMPT_AND_RETURN_THIS;
     }
   XfstCompiler& 
   XfstCompiler::print_upper_words(const char * name, unsigned int number,
-                                  FILE* outfile)
+                                  std::ostream * oss)
     {
-      return print_words(name, number, outfile, UPPER_LEVEL);
+      return print_words(name, number, oss, UPPER_LEVEL);
     }
   XfstCompiler&
-  XfstCompiler::print_random_upper(const char * name, unsigned int number, FILE* outfile)
+  XfstCompiler::print_random_upper(const char * name, unsigned int number, std::ostream * oss)
     {
       hfst::HfstTwoLevelPaths paths;
 
@@ -2904,7 +2939,8 @@ namespace xfst {
             = definitions_.find(name);
           if (it == definitions_.end())
             {
-              hfst_fprintf(outfile, "no such definition '%s'\n", name);
+              *oss << "no such definition '" << std::string(name) << std::endl;
+              //hfst_fprintf(outfile, "no such definition '%s'\n", name);
               prompt();
               return *this;
             }
@@ -2916,20 +2952,20 @@ namespace xfst {
 
       tmp.input_project();
       tmp.extract_random_paths(paths, number);
-      print_paths(paths, outfile);
+      print_paths(paths, oss);
       PROMPT_AND_RETURN_THIS;
     }
 
   XfstCompiler& 
   XfstCompiler::print_words(const char * name, unsigned int number,
-                            FILE* outfile)
+                            std::ostream * oss)
   {
-    return print_words(name, number, outfile, BOTH_LEVELS);
+    return print_words(name, number, oss, BOTH_LEVELS);
   }
 
   XfstCompiler& 
   XfstCompiler::print_words(const char * name, unsigned int number,
-                            FILE* outfile, Level level)
+                            std::ostream * oss, Level level)
     {
       HfstTransducer temp(format_);
       if (name == NULL)
@@ -2945,7 +2981,8 @@ namespace xfst {
             = definitions_.find(name);
           if (it == definitions_.end())
             {
-              hfst_fprintf(outfile, "no such definition '%s'\n", name);
+              *oss << "no such definition '" << std::string(name) << "'" << std::endl;
+              //hfst_fprintf(outfile, "no such definition '%s'\n", name);
               prompt();
               return *this;
             }
@@ -2990,13 +3027,13 @@ namespace xfst {
             temp.extract_paths_fd(results, number, cutoff);
         }
 
-      print_paths(results, outfile);
+      print_paths(results, oss);
 
       PROMPT_AND_RETURN_THIS;
     }
 
   XfstCompiler& 
-  XfstCompiler::print_random_words(const char * name, unsigned int number, FILE* outfile)
+  XfstCompiler::print_random_words(const char * name, unsigned int number, std::ostream * oss)
     {
       const HfstTransducer * tmp = NULL;
       if (name == NULL)
@@ -3011,7 +3048,8 @@ namespace xfst {
             = definitions_.find(name);
           if (it == definitions_.end())
             {
-              hfst_fprintf(outfile, "no such definition '%s'\n", name);
+              *oss << "no such definition '" << std::string(name) << "'" << std::endl; 
+              //hfst_fprintf(outfile, "no such definition '%s'\n", name);
               prompt();
               return *this;
             }
@@ -3023,7 +3061,7 @@ namespace xfst {
 
       hfst::HfstTwoLevelPaths paths;
       tmp->extract_random_paths(paths, number);
-      print_paths(paths, outfile);
+      print_paths(paths, oss);
       PROMPT_AND_RETURN_THIS;
     }
   XfstCompiler& 
