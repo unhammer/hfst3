@@ -1098,7 +1098,7 @@ ccc : ddd
     //! transducer.
     //!
     //! \warning{This function will convert the transducer into
-    //! HFST_OLW_FORMAT which may be very slow for large transducers. Lookup
+    //! HFST_OLW_TYPE which may be very slow for large transducers. Lookup
     //! speed can therefore be *extremely* slow.}
     //!
     //! @param s  String to look up. The weight is ignored.
