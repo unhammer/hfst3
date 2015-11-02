@@ -116,6 +116,11 @@ namespace hfst {
           return transition_data.get_weight();
         }
 
+       /** @brief Set the weight of the transition. */
+        HFSTDLL void set_weight(float w) {
+          transition_data.set_weight(w);
+        }
+
         friend class ComposeIntersectFst;
         friend class ComposeIntersectLexicon;
         friend class ComposeIntersectRule;

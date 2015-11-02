@@ -245,6 +245,12 @@ namespace hfst {
         return weight;
       }
 
+      /** @brief Set the weight. */
+      HFSTDLL void set_weight(WeightType w) {
+        weight = w;
+      }
+
+
       /* Are these needed? */
       HFSTDLL static bool is_epsilon(const SymbolType &symbol) {
         return (symbol.compare("@_EPSILON_SYMBOL_@") == 0);

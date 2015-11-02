@@ -690,6 +690,15 @@
            return this->operator[](s);
          }
 
+         /** @brief Get mutable transitions.
+          */
+         HFSTDLL HfstTransitions & transitions(HfstState s) 
+         {
+           if (s >= state_vector.size()) { 
+             HFST_THROW(StateIndexOutOfBoundsException); }
+           return state_vector[s];
+         }
+
      // --------------------------------------------------
      // -----   Reading and writing in AT&T format   -----
      // --------------------------------------------------
