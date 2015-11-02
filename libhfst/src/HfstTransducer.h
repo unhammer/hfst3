@@ -1097,6 +1097,10 @@ ccc : ddd
     //! This is an overloaded lookup_fd that leaves tokenizing to the
     //! transducer.
     //!
+    //! \warning{This function will convert the transducer into
+    //! HFST_OLW_FORMAT which may be very slow for large transducers. Lookup
+    //! speed can therefore be *extremely* slow.}
+    //!
     //! @param s  String to look up. The weight is ignored.
     //! @param limit  (Currently ignored.) Number of strings to look up. 
     //!               -1 tries to look up all and may get stuck 
