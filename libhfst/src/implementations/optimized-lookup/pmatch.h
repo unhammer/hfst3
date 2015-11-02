@@ -158,6 +158,7 @@ namespace hfst_ol {
         bool verbose;
         bool locate_mode;
         bool profile_mode;
+        bool single_codepoint_tokenization;
         unsigned int recursion_depth_left;
 
     public:
@@ -192,6 +193,8 @@ namespace hfst_ol {
         void set_verbose(bool b) { verbose = b; }
         void set_extract_tags_mode(bool b)
             { alphabet.extract_tags = b; }
+        void set_single_codepoint_tokenization(bool b)
+            { single_codepoint_tokenization = b; }
         void set_profile(bool b) { profile_mode = b; }
         bool try_recurse(void)
         {

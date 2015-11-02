@@ -161,6 +161,8 @@ void PmatchAlphabet::count(SymbolNumber sym)
 PmatchContainer::PmatchContainer(std::istream & inputstream):
     verbose(false),
     locate_mode(false),
+    profile_mode(false),
+    single_codepoint_tokenization(false),
     recursion_depth_left(PMATCH_MAX_RECURSION_DEPTH),
     entry_stack()
 {
@@ -950,28 +952,47 @@ void PmatchTransducer::collect_first(TransitionTableIndex i,
 
 void PmatchContainer::initialize_input(const char * input_s)
 {
+    input.clear();
     char * input_str = const_cast<char *>(input_s);
     char ** input_str_ptr = &input_str;
     SymbolNumber k = NO_SYMBOL_NUMBER;
     SymbolNumber boundary_sym = alphabet.get_special(boundary);
-    input.clear();
+    char * single_codepoint_scratch;
+    char * single_codepoint_scratch_orig;
+    if (single_codepoint_tokenization) {
+        single_codepoint_scratch = new char[5];
+        single_codepoint_scratch_orig = single_codepoint_scratch;
+    }
     if (boundary_sym != NO_SYMBOL_NUMBER) {
         input.push_back(boundary_sym);
     }
     while (**input_str_ptr != 0) {
         char * original_input_loc = *input_str_ptr;
-        k = encoder->find_key(input_str_ptr);
+        if (single_codepoint_tokenization) {
+            int bytes_to_tokenize = nByte_utf8(**input_str_ptr);
+            if (bytes_to_tokenize > 0) {
+                single_codepoint_scratch = single_codepoint_scratch_orig;
+                memcpy(single_codepoint_scratch, *input_str_ptr, bytes_to_tokenize);
+                single_codepoint_scratch[bytes_to_tokenize] = '\0';
+                k = encoder->find_key(&single_codepoint_scratch);
+                if (k != NO_SYMBOL_NUMBER) {
+                    (*input_str_ptr) += bytes_to_tokenize;
+                }
+            }
+        } else {
+            k = encoder->find_key(input_str_ptr);
+        }
         if (k == NO_SYMBOL_NUMBER) {
+            // Regular tokenization failed
             // the encoder moves as far as it can during tokenization,
             // we want to go back to be in position to add one utf-8 char
             *input_str_ptr = original_input_loc;
-            // Regular tokenization failed
             int bytes_to_tokenize = nByte_utf8(**input_str_ptr);
             if (bytes_to_tokenize == 0) {
-                // even if it's not utf-8, tokenize a byte at a time
+                // if utf-8 tokenization fails too, just grab a byte
                 bytes_to_tokenize = 1;
             }
-            char * new_symbol = new char [bytes_to_tokenize + 1];
+            char new_symbol[5];
             memcpy(new_symbol, *input_str_ptr, bytes_to_tokenize);
             new_symbol[bytes_to_tokenize] = '\0';
             (*input_str_ptr) += bytes_to_tokenize;
@@ -979,12 +1000,14 @@ void PmatchContainer::initialize_input(const char * input_s)
             encoder->read_input_symbol(new_symbol, symbol_count);
             k = symbol_count;
             ++symbol_count;
-            delete [] new_symbol;
         }
         input.push_back(k);
     }
     if (boundary_sym != NO_SYMBOL_NUMBER) {
         input.push_back(boundary_sym);
+    }
+    if (single_codepoint_tokenization) {
+        delete single_codepoint_scratch_orig;
     }
     return;
 }
@@ -1168,6 +1191,7 @@ void PmatchTransducer::check_context(unsigned int input_pos,
                                      unsigned int tape_pos,
                                      TransitionTableIndex i)
 {
+//    std::cerr << local_stack.size() << std::endl;
     local_stack.top().context_placeholder = input_pos;
     if (local_stack.top().context == LC ||
         local_stack.top().context == NLC) {
@@ -1178,14 +1202,19 @@ void PmatchTransducer::check_context(unsigned int input_pos,
     // In case we have a negative context, we check to see if the context matched.
     // If it did, we schedule a passthrough arc after we've processed epsilons.
     bool schedule_passthrough = false;
+//            std::cerr << "!local_stack.top().negative_context_success is " <<
+//            !local_stack.top().negative_context_success << std::endl;
+
     if((local_stack.top().context == NLC || local_stack.top().context == NRC)
        && !local_stack.top().negative_context_success) {
         schedule_passthrough = true;
+//        std::cerr << "scheduled passthrough\n";
     }
     local_stack.pop();
     if (schedule_passthrough) {
         local_stack.top().pending_passthrough = true;
     }
+//    std::cerr << local_stack.size() << std::endl;
 }
 
 void PmatchTransducer::take_rtn(SymbolNumber input,
@@ -1297,9 +1326,9 @@ void PmatchTransducer::get_analyses(unsigned int input_pos,
         }
         return;
     }
-
     local_stack.top().default_symbol_trap = true;
     take_epsilons(input_pos, tape_pos, i + 1);
+//    std::cerr << "get_analyses local stack size is " << local_stack.size() << std::endl;
     if (local_stack.top().pending_passthrough) {
         // A negative context failed
         take_transitions(alphabet.get_special(Pmatch_passthrough),

@@ -52,6 +52,7 @@ using std::pair;
 bool blankline_separated = true;
 bool print_all = false;
 bool print_weights = false;
+bool tokenize_multichar = false;
 std::string tokenizer_filename;
 enum OutputFormat {
     tokenize,
@@ -77,10 +78,13 @@ print_usage()
             "  -n  --newline          Newline as input separator (default is blank line)\n"
             "  -a  --print-all        Print nonmatching text\n"
             "  -w  --print-weight     Print weights\n"
+            "  --tokenize-multichar   Tokenize multicharacter symbols\n"
+            "                         (by default only one utf-8 character is tokenized at a time"
+            "                         regardless of what is present in the alphabet)"
             "  --segment              Segmenting / tokenization mode (default)\n"
             "  --xerox                Xerox output\n"
             "  --cg                   cg output\n"
-            " --finnpos               FinnPos output\n");
+            "  --finnpos              FinnPos output\n");
     fprintf(message_out, 
             "Use standard streams for input and output (for now).\n"
             "\n"
@@ -277,6 +281,7 @@ int parse_options(int argc, char** argv)
                 {"newline", no_argument, 0, 'n'},
                 {"print-all", no_argument, 0, 'a'},
                 {"print-weights", no_argument, 0, 'w'},
+                {"tokenize-multichar", no_argument, 0, 'm'},
                 {"segment", no_argument, 0, 't'},
                 {"xerox", no_argument, 0, 'x'},
                 {"cg", no_argument, 0, 'c'},
@@ -303,6 +308,9 @@ int parse_options(int argc, char** argv)
             break;
         case 'w':
             print_weights = true;
+            break;
+        case 'm':
+            tokenize_multichar = true;
             break;
         case 't':
             output_format = tokenize;
@@ -371,6 +379,7 @@ int main(int argc, char ** argv)
     try {
         hfst_ol::PmatchContainer container(instream);
         container.set_verbose(verbose);
+        container.set_single_codepoint_tokenization(!tokenize_multichar);
         return process_input(container, std::cout);
     } catch(HfstException & e) {
         std::cerr << "The archive in " << tokenizer_filename << " doesn't look right."
