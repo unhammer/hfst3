@@ -1081,7 +1081,7 @@
              {
                if (symbols_used_.find(*it) == symbols_used_.end())
                  {
-                   os << "symbol(" << name << ", \"" << prologize_symbol(*it) << "\")" << std::endl;
+                   os << "symbol(" << name << ", \"" << prologize_symbol(*it) << "\")." << std::endl;
                  }
              }
 
