@@ -3884,7 +3884,7 @@ HfstTransducer &HfstTransducer::merge
   // filter non-optimal paths
   // [ ? | #V ?:? ]* %#V:V ?:0 [ ? | #V ?:? | %#V:V ?:0 ]*
   hfst::xre::XreCompiler xre_(args);
-  xre_.set_verbosity(false, NULL);
+  xre_.set_verbosity(false);
 
   for (std::set<std::string>::const_iterator it = markers_added.begin(); it != markers_added.end(); it++)
     {

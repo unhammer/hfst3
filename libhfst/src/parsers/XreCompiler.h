@@ -111,7 +111,6 @@ class XreCompiler
   //! @brief Remove a definition macro.
   void undefine(const std::string& name);
 
-
   //! @brief Compile a transducer defined by @a xre.
   //!        May return a pointer to @e empty transducer on non-fatal error.
   //!        A null pointer is returned on fatal error, if abort is not called.
@@ -123,8 +122,6 @@ class XreCompiler
   //!        May return a pointer to @e empty transducer on non-fatal error.
   //!        A null pointer is returned on fatal error, if abort is not called.
   HfstTransducer* compile_first(const std::string& xre, unsigned int & chars_read);
-
-  std::string get_error_message();
 
   //! @brief Whether the last regex compiled contained only comments.
   //!        
@@ -148,9 +145,10 @@ class XreCompiler
   //!        Default is false.
   void set_flag_harmonization(bool harmonize_flags);
 
-  //! @brief Whether warning messages are printed to \a file.
-  //!        Default is false, If verbose==false, \a file is ignored.
-  void set_verbosity(bool verbose, FILE * file);
+  void set_verbosity(bool verbose);
+  bool get_verbosity();
+  void set_error_stream(std::ostream * os);
+  std::ostream * get_error_stream();
 
   private:
   std::map<std::string,hfst::HfstTransducer*> definitions_;
@@ -158,6 +156,7 @@ class XreCompiler
   std::map<std::string, unsigned int > function_arguments_;
   std::map<std::string, std::set<std::string> > list_definitions_;
   hfst::ImplementationType format_;
+  bool verbose_;
 
 }
 ;

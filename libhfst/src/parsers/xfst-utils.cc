@@ -52,32 +52,33 @@ namespace hfst { namespace xfst {
         char* r = fgets(*s, *n, f);
         if (r == 0)
           {
-            fprintf(stderr, "unable to read in substitute getline\n");
+            //fprintf(stderr, "unable to read in substitute getline\n");
             return -1;
           }
         return *n;
-       }
+      }
 #endif
 
-void
-xfst_fclose(FILE * file, const char * name)
-{
-  if (0 != fclose(file))
-    {
-      fprintf(stderr, "Unable to close %s: %s\n", name, strerror(errno));
-    }
-}
+    //void
+    //xfst_fclose(FILE * file, const char * name)
+    //{
+    //return fclose(file))
+    //{
+    //  //fprintf(stderr, "Unable to close %s: %s\n", name, strerror(errno));
+    //  throw strerr;
+    //}
+    //}
 
-FILE*
-xfst_fopen(const char* path, const char* mode)
-  {
-    FILE* f = fopen(path, mode);
-    if (f == NULL)
-      {
-        fprintf(stderr, "Unable to open %s: %s\n", path, strerror(errno));
-      }
-    return f;
-  }
+    //FILE*
+    //xfst_fopen(const char* path, const char* mode)
+    //{
+    //FILE* f = fopen(path, mode);
+    //if (f == NULL)
+    //  {
+    //    fprintf(stderr, "Unable to open %s: %s\n", path, strerror(errno));
+    //  }
+    //return f;
+    //}
 
 char*
 strdup_token_part()
@@ -104,7 +105,7 @@ strdup_token_part()
     return error_token;
 }
 
-char*
+    /*char*
 strip_percents(const char* s, bool do_zeros)
 {
     char* rv = (char*)malloc(sizeof(char)*strlen(s)*6+1);
@@ -166,7 +167,7 @@ strip_percents(const char* s, bool do_zeros)
         return NULL;
     }
     return rv;
-}
+    }*/
 
 char*
 strstrip(const char* s)

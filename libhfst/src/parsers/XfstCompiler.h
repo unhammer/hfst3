@@ -236,34 +236,34 @@ class XfstCompiler
   XfstCompiler& substitute_symbol(const char* list, const char* target);
 
   //! @brief Print aliases
-  XfstCompiler& print_aliases(FILE* outfile);
+  XfstCompiler& print_aliases(std::ostream * oss);
   //! @brief Print arc count for @a level
-  XfstCompiler& print_arc_count(const char* level, FILE* outfile);
+  XfstCompiler& print_arc_count(const char* level, std::ostream * oss);
   //! @brief Print arc count
-  XfstCompiler& print_arc_count(FILE* outfile);
+  XfstCompiler& print_arc_count(std::ostream * oss);
   //! @brief Print definition
-  XfstCompiler& print_defined(FILE* outfile);
+  XfstCompiler& print_defined(std::ostream * oss);
   //! @brief Print directory contents
-  XfstCompiler& print_dir(const char* glob, FILE* outfile);
+  XfstCompiler& print_dir(const char* glob, std::ostream * oss);
   //! @brief Print file info
-  XfstCompiler& print_file_info(FILE* outfile);
+  XfstCompiler& print_file_info(std::ostream * oss);
   //! @brief Print flag diacritics
-  XfstCompiler& print_flags(FILE* outfile);
+  XfstCompiler& print_flags(std::ostream * oss);
 
-  XfstCompiler& print_labels(FILE* outfile, HfstTransducer* tr);
+  XfstCompiler& print_labels(std::ostream * oss, HfstTransducer* tr);
 
   //! @brief Print labels in network @a name
-  XfstCompiler& print_labels(const char* name, FILE* outfile);
+  XfstCompiler& print_labels(const char* name, std::ostream * oss);
   //! @brief Print labels
-  XfstCompiler& print_labels(FILE* outfile);
+  XfstCompiler& print_labels(std::ostream * oss);
   //! @brief Print label mappings
-  XfstCompiler& print_labelmaps(FILE* outfile);
+  XfstCompiler& print_labelmaps(std::ostream * oss);
   //! @brief Print label count
-  XfstCompiler& print_label_count(FILE* outfile);
+  XfstCompiler& print_label_count(std::ostream * oss);
   //! @brief Print list named @a name
-  XfstCompiler& print_list(const char* name, FILE* outfile);
+  XfstCompiler& print_list(const char* name, std::ostream * oss);
   //! @brief Print all lists
-  XfstCompiler& print_list(FILE* outfile);
+  XfstCompiler& print_list(std::ostream * oss);
 
   XfstCompiler& shortest_string
     (const hfst::HfstTransducer* transducer, hfst::HfstTwoLevelPaths& paths);
@@ -292,41 +292,41 @@ class XfstCompiler
   //! @brief Print random pair strings of language
   XfstCompiler& print_random_words(const char * name, unsigned int number, std::ostream * oss);
   //! @brief Print name of top network
-  XfstCompiler& print_name(FILE* outfile);
+  XfstCompiler& print_name(std::ostream * oss);
   //! @brief Print network
-  XfstCompiler& print_net(FILE* outfile);
+  XfstCompiler& print_net(std::ostream * oss);
   //! @brief Print network named @a name
-  XfstCompiler& print_net(const char* name, FILE* outfile);
+  XfstCompiler& print_net(const char* name, std::ostream * oss);
   //! @brief Print properties of top network
-  XfstCompiler& print_properties(FILE* outfile);
+  XfstCompiler& print_properties(std::ostream * oss);
   //! @brief Print properties of network named @a name
-  XfstCompiler& print_properties(const char* name, FILE* outfile);
+  XfstCompiler& print_properties(const char* name, std::ostream * oss);
   //! @brief Print all symbols of network named @a name
-  XfstCompiler& print_sigma(const char* name, FILE* outfile);
+  XfstCompiler& print_sigma(const char* name, std::ostream * oss);
   //! @brief Print all symbols of network
-  XfstCompiler& print_sigma(FILE* outfile, bool prompt=true);
+  XfstCompiler& print_sigma(std::ostream * oss, bool prompt=true);
   //! @brief Print nnumber of symbols in network
-  XfstCompiler& print_sigma_count(FILE* outfile);
+  XfstCompiler& print_sigma_count(std::ostream * oss);
   //! @brief Print number of paths with all symbols on @a level
-  XfstCompiler& print_sigma_word_count(const char* level, FILE* outfile);
+  XfstCompiler& print_sigma_word_count(const char* level, std::ostream * oss);
   //! @brief Print number of paths with all symbols
-  XfstCompiler& print_sigma_word_count(FILE* outfile);
+  XfstCompiler& print_sigma_word_count(std::ostream * oss);
   //! @brief Print size of network named @a name
-  XfstCompiler& print_size(const char* name, FILE* outfile);
+  XfstCompiler& print_size(const char* name, std::ostream * oss);
   //! @brief Print size of top network
-  XfstCompiler& print_size(FILE* outfile);
+  XfstCompiler& print_size(std::ostream * oss);
   //! @brief Print all networks in stack
-  XfstCompiler& print_stack(FILE* outfile);
+  XfstCompiler& print_stack(std::ostream * oss);
   //! @brief Save @a name network in dot form in @a outfile
-  XfstCompiler& write_dot(const char* name, FILE* outfile);
+  XfstCompiler& write_dot(const char* name, std::ostream * oss);
   //! @brief Save top networks dot form in @a outfile
-  XfstCompiler& write_dot(FILE* outfile);
+  XfstCompiler& write_dot(std::ostream * oss);
   //! @brief Save top networks prolog form in @a outfile
-  XfstCompiler& write_prolog(FILE* outfile);
+  XfstCompiler& write_prolog(std::ostream * oss);
   //! @brief Save top networks spaced paths form in @a outfile
-  XfstCompiler& write_spaced(FILE* outfile);
+  XfstCompiler& write_spaced(std::ostream * oss);
   //! @brief Save top networks paths form in @a outfile
-  XfstCompiler& write_text(FILE* outfile);
+  XfstCompiler& write_text(std::ostream * oss);
   //! @brief Save function @a name in @a outfile
   //! @todo HFST does not support function macros in automata
   XfstCompiler& write_function(const char* name, const char* outfilename);
@@ -371,7 +371,7 @@ class XfstCompiler
   //! @brief Read a transducer in att format from file @a filename
   XfstCompiler& read_att_from_file(const char * filename);
   //! @brief Write top transducer in att format to @a outfile
-  XfstCompiler& write_att(FILE* outfile);
+  XfstCompiler& write_att(std::ostream * oss);
 
   //! @brief do some label pushing
   //! @todo HFST automata cannot push labels
@@ -513,6 +513,14 @@ class XfstCompiler
   // For xfst parser.
   bool get_fail_flag() const;
 
+  void set_error_stream(std::ostream & os);
+  std::ostream & get_error_stream();
+  void set_output_stream(std::ostream & os);
+  std::ostream & get_output_stream();
+
+  int xfst_fclose(FILE * f, const char * name);
+  FILE * xfst_fopen(const char* path, const char* mode);
+
  protected:
   //! @brief Get the prompt that is used when applying up or down 
   //! (as specified by \a direction).
@@ -584,7 +592,7 @@ class XfstCompiler
   //! @brief Print alphabet \a alpha to \a outfile. \a unknown and \a identity
   //! define whether these symbols occur in the transitions of the transducer
   //! whose alphabet we are printing.
-  void print_alphabet(const StringSet & alpha, bool unknown, bool identity, FILE* outfile);
+  void print_alphabet(const StringSet & alpha, bool unknown, bool identity, std::ostream * oss);
 
   void print_level
     (const std::vector<unsigned int> & whole_path,

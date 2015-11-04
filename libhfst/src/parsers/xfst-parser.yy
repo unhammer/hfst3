@@ -107,9 +107,9 @@ COMMAND_LIST: COMMAND_LIST COMMAND
             ;
 
 COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            FILE * f = hfst::xfst::xfst_->xfst_fopen($2, "r"); CHECK;
             hfst::xfst::xfst_->add_props(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            hfst::xfst::xfst_->xfst_fclose(f, $2); CHECK;
        }
        | ADD_PROPS NAMETOKEN_LIST CTRLD {
             hfst::xfst::xfst_->add_props($2);
@@ -131,9 +131,9 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | APPLY_UP REDIRECT_IN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "r");
+            FILE * f = hfst::xfst::xfst_->xfst_fopen($2, "r"); CHECK;
             hfst::xfst::xfst_->apply_up(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            hfst::xfst::xfst_->xfst_fclose(f, $2); CHECK;
        }
        | APPLY_UP END_COMMAND NAMETOKEN_LIST END_SUB {
             hfst::xfst::xfst_->apply_up($3);
@@ -150,9 +150,9 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | APPLY_DOWN REDIRECT_IN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "r");
+            FILE * f = hfst::xfst::xfst_->xfst_fopen($2, "r"); CHECK;
             hfst::xfst::xfst_->apply_down(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            hfst::xfst::xfst_->xfst_fclose(f, $2); CHECK;
        }
        | APPLY_DOWN END_COMMAND NAMETOKEN_LIST END_SUB {
             hfst::xfst::xfst_->apply_down($3);
@@ -163,9 +163,9 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | APPLY_MED REDIRECT_IN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "r");
+            FILE * f = hfst::xfst::xfst_->xfst_fopen($2, "r"); CHECK;
             hfst::xfst::xfst_->apply_med(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            hfst::xfst::xfst_->xfst_fclose(f, $2); CHECK;
        }
        | APPLY_MED END_COMMAND NAMETOKEN_LIST END_SUB {
             hfst::xfst::xfst_->apply_med($3);
@@ -439,17 +439,17 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
        }
        // prints
        | PRINT_ALIASES REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "r");
-            hfst::xfst::xfst_->print_aliases(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_aliases(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_ALIASES END_COMMAND {
-            hfst::xfst::xfst_->print_aliases(stdout); CHECK;
+            hfst::xfst::xfst_->print_aliases(&std::cout); CHECK;
        }
        | PRINT_ARCCOUNT REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_arc_count(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_arc_count(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_ARCCOUNT NAMETOKEN END_COMMAND {
             if (strcmp($2, "upper") && strcmp($2, "lower"))
@@ -457,94 +457,94 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
                 hxfsterror("should be upper or lower");
                 return EXIT_FAILURE;
             }
-            hfst::xfst::xfst_->print_arc_count($2, stdout);
+            hfst::xfst::xfst_->print_arc_count($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT_ARCCOUNT END_COMMAND {
-            hfst::xfst::xfst_->print_arc_count(stdout); CHECK;
+            hfst::xfst::xfst_->print_arc_count(&std::cout); CHECK;
        }
        | PRINT_DEFINED REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_defined(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_defined(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_DEFINED END_COMMAND {
-            hfst::xfst::xfst_->print_defined(stdout); CHECK;
+            hfst::xfst::xfst_->print_defined(&std::cout); CHECK;
        }
        | PRINT_DIR GLOB REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($3, "w");
-            hfst::xfst::xfst_->print_dir($2, f);
-            hfst::xfst::xfst_fclose(f, $3);
+            std::ofstream oss($3);
+            hfst::xfst::xfst_->print_dir($2, &oss);
+            oss.close();
             free($3); CHECK;
        }
        | PRINT_DIR GLOB END_COMMAND {
-            hfst::xfst::xfst_->print_dir($2, stdout);
+            hfst::xfst::xfst_->print_dir($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT_DIR REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_dir("*", f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_dir("*", &oss);
+            oss.close(); CHECK;
        }
        | PRINT_DIR END_COMMAND {
-            hfst::xfst::xfst_->print_dir("*", stdout); CHECK;
+            hfst::xfst::xfst_->print_dir("*", &std::cout); CHECK;
        }
        | PRINT_FILE_INFO REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_file_info(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_file_info(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_FILE_INFO END_COMMAND {
-            hfst::xfst::xfst_->print_file_info(stdout); CHECK;
+            hfst::xfst::xfst_->print_file_info(&std::cout); CHECK;
        }
        | PRINT_FLAGS REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_flags(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_flags(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_FLAGS END_COMMAND {
-            hfst::xfst::xfst_->print_flags(stdout); CHECK;
+            hfst::xfst::xfst_->print_flags(&std::cout); CHECK;
        }
        | PRINT_LABELS NAMETOKEN END_COMMAND {
-            hfst::xfst::xfst_->print_labels($2, stdout);
+            hfst::xfst::xfst_->print_labels($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT_LABELS REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_labels(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_labels(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_LABELS END_COMMAND {
-            hfst::xfst::xfst_->print_labels(stdout); CHECK;
+            hfst::xfst::xfst_->print_labels(&std::cout); CHECK;
        }
        | PRINT_LABEL_COUNT REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_label_count(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_label_count(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_LABEL_COUNT END_COMMAND {
-            hfst::xfst::xfst_->print_label_count(stdout); CHECK;
+            hfst::xfst::xfst_->print_label_count(&std::cout); CHECK;
        }
        | PRINT_LIST NAMETOKEN REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($3, "w");
-            hfst::xfst::xfst_->print_list($2, f);
-            hfst::xfst::xfst_fclose(f, $3);
+            std::ofstream oss($3);
+            hfst::xfst::xfst_->print_list($2, &oss);
+            oss.close();
             free($2); CHECK;
        }
        | PRINT_LIST NAMETOKEN END_COMMAND {
-            hfst::xfst::xfst_->print_list($2, stdout);
+            hfst::xfst::xfst_->print_list($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT_LISTS REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_list(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_list(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_LISTS END_COMMAND {
-            hfst::xfst::xfst_->print_list(stdout); CHECK;
+            hfst::xfst::xfst_->print_list(&std::cout); CHECK;
        }
        | PRINT_LONGEST_STRING REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_longest_string(&oss);
             //hfst::xfst::xfst_fclose(f, $2); 
@@ -552,12 +552,12 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_LONGEST_STRING END_COMMAND {
-            //hfst::xfst::xfst_->print_longest_string(stdout); 
+            //hfst::xfst::xfst_->print_longest_string(&std::cout); 
             hfst::xfst::xfst_->print_longest_string(&std::cout); 
             CHECK;
        }
        | PRINT_LONGEST_STRING_SIZE REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_longest_string_size(&oss);
             //hfst::xfst::xfst_fclose(f, $2); 
@@ -565,20 +565,20 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_LONGEST_STRING_SIZE END_COMMAND {
-            //hfst::xfst::xfst_->print_longest_string_size(stdout); 
+            //hfst::xfst::xfst_->print_longest_string_size(&std::cout); 
             hfst::xfst::xfst_->print_longest_string_size(&std::cout); 
             CHECK;
        }
        | PRINT_NAME REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_name(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_name(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_NAME END_COMMAND {
-            hfst::xfst::xfst_->print_name(stdout); CHECK;
+            hfst::xfst::xfst_->print_name(&std::cout); CHECK;
        }
        | PRINT_SHORTEST_STRING REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_shortest_string(&oss);
             //hfst::xfst::xfst_fclose(f, $2);
@@ -586,12 +586,12 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_SHORTEST_STRING END_COMMAND {
-            //hfst::xfst::xfst_->print_shortest_string(stdout); 
+            //hfst::xfst::xfst_->print_shortest_string(&std::cout); 
             hfst::xfst::xfst_->print_shortest_string(&std::cout);
             CHECK;
        }
        | PRINT_SHORTEST_STRING_SIZE REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_shortest_string_size(&oss);
             //hfst::xfst::xfst_fclose(f, $2);
@@ -599,7 +599,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_SHORTEST_STRING_SIZE END_COMMAND {
-            //hfst::xfst::xfst_->print_shortest_string_size(stdout); 
+            //hfst::xfst::xfst_->print_shortest_string_size(&std::cout); 
             hfst::xfst::xfst_->print_shortest_string_size(&std::cout); 
             CHECK;
        }
@@ -608,7 +608,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | PRINT_LOWER_WORDS NAMETOKEN NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($4, "w");
+            //std::ofstream oss($4, "w");
             std::ofstream oss($4);
             hfst::xfst::xfst_->print_lower_words($2, hfst::xfst::nametoken_to_number($3), &oss);
             free($2);
@@ -628,7 +628,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             hfst::xfst::xfst_->print_lower_words(NULL, 0, &std::cout); CHECK;
        }
        | PRINT_LOWER_WORDS NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($3, "w");
+            //std::ofstream oss($3);
             std::ofstream oss($3);
             int i = hfst::xfst::nametoken_to_number($2);
             if (i != -1)
@@ -640,7 +640,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_LOWER_WORDS REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_lower_words(NULL, 0, &oss);
             //hfst::xfst::xfst_fclose(f, $2); 
@@ -652,7 +652,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | PRINT_RANDOM_LOWER NAMETOKEN NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($4, "w");
+            //std::ofstream oss($4, "w");
             std::ofstream oss($4);
             hfst::xfst::xfst_->print_random_lower($2, hfst::xfst::nametoken_to_number($3), &oss);
             free($2);
@@ -672,7 +672,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             hfst::xfst::xfst_->print_random_lower(NULL, 15, &std::cout); CHECK;
        }
        | PRINT_RANDOM_LOWER NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($3, "w");
+            //std::ofstream oss($3);
             std::ofstream oss($3);
             int i = hfst::xfst::nametoken_to_number($2);
             if (i != -1)
@@ -684,7 +684,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_RANDOM_LOWER REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_random_lower(NULL, 15, &oss);
             //hfst::xfst::xfst_fclose(f, $2); 
@@ -696,7 +696,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | PRINT_UPPER_WORDS NAMETOKEN NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($4, "w");
+            //std::ofstream oss($4, "w");
             std::ofstream oss($4);
             hfst::xfst::xfst_->print_upper_words($2, hfst::xfst::nametoken_to_number($3), &oss);
             free($2);
@@ -716,7 +716,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             hfst::xfst::xfst_->print_upper_words(NULL, 0, &std::cout); CHECK;
        }
        | PRINT_UPPER_WORDS NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($3, "w");
+            //std::ofstream oss($3);
             std::ofstream oss($3);
             int i = hfst::xfst::nametoken_to_number($2);
             if (i != -1)
@@ -728,7 +728,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_UPPER_WORDS REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2); 
             hfst::xfst::xfst_->print_upper_words(NULL, 0, &oss);
             //hfst::xfst::xfst_fclose(f, $2); 
@@ -740,7 +740,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | PRINT_RANDOM_UPPER NAMETOKEN NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($4, "w");
+            //std::ofstream oss($4, "w");
             std::ofstream oss($4);
             hfst::xfst::xfst_->print_random_upper($2, hfst::xfst::nametoken_to_number($3), &oss);
             free($2);
@@ -760,7 +760,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             hfst::xfst::xfst_->print_random_upper(NULL, 15, &std::cout); CHECK;
        }
        | PRINT_RANDOM_UPPER NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($3, "w");
+            //std::ofstream oss($3);
             std::ofstream oss($3);
             int i = hfst::xfst::nametoken_to_number($2);
             if (i != -1)
@@ -772,7 +772,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_RANDOM_UPPER REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_random_upper(NULL, 15, &oss);
             //hfst::xfst::xfst_fclose(f, $2);
@@ -784,7 +784,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | PRINT_WORDS NAMETOKEN NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($4, "w");
+            //std::ofstream oss($4, "w");
             std::ofstream oss($4);
             hfst::xfst::xfst_->print_words($2, hfst::xfst::nametoken_to_number($3), &oss);
             free($2);
@@ -804,7 +804,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             hfst::xfst::xfst_->print_words(NULL, 0, &std::cout); CHECK;
        }
        | PRINT_WORDS NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($3, "w");
+            //std::ofstream oss($3);
             std::ofstream oss($3);
             int i = hfst::xfst::nametoken_to_number($2);
             if (i != -1)
@@ -816,7 +816,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_WORDS REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_words(NULL, 0, &oss);
             oss.close();
@@ -828,7 +828,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | PRINT_RANDOM_WORDS NAMETOKEN NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($4, "w");
+            //std::ofstream oss($4, "w");
             std::ofstream oss($4);
             hfst::xfst::xfst_->print_random_words($2, hfst::xfst::nametoken_to_number($3), &oss);
             free($2);
@@ -848,7 +848,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             hfst::xfst::xfst_->print_random_words(NULL, 15, &std::cout); CHECK;
        }
        | PRINT_RANDOM_WORDS NAMETOKEN REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($3, "w");
+            //std::ofstream oss($3);
             std::ofstream oss($3);
             int i = hfst::xfst::nametoken_to_number($2);
             if (i != -1)
@@ -860,7 +860,7 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT_RANDOM_WORDS REDIRECT_OUT END_COMMAND {
-            //FILE * f = hfst::xfst::xfst_fopen($2, "w");
+            //std::ofstream oss($2);
             std::ofstream oss($2);
             hfst::xfst::xfst_->print_random_words(NULL, 15, &oss);
             //hfst::xfst::xfst_fclose(f, $2); 
@@ -868,48 +868,48 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             CHECK;
        }
        | PRINT NAMETOKEN END_COMMAND {
-            hfst::xfst::xfst_->print_net($2, stdout);
+            hfst::xfst::xfst_->print_net($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_net(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_net(&oss);
+            oss.close(); CHECK;
        }
        | PRINT END_COMMAND {
-            hfst::xfst::xfst_->print_net(stdout); CHECK;
+            hfst::xfst::xfst_->print_net(&std::cout); CHECK;
        }
        | PRINT_PROPS NAMETOKEN END_COMMAND {
-            hfst::xfst::xfst_->print_properties($2, stdout);
+            hfst::xfst::xfst_->print_properties($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT_PROPS END_COMMAND {
-            hfst::xfst::xfst_->print_properties(stdout); CHECK;
+            hfst::xfst::xfst_->print_properties(&std::cout); CHECK;
        }
        | PRINT_PROPS REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_properties(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_properties(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_SIGMA NAMETOKEN END_COMMAND {
-            hfst::xfst::xfst_->print_sigma($2, stdout);
+            hfst::xfst::xfst_->print_sigma($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT_SIGMA REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_sigma(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_sigma(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_SIGMA END_COMMAND {
-            hfst::xfst::xfst_->print_sigma(stdout); CHECK;
+            hfst::xfst::xfst_->print_sigma(&std::cout); CHECK;
        }
        | PRINT_SIGMA_COUNT REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_sigma_count(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_sigma_count(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_SIGMA_COUNT END_COMMAND {
-            hfst::xfst::xfst_->print_sigma_count(stdout); CHECK;
+            hfst::xfst::xfst_->print_sigma_count(&std::cout); CHECK;
        }
        | PRINT_SIGMA_WORD_COUNT NAMETOKEN END_COMMAND {
             if (strcmp($2, "upper") && strcmp($2, "lower"))
@@ -917,54 +917,54 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
                 hxfsterror("must be upper or lower\n");
                 return EXIT_FAILURE;
             }
-            hfst::xfst::xfst_->print_sigma_word_count($2, stdout);
+            hfst::xfst::xfst_->print_sigma_word_count($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT_SIGMA_WORD_COUNT REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_sigma_word_count(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_sigma_word_count(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_SIGMA_WORD_COUNT END_COMMAND {
-            hfst::xfst::xfst_->print_sigma_word_count(stdout); CHECK;
+            hfst::xfst::xfst_->print_sigma_word_count(&std::cout); CHECK;
        }
        | PRINT_SIZE NAMETOKEN END_COMMAND {
-            hfst::xfst::xfst_->print_size($2, stdout);
+            hfst::xfst::xfst_->print_size($2, &std::cout);
             free($2); CHECK;
        }
        | PRINT_SIZE REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_size(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_size(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_SIZE END_COMMAND {
-            hfst::xfst::xfst_->print_size(stdout); CHECK;
+            hfst::xfst::xfst_->print_size(&std::cout); CHECK;
        }
        | PRINT_STACK REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_stack(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_stack(&oss);
+            oss.close(); CHECK;
        }
        | PRINT_STACK END_COMMAND {
-            hfst::xfst::xfst_->print_stack(stdout); CHECK;
+            hfst::xfst::xfst_->print_stack(&std::cout); CHECK;
        }
        | PRINT_LABELMAPS REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->print_labelmaps(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->print_labelmaps(&oss);
+            oss.close(); CHECK;
        }
        // writes
        | SAVE_DOT NAMETOKEN END_COMMAND {
-            hfst::xfst::xfst_->write_dot($2, stdout);
+            hfst::xfst::xfst_->write_dot($2, &std::cout);
             free($2); CHECK;
        }
        | SAVE_DOT REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->write_dot(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->write_dot(&oss);
+            oss.close(); CHECK;
        }
        | SAVE_DOT END_COMMAND {
-            hfst::xfst::xfst_->write_dot(stdout); CHECK;
+            hfst::xfst::xfst_->write_dot(&std::cout); CHECK;
        }
        | SAVE_DEFINITION NAMETOKEN LEFT_PAREN REDIRECT_OUT END_COMMAND {
             hfst::xfst::xfst_->write_function($2, $4);
@@ -993,47 +993,47 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | SAVE_PROLOG REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->write_prolog(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->write_prolog(&oss);
+            oss.close(); CHECK;
        }
        | SAVE_PROLOG NAMETOKEN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->write_prolog(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->write_prolog(&oss);
+            oss.close(); CHECK;
        }
        | SAVE_PROLOG END_COMMAND {
-            hfst::xfst::xfst_->write_prolog(stdout); CHECK;
+            hfst::xfst::xfst_->write_prolog(&std::cout); CHECK;
        }
        | SAVE_SPACED REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->write_spaced(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->write_spaced(&oss);
+            oss.close(); CHECK;
        }
        | SAVE_SPACED END_COMMAND {
-            hfst::xfst::xfst_->write_spaced(stdout); CHECK;
+            hfst::xfst::xfst_->write_spaced(&std::cout); CHECK;
        }
        | SAVE_TEXT REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->write_text(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->write_text(&oss);
+            oss.close(); CHECK;
        }
        | SAVE_TEXT END_COMMAND {
-            hfst::xfst::xfst_->write_text(stdout); CHECK;
+            hfst::xfst::xfst_->write_text(&std::cout); CHECK;
        }
        // reads
        | READ_PROPS REDIRECT_IN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "r");
+            FILE * f = hfst::xfst::xfst_->xfst_fopen($2, "r"); CHECK;
             hfst::xfst::xfst_->read_props(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            hfst::xfst::xfst_->xfst_fclose(f, $2); CHECK;
        }
        | READ_PROPS END_COMMAND {
             hfst::xfst::xfst_->read_props(stdin); CHECK;
        }
        | READ_PROLOG NAMETOKEN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "r");
+            FILE * f = hfst::xfst::xfst_->xfst_fopen($2, "r"); CHECK;
             hfst::xfst::xfst_->read_prolog(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            hfst::xfst::xfst_->xfst_fclose(f, $2); CHECK;
        }
        | READ_PROLOG END_COMMAND {
             hfst::xfst::xfst_->read_prolog(stdin); CHECK;
@@ -1043,9 +1043,9 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | READ_REGEX REDIRECT_IN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "r");
+            FILE * f = hfst::xfst::xfst_->xfst_fopen($2, "r"); CHECK;
             hfst::xfst::xfst_->read_regex(f);
-            hfst::xfst::xfst_fclose(f, $2); CHECK;
+            hfst::xfst::xfst_->xfst_fclose(f, $2); CHECK;
        }
        | READ_REGEX NAMETOKEN_LIST SEMICOLON END_COMMAND {
             hfst::xfst::xfst_->read_regex($2);
@@ -1091,25 +1091,25 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($2); CHECK;
        }
        | WRITE_ATT END_COMMAND {
-            hfst::xfst::xfst_->write_att(stdout); CHECK;
+            hfst::xfst::xfst_->write_att(&std::cout); CHECK;
        }
        | WRITE_ATT REDIRECT_OUT END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->write_att(f);
-            hfst::xfst::xfst_fclose(f, $2);
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->write_att(&oss);
+            oss.close();
             free($2); CHECK;
        }
        | WRITE_ATT NAMETOKEN END_COMMAND {
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->write_att(f);
-            hfst::xfst::xfst_fclose(f, $2);
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->write_att(&oss);
+            oss.close();
             free($2); CHECK;
        }
        | WRITE_ATT NAMETOKEN NAMETOKEN NAMETOKEN END_COMMAND {
             // todo: handle input and output symbol tables
-            FILE * f = hfst::xfst::xfst_fopen($2, "w");
-            hfst::xfst::xfst_->write_att(f);
-            hfst::xfst::xfst_fclose(f, $2);
+            std::ofstream oss($2);
+            hfst::xfst::xfst_->write_att(&oss);
+            oss.close();
             free($2); CHECK;
        }
        // net ops
@@ -1356,7 +1356,8 @@ int hxfstparse(void);
 void
 hxfsterror(const char* text)
 { 
-    fprintf(stderr,  "%s\n", text);
+    hfst::xfst::xfst_->get_error_stream() << text << std::endl;
+    //fprintf(stderr,  "%s\n", text);
 }
 
 

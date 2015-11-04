@@ -13,14 +13,16 @@ namespace hfst { namespace xre {
     unsigned int cr=0; // chars read from xre input
     std::set<unsigned int> positions;
     char * position_symbol = NULL;
-    std::string error_message;
+    std::ostream * error_(&std::cerr);
+    bool verbose_(false);
 
 XreCompiler::XreCompiler() : 
     definitions_(),
     function_definitions_(),
     function_arguments_(),
     list_definitions_(),
-    format_(hfst::TROPICAL_OPENFST_TYPE)
+    format_(hfst::TROPICAL_OPENFST_TYPE),
+    verbose_(false)
 {}
 
 XreCompiler::XreCompiler(hfst::ImplementationType impl) :
@@ -28,7 +30,8 @@ XreCompiler::XreCompiler(hfst::ImplementationType impl) :
     function_definitions_(),
     function_arguments_(),
     list_definitions_(),
-    format_(impl)
+    format_(impl),
+    verbose_(false)
 {}
 
     XreCompiler::XreCompiler(const struct XreConstructorArguments & args) :
@@ -36,9 +39,32 @@ XreCompiler::XreCompiler(hfst::ImplementationType impl) :
     function_definitions_(args.function_definitions),
     function_arguments_(args.function_arguments),
     list_definitions_(args.list_definitions),
-    format_(args.format)
+    format_(args.format),
+    verbose_(false)
 {}
 
+
+    void XreCompiler::set_verbosity(bool verbose)
+    {
+      this->verbose_ = verbose;
+      hfst::xre::verbose_ = verbose; // TODO
+    }
+
+    bool XreCompiler::get_verbosity()
+    {
+      return this->verbose_;
+    }
+
+    // TODO: get rid of global variables
+    void XreCompiler::set_error_stream(std::ostream * os)
+    {
+      hfst::xre::error_ = os;
+    }
+
+    std::ostream * XreCompiler::get_error_stream()
+    {
+      return hfst::xre::error_;
+    }
 
 bool
 XreCompiler::define(const std::string& name, const std::string& xre)
@@ -49,7 +75,8 @@ XreCompiler::define(const std::string& name, const std::string& xre)
       //fprintf(stderr, "error in XreCompiler::define: xre '%s' could not be parsed, leaving %s undefined\n", 
       //        xre.c_str(), name.c_str());
       //*errorstream_ << "error in XreCompiler::define: xre '" << xre << "' could not be parsed, leaving " << name << "undefined" << std::endl;
-      error_message += "error: could not parse '" + xre + "', leaving '" + name + "' undefined\n"; 
+      if (this->verbose_)
+        *error_ << "error: could not parse '" << xre << "', leaving '" << name << "' undefined" << std::endl; 
       return false;
     }
   definitions_[name] = compiled;
@@ -107,8 +134,8 @@ if (definitions_.find(name) != definitions_.end())
 extern bool expand_definitions;
 extern bool harmonize_;
 extern bool harmonize_flags_;
-extern bool verbose_;
-extern FILE * warning_stream;
+    //extern bool verbose_;
+    //extern FILE * warning_stream;
 
 void XreCompiler::set_expand_definitions(bool expand)
 {
@@ -123,21 +150,6 @@ void XreCompiler::set_harmonization(bool harmonize)
 void XreCompiler::set_flag_harmonization(bool harmonize_flags)
 {
   harmonize_flags_=harmonize_flags;
-}
-
-void XreCompiler::set_verbosity(bool verbose, FILE * file)
-{
-  verbose_=verbose;
-  if (verbose)
-    {
-      warning_stream=file;
-    }
-}
-
-std::string 
-XreCompiler::get_error_message()
-{
-  return error_message;
 }
 
 bool

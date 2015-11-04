@@ -264,7 +264,8 @@ process_stream(HfstOutputStream& outstream)
   size_t len = 0;
   unsigned int line_count = 0;
   XreCompiler comp(output_format);
-  comp.set_verbosity(verbose, stderr);
+  comp.set_verbosity(verbose);
+  comp.set_error_stream(&std::cerr);
   comp.set_harmonization(harmonize);
   comp.set_flag_harmonization(harmonize_flags);
   HfstTransducer disjunction(output_format);
@@ -301,7 +302,7 @@ process_stream(HfstOutputStream& outstream)
                 }
               else
                 {
-                  std::cerr << comp.get_error_message() << std::endl;
+                  //std::cerr << comp.get_error_message() << std::endl;
                   error(EXIT_FAILURE, 0, "%s: XRE parsing failed"
                         "in expression #%u separated by semicolons", inputfilename,
                         (unsigned int)transducer_n);
@@ -370,7 +371,7 @@ process_stream(HfstOutputStream& outstream)
               else {
               //if (line_separated)
               //{
-                std::cerr << comp.get_error_message() << std::endl;
+                //std::cerr << comp.get_error_message() << std::endl;
                 error_at_line(EXIT_FAILURE, 0, inputfilename, line_count,
                               "XRE parsing failed");
               }

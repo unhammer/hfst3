@@ -30,7 +30,8 @@ namespace hfst {
   namespace xre {
     extern unsigned int cr; // number of characters read, defined in XreCompiler.cc
     bool allow_extra_text_at_end = false;
-    extern std::string error_message;
+    extern std::ostream * error_;
+    extern bool verbose_;
   }
 }
 
@@ -51,7 +52,8 @@ int xreerror(yyscan_t scanner, const char* msg)
     }
 
   buffer[1023] = '\0';
-  hfst::xre::error_message = std::string(buffer);
+  if (hfst::xre::verbose_)
+    *(hfst::xre::error_) << std::string(buffer);
   return 0;
 }
 
@@ -61,7 +63,7 @@ xreerror(const char *msg)
   char buffer [1024];
   int n = sprintf(buffer, "*** xre parsing failed: %s\n", msg);
   buffer[1023] = '\0';
-  hfst::xre::error_message = std::string(buffer);
+  *(hfst::xre::error_) << std::string(buffer);
   return 0;
 }
 
@@ -84,8 +86,7 @@ size_t len;
   bool expand_definitions=false;
   bool harmonize_=true;
   bool harmonize_flags_=false;
-  bool verbose_=false;
-  FILE * warning_stream=NULL;
+  //bool verbose_=false;
 
   std::string substitution_function_symbol;
 
@@ -284,8 +285,7 @@ parse_quoted(const char *s)
               case '5':
               case '6':
               case '7':
-                fprintf(stderr, "*** XRE unimplemented: "
-                        "parse octal escape in %s", p);
+                *(hfst::xre::error_) << "*** XRE unimplemented: parse octal escape in " << std::string(p);
                 *r = '\0';
                 p = p + 5;
                 break;
@@ -320,7 +320,7 @@ parse_quoted(const char *s)
                 p = p + 2;
                 break;
               case 'u':
-                fprintf(stderr, "Unimplemented: parse unicode escapes in %s", p);
+                *(hfst::xre::error_) << "Unimplemented: parse unicode escapes in " << std::string(p);
                 *r = '\0';
                 r++;
                 p = p + 6;
@@ -340,8 +340,9 @@ parse_quoted(const char *s)
                       }
                     else
                       {
-                        fprintf(stderr, "*** XRE unimplemented: "
-                                "parse \\x%d\n", i);
+                        *(hfst::xre::error_) << "*** XRE unimplemented: parse \\x" << i << std::endl;
+                        //fprintf(stderr, "*** XRE unimplemented: "
+                        //        "parse \\x%d\n", i);
                         *r = '\0';
                       }
                     r++;
@@ -350,7 +351,8 @@ parse_quoted(const char *s)
                    break;
                 }
               case '\0':
-                fprintf(stderr, "End of line after \\ escape\n");
+                *(hfst::xre::error_) << "End of line after \\ escape" << std::endl;
+                //fprintf(stderr, "End of line after \\ escape\n");
                 *r = '\0';
                 r++;
                 p++;
@@ -543,7 +545,8 @@ bool is_valid_function_call
   if (name2xre == function_definitions.end() || 
       name2args == function_arguments.end())
     {
-      fprintf(stderr, "No such function defined: '%s'\n", name);
+      *(hfst::xre::error_) << "No such function defined: '" << name << "'" << std::endl;
+      //fprintf(stderr, "No such function defined: '%s'\n", name);
       return false;
     }
 
@@ -551,8 +554,10 @@ bool is_valid_function_call
 
   if ( number_of_args != args->size())
     {
-      fprintf(stderr, "Wrong number of arguments: function '%s' expects %i, %i given\n", 
-              name, (int)number_of_args, (int)args->size());
+      *(hfst::xre::error_) << "Wrong number of arguments: function '" << name << "' expects " 
+                           << (int)number_of_args << ", " << (int)args->size() << " given" << std::endl;
+        //fprintf(stderr, "Wrong number of arguments: function '%s' expects %i, %i given\n", 
+        //       name, (int)number_of_args, (int)args->size());
       return false;
     }
 
@@ -952,14 +957,14 @@ xfst_label_to_transducer(const char* input, const char* output)
     if (!verbose_)
       return;
     
-    fprintf(warning_stream, "%s", msg);
+    *(hfst::xre::error_) << msg;
   }
 
 void warn_about_xfst_special_symbol(const char * symbol)
 {
   if (strcmp("all", symbol) == 0) {
     if (verbose_) {
-      fprintf(warning_stream, "warning: symbol 'all' has no special meaning in hfst\n"); }
+      warn("warning: symbol 'all' has no special meaning in hfst\n"); }
     return;
   }
 
@@ -976,7 +981,7 @@ void warn_about_xfst_special_symbol(const char * symbol)
     return;
   if (!verbose_)
     return;
-  fprintf(warning_stream, "warning: '%s' is an ordinary symbol in hfst\n", symbol);
+  *(hfst::xre::error_) << "warning: '" << symbol << " ' is an ordinary symbol in hfst" << std::endl;
 }
 
 void warn_about_hfst_special_symbol(const char * symbol)
@@ -997,7 +1002,7 @@ void warn_about_hfst_special_symbol(const char * symbol)
     return;
   if (!verbose_)
     return;
-  fprintf(warning_stream, "warning: '%s' is not an ordinary symbol in hfst\n", symbol);
+  *(hfst::xre::error_) << "warning: '" << symbol << "' is not an ordinary symbol in hfst" << std::endl;
 }
 
 void warn_about_special_symbols_in_replace(HfstTransducer * t)
@@ -1014,8 +1019,7 @@ void warn_about_special_symbols_in_replace(HfstTransducer * t)
           *it != hfst::internal_unknown &&
           *it != hfst::internal_identity)
         {         
-          fprintf(warning_stream, "warning: using special symbol '%s' in replace rule, "
-                  "use substitute instead\n", it->c_str());
+          *(hfst::xre::error_) << "warning: using special symbol '" << *it << "' in replace rule, use substitute instead" << std::endl;
         }
     }
 }
