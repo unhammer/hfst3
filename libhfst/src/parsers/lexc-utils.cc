@@ -33,6 +33,7 @@
 // for internal epsilon
 #include "HfstSymbolDefs.h"
 
+#include "LexcCompiler.h"
 #include "lexc-utils.h"
 #include "lexc-parser.hh"
 
@@ -45,6 +46,9 @@ extern char* hlexctext;
 extern YYLTYPE hlexclloc;
 
 namespace hfst { namespace lexc {
+
+extern hfst::lexc::LexcCompiler * lexc_;
+
 // string mangling
 static
 string&
@@ -370,8 +374,9 @@ strip_percents(const char* s, bool do_zeros)
     *p = '\0';
     if (escaping)
     {
-        fprintf(stderr, "Stray escape char %% in %s\n", s);
-        return NULL;
+      //fprintf(stderr, "Stray escape char %% in %s\n", s);
+      *(hfst::lexc::lexc_->get_error_stream()) << "Stray escape char %% in " << s << std::endl;
+      return NULL;
     }
     return rv;
 }
@@ -454,7 +459,8 @@ error_at_current_token(int, int, const char* format)
 {
     char* leader = strdup_token_positions();
     char* token = strdup_token_part();
-    fprintf(stderr, "%s: %s %s\n", leader, format, token);
+    //fprintf(stderr, "%s: %s %s\n", leader, format, token);
+    *(hfst::lexc::lexc_->get_error_stream()) << leader << ": " << format << ": " << token << std::endl;
     free(leader);
 }
 

@@ -70,6 +70,10 @@ class LexcCompiler
   //! lexc compiler does.
   LexcCompiler& setVerbosity(unsigned int verbose);
 
+  void set_error_stream(std::ostream * os);
+
+  std::ostream * get_error_stream();
+
   bool isQuiet();
 
   LexcCompiler& setTreatWarningsAsErrors(bool value);
@@ -136,7 +140,6 @@ class LexcCompiler
   //! Works like xerox lexc, for compatibility.
   const LexcCompiler& printConnectedness(bool & warnings_printed) const;
 
-
   private:
   bool quiet_;
   bool verbose_;
@@ -145,6 +148,7 @@ class LexcCompiler
   bool rename_flags_;
   bool treat_warnings_as_errors_;
   bool allow_multiple_sublexicon_definitions_;
+  std::ostream * error_;
 
   hfst::ImplementationType format_;
   hfst::HfstTokenizer tokenizer_;
