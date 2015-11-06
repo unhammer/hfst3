@@ -111,12 +111,65 @@ HfstTransducer * copy_hfst_transducer_from_basic_transducer(const hfst::implemen
         return new HfstTransducer(t, impl);
 }
 
-hfst::HfstTransducer * regex(const std::string & regex_string)
+std::string hfst_regex_error_message("");
+std::string get_hfst_regex_error_message() { return hfst::hfst_regex_error_message; }
+
+hfst::HfstTransducer * hfst_regex(const std::string & regex_string, const std::string & error_stream)
 {
+        hfst_regex_error_message="";
         hfst::xre::XreCompiler comp(type);
-        comp.set_verbosity(false, NULL);
-        return comp.compile(regex_string);
+        comp.set_verbosity(true);
+        
+        if (error_stream == "cout")
+        {
+          comp.set_error_stream(&std::cout);
+          return comp.compile(regex_string);
+        }
+        else if (error_stream == "cerr")
+        {
+          comp.set_error_stream(&std::cerr);
+          return comp.compile(regex_string);
+        }
+        else
+        {
+          std::ostringstream os(std::ostringstream::ate);
+          comp.set_error_stream(&os);
+          hfst::HfstTransducer * retval = comp.compile(regex_string);
+          hfst_regex_error_message = os.str();
+          return retval;
+        }
 }
+
+std::string hfst_xfst_output("");
+std::string get_hfst_xfst_output() { return hfst::hfst_xfst_output; }
+
+int hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream)
+{
+        hfst_xfst_output="";
+
+        if (output_stream == "cout")
+        {
+          comp.set_output_stream(std::cout);
+          comp.set_error_stream(std::cout);
+          return comp.parse_line(input);
+        }
+        else if (output_stream == "cerr")
+        {
+          comp.set_output_stream(std::cerr);
+          comp.set_error_stream(std::cerr);
+          return comp.parse_line(input);
+        }
+        else
+        {
+          std::ostringstream os(std::ostringstream::ate);
+          comp.set_output_stream(os);
+          comp.set_error_stream(os);
+          int retval = comp.parse_line(input);
+          hfst_xfst_output = os.str();
+          return retval;
+        }
+}
+
 
 
 hfst::HfstOutputStream * create_hfst_output_stream(const std::string & filename, hfst::ImplementationType type, bool hfst_format)
@@ -1157,14 +1210,13 @@ class XreCompiler
   void undefine(const std::string& name);
   HfstTransducer* compile(const std::string& xre);
   HfstTransducer* compile_first(const std::string& xre, unsigned int & chars_read);
-  std::string get_error_message();
   bool contained_only_comments();
   bool get_positions_of_symbol_in_xre
     (const std::string & symbol, const std::string & xre, std::set<unsigned int> & positions);
   void set_expand_definitions(bool expand);
   void set_harmonization(bool harmonize);
   void set_flag_harmonization(bool harmonize_flags);
-  void set_verbosity(bool verbose, FILE * file);
+  void set_verbosity(bool verbose);
 };
 }
 
@@ -1240,7 +1292,11 @@ namespace xfst {
 }
 
 
-hfst::HfstTransducer * hfst::regex(const std::string & regex_string);
+std::string hfst::get_hfst_regex_error_message();
+hfst::HfstTransducer * hfst::hfst_regex(const std::string & regex_string, const std::string & error_stream);
+
+std::string hfst::get_hfst_xfst_output();
+int hfst::hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream);
 
 void hfst::set_default_fst_type(hfst::ImplementationType t);
 hfst::ImplementationType hfst::get_default_fst_type();
@@ -1259,6 +1315,19 @@ std::string hfst::two_level_paths_to_string(const HfstTwoLevelPaths &);
 EPSILON='@_EPSILON_SYMBOL_@'
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
+
+def regex(re, err=None):
+    import sys
+    if err == None:
+       return _libhfst.hfst_regex(re, "")
+    elif err == sys.stdout:
+       return _libhfst.hfst_regex(re, "cout")
+    elif err == sys.stderr:
+       return _libhfst.hfst_regex(re, "cerr")
+    else:
+       retval = _libhfst.hfst_regex(re, "")
+       err.write(_libhfst.get_hfst_regex_error_message())
+       return retval
 
 def replace_symbols(symbol):
     if symbol == "@0@":
@@ -1341,6 +1410,7 @@ def compile_xfst_file(filename, **kvargs):
     verbosity=0
     quit_on_fail='ON'
     type = _libhfst.get_default_fst_type()
+    output=None
 
     for k,v in kvargs.items():
       if k == 'verbosity':
@@ -1348,6 +1418,8 @@ def compile_xfst_file(filename, **kvargs):
       elif k == 'quit_on_fail':
         if v == False:
           quit_on_fail='OFF'
+      elif k == 'output':
+          output=v
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
@@ -1363,7 +1435,20 @@ def compile_xfst_file(filename, **kvargs):
     f.close()
     if verbosity > 1:
       print('File closed...')
-    retval = xfstcomp.parse_line(data)
+
+    retval=-1
+    import sys
+    if output == None:
+       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, "")
+    elif output == sys.stdout:
+       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, "cout")
+    elif output == sys.stderr:
+       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, "cerr")
+    else:
+       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, "")
+       output.write(_libhfst.get_hfst_xfst_output())
+
+    # retval = xfstcomp.parse_line(data)
     if verbosity > 1:
       print('Parsed file with return value %i (0 indicating succesful parsing).' % retval)
     return retval
@@ -1408,9 +1493,9 @@ def check_word(arg):
 
 def fsa(arg):
     if isinstance(arg, str):
-       return _libhfst.regex('{' + check_word(arg) + '}')
+       return regex('{' + check_word(arg) + '}')
     elif is_weighted_word(arg):
-       return _libhfst.regex('{' + check_word(arg[0]) + '}::' + str(arg[1]))
+       return regex('{' + check_word(arg[0]) + '}::' + str(arg[1]))
     elif isinstance(arg, tuple) or isinstance(arg, list):
        exp = '[0-0]' # empty automaton
        for word in arg:
@@ -1420,13 +1505,13 @@ def fsa(arg):
               exp += ' | {' + check_word(word) + '}'
            else:
               raise RuntimeError('Tuple/list element not a string or tuple of string and weight.')           
-       return _libhfst.regex(exp)
+       return regex(exp)
     else:
        raise RuntimeError('Not a string or tuple/list of strings.')
 
 def fst(arg):
     if isinstance(arg, dict):
-       retval = _libhfst.regex('[0-0]') # empty transducer
+       retval = regex('[0-0]') # empty transducer
        for input, output in arg.items():
            if not isinstance(input, str):
               raise RuntimeError('Key not a string.')
@@ -1456,15 +1541,15 @@ def tokenized_fst(arg, weight=0):
               else:
                  raise RuntimeError('Symbol or symbol pair must be given.')
        exp += ']'
-       return _libhfst.regex("[" + exp + "]::" + str(weight))
+       return regex("[" + exp + "]::" + str(weight))
     else:
        raise RuntimeError('Argument must be a list or a tuple')
 
 def empty_fst():
-    return _libhfst.regex('[0-0]')
+    return regex('[0-0]')
 
 def epsilon_fst(weight=0):
-    return _libhfst.regex('[0]::' + str(weight))
+    return regex('[0]::' + str(weight))
 
 
 
