@@ -140,6 +140,56 @@ hfst::HfstTransducer * hfst_regex(const std::string & regex_string, const std::s
         }
 }
 
+std::string hfst_lexc_output("");
+std::string get_hfst_lexc_output() { return hfst::hfst_lexc_output; }
+
+hfst::HfstTransducer * hfst_compile_lexc(hfst::lexc::LexcCompiler & comp, const std::string & filename, const std::string & error_stream)
+{
+        hfst_lexc_output="";
+
+        if (error_stream == "cout")
+        {
+          comp.set_error_stream(&std::cout);
+          if (comp.getVerbosity() > 1)
+            std::cout << "Parsing the lexc file..." << std::endl;
+          comp.parse(filename.c_str());
+          if (comp.getVerbosity() > 1)
+            std::cout << "Compiling..." << std::endl;
+          hfst::HfstTransducer * retval = comp.compileLexical();
+          if (comp.getVerbosity() > 1)
+            std::cout << "Compilation done." << std::endl;
+          return retval;
+        }
+        else if (error_stream == "cerr")
+        {
+          comp.set_error_stream(&std::cerr);
+          if (comp.getVerbosity() > 1)
+            std::cerr << "Parsing the lexc file..." << std::endl;
+          comp.parse(filename.c_str());
+          if (comp.getVerbosity() > 1)
+            std::cerr << "Compiling..." << std::endl;
+          hfst::HfstTransducer * retval = comp.compileLexical();
+          if (comp.getVerbosity() > 1)
+            std::cerr << "Compilation done." << std::endl;
+          return retval;
+        }
+        else
+        {
+          std::ostringstream os(std::ostringstream::ate);
+          comp.set_error_stream(&os);
+          if (comp.getVerbosity() > 1)
+            os << "Parsing the lexc file..." << std::endl;
+          comp.parse(filename.c_str());
+          if (comp.getVerbosity() > 1)
+            os << "Compiling..." << std::endl;
+          hfst::HfstTransducer * retval = comp.compileLexical();
+          if (comp.getVerbosity() > 1)
+            os << "Compilation done." << std::endl;
+          hfst_lexc_output = os.str();
+          return retval;
+        }        
+}
+
 std::string hfst_xfst_output("");
 std::string get_hfst_xfst_output() { return hfst::hfst_xfst_output; }
 
@@ -1231,6 +1281,7 @@ namespace lexc {
       LexcCompiler& parse(FILE* infile);
       LexcCompiler& parse(const char* filename);
       LexcCompiler& setVerbosity(unsigned int verbose);
+      unsigned int getVerbosity();
       bool isQuiet();
       LexcCompiler& setTreatWarningsAsErrors(bool value);
       bool areWarningsTreatedAsErrors();
@@ -1297,6 +1348,9 @@ hfst::HfstTransducer * hfst::hfst_regex(const std::string & regex_string, const 
 
 std::string hfst::get_hfst_xfst_output();
 int hfst::hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream);
+
+std::string hfst::get_hfst_lexc_output();
+hfst::HfstTransducer * hfst_compile_lexc(hfst::lexc::LexcCompiler & comp, const std::string & filename, const std::string & error_stream);
 
 void hfst::set_default_fst_type(hfst::ImplementationType t);
 hfst::ImplementationType hfst::get_default_fst_type();
@@ -1457,6 +1511,7 @@ def compile_lexc_file(filename, **kvargs):
     verbosity=0
     withflags=False
     type = _libhfst.get_default_fst_type()
+    output=None
 
     for k,v in kvargs.items():
       if k == 'verbosity':
@@ -1464,22 +1519,39 @@ def compile_lexc_file(filename, **kvargs):
       elif k == 'with_flags':
         if v == True:
           withflags = v
+      elif k == 'output':
+          output=v
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
     if verbosity > 1:
       print('Compiling with %s implementation...' % _libhfst.fst_type_to_string(type))
-    lexccompiler = LexcCompiler(type, withflags)
-    lexccompiler.setVerbosity(verbosity)
-    if verbosity > 1:
-      print('Parsing the lexc file...')
-    lexccompiler.parse(filename)
-    if verbosity > 1:
-      print('Compiling...')
-    retval = lexccompiler.compileLexical()
-    if verbosity > 1:
-      print('Compilation done.')
-    return retval
+    lexccomp = LexcCompiler(type, withflags)
+    lexccomp.setVerbosity(verbosity)
+
+    retval=-1
+    import sys
+    if output == None:
+       retval = _libhfst.hfst_compile_lexc(lexccomp, filename, "")
+    elif output == sys.stdout:
+       retval = _libhfst.hfst_compile_lexc(lexccomp, filename, "cout")
+    elif output == sys.stderr:
+       retval = _libhfst.hfst_compile_lexc(lexccomp, filename, "cerr")
+    else:
+       retval = _libhfst.hfst_compile_lexc(lexccomp, filename, "")
+       output.write(_libhfst.get_hfst_lexc_output())
+
+    return retval    
+
+    #if verbosity > 1:
+    #  print('Parsing the lexc file...')
+    #lexccompiler.parse(filename)
+    #if verbosity > 1:
+    #  print('Compiling...')
+    #retval = lexccompiler.compileLexical()
+    #if verbosity > 1:
+    #  print('Compilation done.')
+    #return retval
 
 def is_weighted_word(arg):
     if isinstance(arg, tuple) and len(arg) == 2 and isinstance(arg[0], str) and isinstance(arg[1], (int, float)):
