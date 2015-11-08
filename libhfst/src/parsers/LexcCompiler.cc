@@ -201,6 +201,17 @@ bool LexcCompiler::isQuiet()
   return quiet_;
 }
 
+unsigned int LexcCompiler::getVerbosity()
+{
+  if (quiet_ && !verbose_)
+    return 0;
+  if (!quiet_ && !verbose_)
+    return 1;
+  if (!quiet_ && verbose_)
+    return 2;
+  throw "LexcCompiler::getVerbosity() failed";
+}
+
 LexcCompiler&
 LexcCompiler::setVerbosity(unsigned int verbose)
 {

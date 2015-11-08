@@ -70,6 +70,8 @@ class LexcCompiler
   //! lexc compiler does.
   LexcCompiler& setVerbosity(unsigned int verbose);
 
+  unsigned int getVerbosity();
+
   void set_error_stream(std::ostream * os);
 
   std::ostream * get_error_stream();
