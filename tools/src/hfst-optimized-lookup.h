@@ -47,7 +47,7 @@ const char * PACKAGE_STRING = "hfst-optimized-lookup 1.2";
 #include <ctime>
 #include <iostream>
 #include <string>
-
+#include <time.h>
 
 enum OutputType {HFST, xerox};
 OutputType outputType = xerox;
@@ -60,6 +60,8 @@ bool echoInputsFlag = false;
 bool beFast = false;
 int maxAnalyses = INT_MAX;
 bool preserveDiacriticRepresentationsFlag = false;
+double time_cutoff = 0.0;
+clock_t max_clock;
 
 #define MAX_IO_STRING 5000
 

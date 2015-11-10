@@ -62,6 +62,7 @@ bool print_usage(void)
     "                              (if the transducer is weighted, the N best analyses)\n" <<
     "  -b, --beam=B                Output only analyses whose weight is within B from\n" <<
     "                              the best analysis\n" <<
+    "  -t, --time-cutoff=S         Limit search after having used S seconds per input\n"
     "  -x, --xerox                 Xerox output format (default)\n" <<
     "  -f, --fast                  Be as fast as possible.\n" <<
     "                              (with this option enabled -u and -n don't work and\n" <<
@@ -69,6 +70,7 @@ bool print_usage(void)
     "  -p, --pipe-mode[=STREAM]    Control input and output streams.\n" <<
     "\n" <<
     "N must be a positive integer. B must be a non-negative float.\n" <<
+    "S must be a non-negative float. The default, 0.0, indicates no cutoff.\n"
     "Options -n and -b are combined with AND, i.e. they both restrict the output.\n" <<
     "\n" << 
     "STREAM can be { input, output, both }. If not given, defaults to {both}.\n" <<
@@ -122,6 +124,7 @@ int main(int argc, char **argv)
           {"echo-inputs",  no_argument,       0, 'e'},
           {"show-weights", no_argument,       0, 'w'},
           {"beam",         required_argument, 0, 'b'},
+          {"time-cutoff",  required_argument, 0, 't'},
           {"unique",       no_argument,       0, 'u'},
           {"xerox",        no_argument,       0, 'x'},
           {"fast",         no_argument,       0, 'f'},
@@ -193,7 +196,14 @@ int main(int argc, char **argv)
               return EXIT_FAILURE;
             }
           break;
-
+        case 't':
+            time_cutoff = atof(optarg);
+            if (time_cutoff < 0.0)
+            {
+                std::cerr << "Invalid argument for --time-cutoff\n";
+                return EXIT_FAILURE;
+            }
+            break;
         case 'n':
           maxAnalyses = atoi(optarg);
           if (maxAnalyses < 1)
@@ -456,6 +466,10 @@ void runTransducer (genericTransducer T)
   char * str = (char*)(malloc(MAX_IO_STRING*sizeof(char)));  
   *str = 0;
   char * old_str = str;
+
+  if (time_cutoff > 0.0) {
+      max_clock = clock() + CLOCKS_PER_SEC*time_cutoff;
+  }
         
   while(true)
     {
@@ -968,6 +982,12 @@ void Transducer::get_analyses(SymbolNumber * input_symbol,
                               SymbolNumber * original_output_string,
                               TransitionTableIndex i)
 {
+  if (time_cutoff > 0.0) {
+    // quit if we've overspent our time
+    if (clock() > max_clock) {
+      return;
+    }
+  }
 #if OL_FULL_DEBUG
   std::cout << "get_analyses " << i << std::endl;
 #endif
