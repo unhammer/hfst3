@@ -460,8 +460,12 @@ HfstTransducer * HfstTransducer::harmonize_(const HfstTransducer &another)
 
     // Prevent flag diacritics from being harmonized by inserting them to
     // the alphabet. FIX?: remove them at the end?
+    if (this->get_type() == FOMA_TYPE)
+      {
     StringSet this_alphabet    = this->get_alphabet();
     StringSet another_alphabet = another_copy.get_alphabet();
+    StringSet add_to_this;
+    StringSet add_to_another;
 
     for (StringSet::const_iterator it = another_alphabet.begin();
      it != another_alphabet.end();
@@ -469,9 +473,10 @@ HfstTransducer * HfstTransducer::harmonize_(const HfstTransducer &another)
       {
     if (FdOperation::is_diacritic(*it) && this_alphabet.count(*it) == 0)
       {
-        this->insert_to_alphabet(*it);
+        add_to_this.insert(*it);
       }
       }
+    this->insert_to_alphabet(add_to_this);
 
     for (StringSet::const_iterator it = this_alphabet.begin();
      it != this_alphabet.end();
@@ -479,8 +484,10 @@ HfstTransducer * HfstTransducer::harmonize_(const HfstTransducer &another)
       {
     if (FdOperation::is_diacritic(*it) && another_alphabet.count(*it) == 0)
       {
-        another_copy.insert_to_alphabet(*it);
+        add_to_another.insert(*it);
       }
+      }
+    another_copy.insert_to_alphabet(add_to_another);
       }
 
     switch(this->type)
@@ -488,6 +495,7 @@ HfstTransducer * HfstTransducer::harmonize_(const HfstTransducer &another)
 #if HAVE_FOMA
     case (FOMA_TYPE):
       // no need to harmonize as foma's functions take care of harmonizing
+      return new HfstTransducer(another_copy);
       return NULL;
       break;
 #endif // HAVE_FOMA

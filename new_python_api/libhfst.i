@@ -1524,8 +1524,6 @@ def compile_lexc_file(filename, **kvargs):
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
-    if verbosity > 1:
-      print('Compiling with %s implementation...' % _libhfst.fst_type_to_string(type))
     lexccomp = LexcCompiler(type, withflags)
     lexccomp.setVerbosity(verbosity)
 

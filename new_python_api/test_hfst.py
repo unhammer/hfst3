@@ -367,6 +367,12 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     msg = sys.stdout
     tr = libhfst.regex('foo\\', msg)
 
+    # lexc compiler
+    msg = io.StringIO()
+    tr = libhfst.compile_lexc_file('test.lexc', output=msg, verbosity=2)
+    print('This is the output from lexc:')
+    print(msg.getvalue())
+
 print('\n--- Testing HfstBasicTransducer ---\n')
 
 # Create basic transducer, write it to file, read it, and test equivalence

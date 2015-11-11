@@ -506,22 +506,25 @@ def epsilon_fst(weight=0):
 
 ## Get a transducer as defined by regular expression \a regexp.
 # @param regexp The regular expression defined with <a href="http://www.fsmbook.com/">Xerox transducer notation</a>.
-def regex(regexp):
+# @param err Where warnings and errors are printed. Possible values are sys.stdout, sys.stderr, a StringIO or None, indicating a quiet mode.
+def regex(regexp, err=None):
     pass
 
 ## Compile lexc file \a filename into a transducer.
 # @param filename The name of the lexc file.
-# @param kvargs Arguments recognized are: verbosity, with_flags.
+# @param kvargs Arguments recognized are: verbosity, with_flags, output.
 # @param verbosity The verbosity of the compiler, defaults to 0 (silent). Possible values are: 0, 1, 2.
 # @param with_flags Whether lexc flags are used when compiling, defaults to False.
+# @param output Where output is printed. Possible values are sys.stdout, sys.stderr, a StringIO, sys.stderr being the default?
 def compile_lexc_file(filename, **kvargs):
     pass
 
 ## Compile (is 'run' a better term?) xfst file \a filename.
 # @param filename The name of the xfst file.
-# @param kvargs Arguments recognized are: verbosity, quit_on_fail, type.
+# @param kvargs Arguments recognized are: verbosity, quit_on_fail, output, type.
 # @param verbosity The verbosity of the compiler, defaults to 0 (silent). Possible values are: 0, 1, 2.
 # @param quit_on_fail Whether the script is exited on any error, defaults to True.
+# @param output Where output is printed. Possible values are sys.stdout, sys.stderr, a StringIO, sys.stderr being the default?
 # @param type Implementation type of the compiler, defaults to libhfst.get_default_fst_type().
 def compile_xfst_file(filename, **kvargs):
     pass
