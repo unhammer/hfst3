@@ -61,6 +61,7 @@ EXTRA_DIST=test.sh \
 	print_labels.xfst print_labels.output \
 	print_label_tally.xfst print_label_tally.output \
 	shortest_string.xfst shortest_string.output \
+	flag_with_unknown.xfst flag_with_unknown.output \
 	test_sublanguage_true.xfst test_sublanguage_false.xfst \
 	test_overlap_true.xfst test_overlap_false.xfst \
 	test_true.output test_false.output \
