@@ -345,7 +345,7 @@ ALL_SRCS=$(FST_TXTS) $(FST_STRINGS) $(FST_PAIRS) $(FST_PAIRSTRINGS) \
 .txt.pmatch:
 	${top_builddir}/tools/src/hfst-pmatch2fst $< > $@
 
-EXTRA_FILES=cat2dog.substitute cat.strings cat.txt cats_and_dogs.xre utf-8.strings latin-1.strings c_a_t.strings dos.strings not-contains-a.xre not-contains-a-comment-emptyline.xre parallel-left-arrow-multicom-emptyline.xre  parallel-left-arrow.xre cat.prolog
+EXTRA_FILES=cat2dog.substitute cat.strings cat.txt cats_and_dogs.xre utf-8.strings latin-1.strings c_a_t.strings dos.strings not-contains-a.xre not-contains-a-comment-emptyline.xre parallel-left-arrow-multicom-emptyline.xre  parallel-left-arrow.xre cat.prolog negative_epsilon_cycles.txt no_negative_epsilon_cycles.txt
 
 RESULT_FILES=basic.cat-dog-bird.lexc.flag.result \
 basic.cat-dog-bird.lexc.result \

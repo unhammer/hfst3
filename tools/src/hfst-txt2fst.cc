@@ -60,6 +60,8 @@ static bool use_numbers=false; // not used
 // printname for epsilon
 static char *epsilonname=NULL;
 static const unsigned int EPSILON_KEY=0;
+// check if there are epsilon cycles with a negative weight
+bool check_negative_epsilon_cycles = false;
 
 void
 print_usage()
@@ -74,7 +76,10 @@ print_usage()
     fprintf(message_out, "Text and format options:\n"
             "  -f, --format=FMT    Write result using FMT as backend format\n"
             "  -e, --epsilon=EPS   Interpret string EPS as epsilon in att format\n"
-            "  -p, --prolog        Read prolog format instead of att\n" );
+            "  -p, --prolog        Read prolog format instead of att\n");
+    fprintf(message_out, "Other options:\n"
+            "  -C, --check-negative-epsilon-cycles  Issue a warning if there are epsilon cycles\n"
+            "                                       with a negative weight in the transducer\n");
     fprintf(message_out, "\n");
     fprintf(message_out, 
         "If OUTFILE or INFILE is missing or -, standard streams will be used.\n"
@@ -108,12 +113,13 @@ parse_options(int argc, char** argv)
             {"number", no_argument, 0, 'n'},
             {"format", required_argument, 0, 'f'}, 
             {"prolog", no_argument, 0, 'p'}, 
+            {"check-negative-epsilon-cycles", no_argument, 0, 'C'}, 
             {0,0,0,0}
         };
         int option_index = 0;
         // add tool-specific options here 
         char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT
-                             HFST_GETOPT_UNARY_SHORT "e:nf:p",
+                             HFST_GETOPT_UNARY_SHORT "e:nf:pC",
                              long_options, &option_index);
         if (-1 == c)
         {
@@ -137,6 +143,9 @@ break;
         case 'f':
             output_format = hfst_parse_format_name(optarg);
             break;
+        case 'C':
+            check_negative_epsilon_cycles = true;
+            break;
 #include "inc/getopt-cases-error.h"
           }
     }
@@ -154,6 +163,13 @@ break;
         output_format = hfst::TROPICAL_OPENFST_TYPE;
         verbose_printf("Using default output format OpenFst "
                 "with tropical weight class\n");
+      }
+
+    if (output_format == hfst::XFSM_TYPE && read_prolog_format && check_negative_epsilon_cycles)
+      {
+        error(EXIT_FAILURE, 0, "Error: checking negative epsilon cycles not supported when reading in prolog format\n"
+              "and outputting in xfsm format.\n");
+        return EXIT_FAILURE;
       }
 
     return EXIT_CONTINUE;
@@ -199,6 +215,23 @@ process_stream(HfstOutputStream& outstream)
           try {
             HfstBasicTransducer fsm = 
               HfstBasicTransducer::read_in_prolog_format(inputfile, linecount);
+
+            if (check_negative_epsilon_cycles)
+              {
+                verbose_printf("Checking if the transducer has epsilon cycles with a negative weight...\n");
+                if (fsm.has_negative_epsilon_cycles())
+                  {
+                    if (!silent)
+                      {
+                        warning(0, 0, "Transducer has epsilon cycles with a negative weight.\n");
+                      }
+                  }
+                else
+                  {
+                    verbose_printf("No epsilon cycles with a negative weight detected...\n");
+                  }
+              }
+
             HfstTransducer t(fsm, output_format);
             hfst_set_name(t, inputfilename, "text");
             hfst_set_formula(t, inputfilename, "T");
@@ -218,6 +251,22 @@ process_stream(HfstOutputStream& outstream)
                              linecount);
             hfst_set_name(t, inputfilename, "text");
             hfst_set_formula(t, inputfilename, "T");
+            if (check_negative_epsilon_cycles)
+              {
+                verbose_printf("Checking if the transducer has epsilon cycles with a negative weight...\n");
+                hfst::implementations::HfstBasicTransducer fsm(t);
+                if (fsm.has_negative_epsilon_cycles())
+                  {
+                    if (!silent)
+                      {
+                        warning(0, 0, "Transducer has epsilon cycles with a negative weight.\n");
+                      }
+                  }
+                else
+                  {
+                    verbose_printf("No epsilon cycles with a negative weight detected...\n");
+                  }
+              }
             outstream << t;
           }
           catch (NotValidAttFormatException e) {
