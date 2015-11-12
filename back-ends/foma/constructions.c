@@ -1,19 +1,19 @@
-/*     Foma: a finite-state toolkit and library.                             */
-/*     Copyright © 2008-2014 Mans Hulden                                     */
+/*   Foma: a finite-state toolkit and library.                                 */
+/*   Copyright © 2008-2015 Mans Hulden                                         */
 
-/*     This file is part of foma.                                            */
+/*   This file is part of foma.                                                */
 
-/*     Foma is free software: you can redistribute it and/or modify          */
-/*     it under the terms of the GNU General Public License version 2 as     */
-/*     published by the Free Software Foundation.                            */
+/*   Licensed under the Apache License, Version 2.0 (the "License");           */
+/*   you may not use this file except in compliance with the License.          */
+/*   You may obtain a copy of the License at                                   */
 
-/*     Foma is distributed in the hope that it will be useful,               */
-/*     but WITHOUT ANY WARRANTY; without even the implied warranty of        */
-/*     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         */
-/*     GNU General Public License for more details.                          */
+/*      http://www.apache.org/licenses/LICENSE-2.0                             */
 
-/*     You should have received a copy of the GNU General Public License     */
-/*     along with foma.  If not, see <http://www.gnu.org/licenses/>.         */
+/*   Unless required by applicable law or agreed to in writing, software       */
+/*   distributed under the License is distributed on an "AS IS" BASIS,         */
+/*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  */
+/*   See the License for the specific language governing permissions and       */
+/*   limitations under the License.                                            */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -699,6 +699,8 @@ struct fsm *fsm_compose(struct fsm *net1, struct fsm *net2) {
             currtail = (index+asearch)->tail + 1;
             for ( ; iptr != currtail && iptr->mainloop == mainloop ; iptr++) {
                 
+                ain = machine_a->in;
+                aout = machine_a->out;
                 bin = iptr->symin;
                 bout = iptr->symout;
                 
@@ -1727,7 +1729,7 @@ struct fsm *fsm_substitute_symbol(struct fsm *net, char *original, char *substit
     if (strcmp(original,substitute) == 0)
         return(net);
     if ((o = sigma_find(original, net->sigma)) == -1) {
-	printf("\nSymbol '%s' not found in network!\n",original);
+	//fprintf(stderr, "\nSymbol '%s' not found in network!\n", original);
 	return(net);
     }
     if (strcmp(substitute,"0") == 0)
@@ -1908,6 +1910,87 @@ struct fsm *fsm_precedes(struct fsm *net1, struct fsm *net2) {
 struct fsm *fsm_follows(struct fsm *net1, struct fsm *net2) {
     return(fsm_complement(fsm_minimize(fsm_contains(fsm_minimize(fsm_concat(fsm_minimize(fsm_copy(net1)),fsm_concat(fsm_universal(),fsm_minimize(fsm_copy(net2)))))))));
 }
+
+struct fsm *fsm_unflatten(struct fsm *net, char *epsilon_sym, char *repeat_sym) {
+    int a, b, current_state, current_start, current_final, target_number, epsilon, repeat, in, out;
+    struct fsm_state *even_state, *odd_state;
+    struct state_arr *point_a;
+    struct triplethash *th;
+    
+    fsm_minimize(net);
+    fsm_count(net);
+    
+    epsilon = sigma_find(epsilon_sym, net->sigma);
+    repeat = sigma_find(repeat_sym, net->sigma);  
+    
+    even_state = net->states;
+    
+    /* new state 0 = {0,0} */
+    
+    STACK_2_PUSH(0,0);
+    
+    th = triplet_hash_init();
+    triplet_hash_insert(th, 0, 0, 0);
+    
+    fsm_state_init(sigma_max(net->sigma));
+    
+    point_a = init_state_pointers(even_state);
+
+    while (!int_stack_isempty()) {
+	
+	/* Get a pair of states to examine */
+	
+	a = int_stack_pop();
+	a = int_stack_pop();
+	
+	/* printf("Treating pair: {%i,%i}\n",a,b); */
+	
+	current_state = triplet_hash_find(th, a, a, 0);
+	current_start = ((point_a+a)->start == 1) ? 1 : 0;
+	current_final = ((point_a+a)->final == 1) ? 1 : 0;
+	
+	fsm_state_set_current_state(current_state, current_final, current_start);
+	
+	for (even_state = (point_a+a)->transitions; even_state->state_no == a; even_state++) {
+	    if (even_state->target == -1) {
+		continue;
+	    }
+	    in = even_state->in;
+	    b = even_state->target;
+	    for (odd_state = (point_a+b)->transitions; odd_state->state_no == b; odd_state++) {
+		if (odd_state->target == -1) {
+		    continue;
+		}
+		if ((target_number = triplet_hash_find(th, odd_state->target, odd_state->target, 0)) == -1) {
+		    STACK_2_PUSH(odd_state->target, odd_state->target);
+		    target_number = triplet_hash_insert(th, odd_state->target, odd_state->target, 0);
+		}
+		in = even_state->in;
+		out = odd_state->in;
+		if (out == repeat) {
+		    out = in;
+		} else if (in == IDENTITY || out == IDENTITY) {
+		    in = in == IDENTITY ? UNKNOWN : in;
+		    out = out == IDENTITY ? UNKNOWN : out;
+		}
+		if (in == epsilon) {
+		    in = EPSILON;
+		}
+		if (out == epsilon) {
+		    out = EPSILON;
+		}
+		fsm_state_add_arc(current_state, in, out, target_number, current_final, current_start);
+	    }
+	}
+	fsm_state_end_state();
+    }
+    xxfree(net->states);
+    fsm_state_close(net);
+    xxfree(point_a);
+    triplet_hash_free(th);
+    return(net);
+}
+
 
 struct fsm *fsm_shuffle(struct fsm *net1, struct fsm *net2) {
   int a, b, current_state, current_start, current_final, target_number;
@@ -2932,12 +3015,86 @@ struct fsm *fsm_mark_fsm_tail(struct fsm *net, struct fsm *marker) {
     return(newnet);
 }
 
+#ifndef ORIGINAL
+struct fsm *fsm_context_restrict(struct fsm *X, struct fsmcontexts *LR);
+#else
+struct fsm *fsm_context_restrict(struct fsm *X, struct fsmcontexts *LR) {
+
+    struct fsm *Var, *Notvar, *UnionL, *UnionP, *Result, *Word;
+    struct fsmcontexts *pairs;
+
+    /* [.#. \.#.* .#.]-`[[ [\X* X C X \X*]&~[\X* [L1 X \X* X R1|...|Ln X \X* X Rn] \X*]],X,0] */
+    /* Where X = variable symbol */
+    /* The above only works if we do the subtraction iff the right hand side contains .#. in */
+    /* its alphabet */
+    /* A more generic formula is the following: */
+
+    /* `[[[(?) \.#.* (?)] - `[[[\X* X C X \X*] - [\X* [L1 X \X* X R1|...|Ln X \X* X Rn] \X*] ],X,0],.#.,0]; */
+    /* Here, the LHS is another way of saying ~[?+ .#. ?+] */
+
+    Var = fsm_symbol("@VARX@");
+    Notvar = fsm_minimize(fsm_kleene_star(fsm_term_negation(fsm_symbol("@VARX@"))));
+
+    /* We add the variable symbol to all alphabets to avoid ? mathing it */
+    /* which would cause extra nondeterminism */
+    sigma_add("@VARX@", X->sigma);
+    sigma_sort(X);
+    
+    /* Also, if any L or R is undeclared we add 0 */
+    for (pairs = LR; pairs != NULL; pairs = pairs->next) {
+        if (pairs->left == NULL) {
+            pairs->left = fsm_empty_string();
+        } else {
+            sigma_add("@VARX@",pairs->left->sigma);
+	    sigma_substitute(".#.", "@#@", pairs->left->sigma);
+            sigma_sort(pairs->left);
+        }
+        if (pairs->right == NULL) {
+            pairs->right = fsm_empty_string();
+        } else {
+            sigma_add("@VARX@",pairs->right->sigma);
+	    sigma_substitute(".#.", "@#@", pairs->right->sigma);
+            sigma_sort(pairs->right);
+        }
+    }
+
+    UnionP = fsm_empty_set();
+    
+    for (pairs = LR; pairs != NULL ; pairs = pairs->next) {
+        UnionP = fsm_minimize(fsm_union(fsm_minimize(fsm_concat(fsm_copy(pairs->left),fsm_concat(fsm_copy(Var),fsm_concat(fsm_copy(Notvar),fsm_concat(fsm_copy(Var),fsm_copy(pairs->right)))))), UnionP));
+    }
+    
+    UnionL = fsm_minimize(fsm_concat(fsm_copy(Notvar),fsm_concat(fsm_copy(Var), fsm_concat(fsm_copy(X), fsm_concat(fsm_copy(Var),fsm_copy(Notvar))))));
+
+    Result = fsm_intersect(UnionL, fsm_complement(fsm_concat(fsm_copy(Notvar),fsm_minimize(fsm_concat(fsm_copy(UnionP),fsm_copy(Notvar))))));
+    if (sigma_find("@VARX@", Result->sigma) != -1) {
+        Result = fsm_complement(fsm_substitute_symbol(Result, "@VARX@","@_EPSILON_SYMBOL_@"));
+    } else {
+	Result = fsm_complement(Result);
+    }
+
+    if (sigma_find("@#@", Result->sigma) != -1) {
+	Word = fsm_minimize(fsm_concat(fsm_symbol("@#@"),fsm_concat(fsm_kleene_star(fsm_term_negation(fsm_symbol("@#@"))),fsm_symbol("@#@"))));
+        Result = fsm_intersect(Word, Result);
+        Result = fsm_substitute_symbol(Result, "@#@", "@_EPSILON_SYMBOL_@");
+    }
+    fsm_destroy(UnionP);
+    fsm_destroy(Var);
+    fsm_destroy(Notvar);
+    fsm_destroy(X);
+    fsm_clear_contexts(pairs);
+    return(Result);
+}
+#endif
+
 struct fsm *fsm_flatten(struct fsm *net, struct fsm *epsilon) {
     struct fsm *newnet;
     struct fsm_construct_handle *outh;
     struct fsm_read_handle *inh, *eps;
     int i, maxstate, in, out, target;
     char *epssym, *instring, *outstring;
+
+    net = fsm_minimize(net);
     
     inh = fsm_read_init(net);
     eps = fsm_read_init(epsilon);

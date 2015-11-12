@@ -19,9 +19,9 @@ LEXCTESTS="basic.cat-dog-bird.lexc basic.colons.lexc basic.comments.lexc
           xre.definitions.lexc xre.months.lexc xre.nested-definitions.lexc 
           xre.numeric-star.lexc xre.sharp.lexc xre.quotations.lexc
           xre.star-plus-optional.lexc
-          no-newline-before-sublexicon.lexc"
+          no-newline-before-sublexicon.lexc xre.any-variations.lexc"
 
-          # xre.any-variations.lexc - hfst works file, foma's eliminate_flags removes valid paths (hfst-compare -e)
+          # xre.any-variations.lexc # - hfst works file, foma's eliminate_flags removes valid paths (hfst-compare -e)
           # basic.end.lexc -hfst doesn't parse till end
           # xre.any-variations.lexc -foma ?:? problem
           # basic.multichar-symbol-with-0.lexc  - hfst works fine, foma wrong
