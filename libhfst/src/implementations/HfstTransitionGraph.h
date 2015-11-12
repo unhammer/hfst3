@@ -3536,6 +3536,25 @@
 
          bool has_negative_epsilon_cycles()
          {
+           bool has_negative_epsilon_transitions = false;
+           for (iterator it = begin(); it != end(); it++)
+             {
+               for (typename HfstTransitions::iterator tr_it
+                      = it->begin();
+                    tr_it != it->end(); tr_it++)
+                 {
+                   if (is_epsilon(tr_it->get_input_symbol()) && is_epsilon(tr_it->get_output_symbol()) && tr_it->get_weight() < 0)
+                     {
+                       has_negative_epsilon_transitions = true;
+                       break;
+                     }
+                 }
+             }
+           if (! has_negative_epsilon_transitions)
+             {
+               return false;
+             }
+
            std::map<HfstState, float> state_weights;
            for (unsigned int state = INITIAL_STATE; state < (this->get_max_state()+1); state++)
              {
