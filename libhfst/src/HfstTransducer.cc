@@ -143,6 +143,15 @@ void set_encode_weights(bool value) {
   bool get_encode_weights(void) {
     return encode_weights; }
 
+  void set_warning_stream(std::ostream * os)
+  {
+    hfst::implementations::TropicalWeightTransducer::set_warning_stream(os);
+  }
+
+  std::ostream * get_warning_stream()
+  {
+    return hfst::implementations::TropicalWeightTransducer::get_warning_stream();
+  }
 
 void set_minimization_algorithm(MinimizationAlgorithm a) {
     minimization_algorithm=a; 

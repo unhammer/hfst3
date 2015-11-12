@@ -313,10 +313,15 @@ namespace implementations
         (StdVectorFst * t, 
          std::vector<std::pair<unsigned short, std::string> > symbol_mappings);
 
+      static void set_warning_stream(std::ostream * os);
+      static std::ostream * get_warning_stream();
+
     private:
       static fst::SymbolTable create_symbol_table(std::string name);
       static void initialize_symbol_tables(StdVectorFst *t);
       static void remove_symbol_table(StdVectorFst *t);      
+
+      static std::ostream * warning_stream;
 
       /* Maps state numbers in AT&T text format to state ids used by 
          OpenFst transducers. */

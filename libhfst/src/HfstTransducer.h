@@ -158,6 +158,9 @@ namespace hfst
   HFSTDLL void set_unknown_symbols_in_use(bool);
   HFSTDLL bool get_unknown_symbols_in_use();
 
+  void set_warning_stream(std::ostream * os);
+  std::ostream * get_warning_stream();
+
   // *** ...TESTING AND OPTIMIZATION
 
 

@@ -13,12 +13,29 @@
 #include "TropicalWeightTransducer.h"
 #include "HfstSymbolDefs.h"
 #include "HfstLookupFlagDiacritics.h"
+#include "HfstTransitionGraph.h"
+#include "ConvertTransducerFormat.h"
 
 #ifndef MAIN_TEST
+
+#define CHECK_EPSILON_CYCLES(x, y) { hfst::implementations::HfstBasicTransducer * fsm = hfst::implementations::ConversionFunctions::tropical_ofst_to_hfst_basic_transducer( x ); if (fsm->has_negative_epsilon_cycles()) { if (warning_stream != NULL) { *warning_stream << y << ": warning: transducer has epsilon cycles with a negative weight" << std::endl; } } delete fsm; }
+
 namespace hfst { 
   bool get_encode_weights();
 
   namespace implementations {
+
+    std::ostream * TropicalWeightTransducer::warning_stream = NULL;
+
+    std::ostream * TropicalWeightTransducer::get_warning_stream()
+    {
+      return warning_stream;
+    }
+
+    void TropicalWeightTransducer::set_warning_stream(std::ostream * os)
+    {
+      warning_stream = os;
+    }
     
     // This function can be moved to its own file if TropicalWeightTransducer.o
     // yields a 'File too big' error.
@@ -26,6 +43,9 @@ namespace hfst {
     (StdVectorFst * t, bool to_initial_state)
     {
       assert (t->InputSymbols() != NULL);
+
+      CHECK_EPSILON_CYCLES(t, "push_weights");
+      
       fst::StdVectorFst * retval = new fst::StdVectorFst();
       if (to_initial_state)
         fst::Push<StdArc, REWEIGHT_TO_INITIAL>(*t, retval, fst::kPushWeights);
@@ -94,6 +114,9 @@ namespace hfst {
     // yields a 'File too big' error.
     StdVectorFst * TropicalWeightTransducer::minimize(StdVectorFst * t)
     {
+
+      CHECK_EPSILON_CYCLES(t, "minimize");
+
       RmEpsilon<StdArc>(t);
 
       float w = get_smallest_weight(t); 
@@ -1392,6 +1415,9 @@ namespace hfst {
     StdVectorFst * a = copy(a_);
     StdVectorFst * b = copy(b_);
 
+    CHECK_EPSILON_CYCLES(a, "are_equivalent");
+    CHECK_EPSILON_CYCLES(b, "are_equivalent");
+
     RmEpsilon<StdArc>(a);
     RmEpsilon<StdArc>(b);
 
@@ -1601,6 +1627,9 @@ namespace hfst {
   StdVectorFst * 
   TropicalWeightTransducer::determinize(StdVectorFst * t)
   {
+
+    CHECK_EPSILON_CYCLES(t, "determinize");
+
     RmEpsilon<StdArc>(t);
 
     float w = get_smallest_weight(t); 
@@ -1761,7 +1790,9 @@ namespace hfst {
 
   StdVectorFst * 
   TropicalWeightTransducer::remove_epsilons(StdVectorFst * t)
-  { return new StdVectorFst(RmEpsilonFst<StdArc>(*t)); }
+  {
+    CHECK_EPSILON_CYCLES(t, "remove_epsilons");
+    return new StdVectorFst(RmEpsilonFst<StdArc>(*t)); }
 
   StdVectorFst * 
   TropicalWeightTransducer::prune(StdVectorFst * t)
@@ -1773,6 +1804,8 @@ namespace hfst {
   StdVectorFst * 
   TropicalWeightTransducer::n_best(StdVectorFst * t, unsigned int n)
   { 
+    CHECK_EPSILON_CYCLES(t, "n_best");
+
     StdVectorFst * n_best_fst = new StdVectorFst(); 
     StdVectorFst * scaled = t->Copy();
     RmEpsilon(scaled);
@@ -2329,6 +2362,9 @@ namespace hfst {
   StdVectorFst * TropicalWeightTransducer::intersect(StdVectorFst * t1,
                                                      StdVectorFst * t2)
   {
+    CHECK_EPSILON_CYCLES(t1, "intersect");
+    CHECK_EPSILON_CYCLES(t2, "intersect");
+
     RmEpsilon(t1);
     RmEpsilon(t2);
 
@@ -2368,6 +2404,9 @@ namespace hfst {
       t1->SetOutputSymbols(t1->InputSymbols());
     if (t2->OutputSymbols() == NULL)
       t2->SetOutputSymbols(t2->InputSymbols());
+
+    CHECK_EPSILON_CYCLES(t1, "subtract");
+    CHECK_EPSILON_CYCLES(t2, "subtract");
 
     RmEpsilon(t1);
     RmEpsilon(t2);
