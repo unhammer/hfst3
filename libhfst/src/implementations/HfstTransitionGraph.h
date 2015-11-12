@@ -3500,6 +3500,51 @@
              return result;
            }
 
+         bool has_negative_epsilon_cycles
+           (HfstState state,
+            float total_weight,
+            std::map<HfstState, float> & state_weights)
+         {
+           std::map<HfstState, float>::const_iterator it = state_weights.find(state);
+           if (it != state_weights.end()) // cycle detected
+             {
+               if (total_weight - it->second < 0)
+                 {
+                   return true; // cycle with negative weight detected
+                 }
+               return false; // cycle with positive weight
+             }
+           state_weights[state] = total_weight;
+           
+           // Go through all transitions in this state                                 
+           const HfstBasicTransducer::HfstTransitions &transitions 
+             = this->operator[](state);
+           for (HfstBasicTransducer::HfstTransitions::const_iterator it
+                  = transitions.begin();
+                it != transitions.end(); it++)
+             {
+               if (is_epsilon(it->get_input_symbol()) && is_epsilon(it->get_output_symbol()))
+                 {
+                   if (has_negative_epsilon_cycles
+                       (it->get_target_state(), total_weight + it->get_weight(), state_weights))
+                     return true;
+                 }
+             }
+           state_weights.erase(state);
+           return false;
+         }
+
+         bool has_negative_epsilon_cycles()
+         {
+           std::map<HfstState, float> state_weights;
+           for (unsigned int state = INITIAL_STATE; state < (this->get_max_state()+1); state++)
+             {
+               if (has_negative_epsilon_cycles(state, 0, state_weights))
+                 return true;
+             }
+           return false;           
+         }
+
          HFSTDLL bool is_infinitely_ambiguous
            (HfstState state, 
             std::set<HfstState> &epsilon_path_states,
