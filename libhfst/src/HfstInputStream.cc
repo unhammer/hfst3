@@ -502,8 +502,9 @@ namespace hfst
 
         if (hfst_version_2_weighted_transducer) // this should not happen
           { 
-            fprintf(stderr, "ERROR: not transducer stream\n");
-            exit(1);
+            //fprintf(stderr, "ERROR: not transducer stream\n");
+            //exit(1);
+            HFST_THROW_MESSAGE(HfstFatalException, "not transducer stream");
           }
         break;
         }

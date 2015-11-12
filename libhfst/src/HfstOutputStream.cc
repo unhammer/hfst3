@@ -433,8 +433,9 @@ HfstOutputStream::append_implementation_specific_header_data(std::vector<char>&,
       // write header length using two bytes
       int header_length = (int)header.size();
       if (header_length > MAX_HEADER_LENGTH) {
-        fprintf(stderr, "ERROR: transducer header is too long\n");
-        exit(1);
+        //fprintf(stderr, "ERROR: transducer header is too long\n");
+        //exit(1);
+        HFST_THROW_MESSAGE(HfstFatalException, "transducer header is too long");
       }
 
       char first_byte = *((char*)(&header_length));

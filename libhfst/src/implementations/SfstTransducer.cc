@@ -1161,14 +1161,16 @@ namespace hfst { namespace implementations {
         const char * osymbol = t->alphabet.code2symbol(it->upper_char());
 
         if (isymbol == NULL) {
-          fprintf(stderr, "ERROR: input number %i not found\n", 
-                  it->lower_char());
-          exit(1);
+          HFST_THROW_MESSAGE(HfstFatalException, "input number not found");
+          //fprintf(stderr, "ERROR: input number %i not found\n", 
+          //        it->lower_char());
+          //exit(1);
         }
         if (osymbol == NULL) {
-          fprintf(stderr, "ERROR: input number %i not found\n", 
-                  it->upper_char());
-          exit(1);
+          HFST_THROW_MESSAGE(HfstFatalException, "output number not found");
+          //fprintf(stderr, "ERROR: input number %i not found\n", 
+          //        it->upper_char());
+          //exit(1);
         }
 
         std::string istring(isymbol);

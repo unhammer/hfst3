@@ -166,13 +166,17 @@ namespace hfst { namespace implementations
 
             if (arc.ilabel >= symbol_vector.size())
               {
-                std::cerr << "FATAL ERROR: input number " << arc.ilabel << " not in symbol_vector" << std::endl;
-                exit(1);
+                std::ostringstream oss;
+                oss << "FATAL ERROR: input number " << arc.ilabel << " not in symbol_vector" << std::endl;
+                HFST_THROW_MESSAGE(HfstFatalException, oss.str());
+                //exit(1);
               }
             if (arc.olabel >= symbol_vector.size())
               {
-                std::cerr << "FATAL ERROR: output number " << arc.olabel << " not in symbol_vector" << std::endl;
-                exit(1);
+                std::ostringstream oss;
+                oss << "FATAL ERROR: output number " << arc.olabel << " not in symbol_vector" << std::endl;
+                HFST_THROW_MESSAGE(HfstFatalException, oss.str());
+                //exit(1);
               }
 
             net->add_transition(origin, 

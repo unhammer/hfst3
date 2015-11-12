@@ -32,8 +32,9 @@ namespace hfst
       else if (repl_type == REPL_DOWN)
         t_proj.output_project();
       else {
-        fprintf(stderr, "ERROR: replace: Impossible replace type\n");
-        exit(1);
+        //fprintf(stderr, "ERROR: replace: Impossible replace type\n");
+        //exit(1);
+        HFST_THROW_MESSAGE(HfstFatalException, "impossible replace type");
       }
 
       HfstTransducer pi_star(alphabet, type, true);
