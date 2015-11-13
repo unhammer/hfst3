@@ -500,7 +500,7 @@ class XfstCompiler
   //! @brief Define wheter prompts are printed.
   XfstCompiler& setPromptVerbosity(bool verbosity);
   //! @brief Explicitly print the prompt to stdout.
-  const XfstCompiler& prompt() const;
+  const XfstCompiler& prompt();
   //! @brief Get the prompt string.
   char* get_prompt() const;
 
@@ -520,6 +520,10 @@ class XfstCompiler
 
   int xfst_fclose(FILE * f, const char * name);
   FILE * xfst_fopen(const char* path, const char* mode);
+
+  std::ostream & output();
+  std::ostream & error();
+  void flush(std::ostream * oss);
 
  protected:
   //! @brief Get the prompt that is used when applying up or down 
@@ -656,7 +660,7 @@ class XfstCompiler
   private:
   /* */
   const XfstCompiler& error(const char* message) const;
-  const XfstCompiler& print_transducer_info() const;
+  XfstCompiler& print_transducer_info();
   XfstCompiler& add_prop_line(char* line);
 
   XfstCompiler& apply_line(char* line, const HfstTransducer * t, size_t cutoff);
@@ -668,6 +672,8 @@ class XfstCompiler
 
   XfstCompiler& print_bool(bool value);
   XfstCompiler& read_prop_line(char* line);
+
+  std::ostream * get_stream(std::ostream * oss);
 
   bool use_readline_;
   bool read_interactive_text_from_stdin_;
@@ -708,6 +714,9 @@ class XfstCompiler
   // Where output is printed.
   std::ostream * output_;
   std::ostream * error_;
+#ifdef WINDOWS
+  std::ostringstream winoss_;
+#endif
 }
 ;
 

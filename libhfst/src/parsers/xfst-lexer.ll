@@ -736,14 +736,16 @@ LWSP [\t ]*
   FILE * tmp = NULL;
   if ((tmp = fopen(hfst::xfst::strstrip(hxfsttext), "r" )) != NULL) 
   {
-    printf("Opening file '%s'.\n", hfst::xfst::strstrip(hxfsttext));
+    //printf("Opening file '%s'.\n", hfst::xfst::strstrip(hxfsttext));
     // push the included text onto the lexer stack
     hxfstpush_buffer_state(hxfst_create_buffer(tmp, 32000));
     ++source_stack_size;
   } 
   else 
   {
-    printf("Error opening file '%s'\n",hfst::xfst::strstrip(hxfsttext));
+    char buffer [1024];
+    sprintf(buffer, "Error opening file '%s'\n",hfst::xfst::strstrip(hxfsttext));
+    hxfsterror(buffer);
   } 
   BEGIN(INITIAL); 
 }
