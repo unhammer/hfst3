@@ -39,7 +39,10 @@
 #  include <getopt.h>
 #endif
 
+#ifdef WINDOWS
 #include "hfst-string-conversions.h"
+using hfst::hfst_fprintf_console;
+#endif
 
 #include <limits>
 #include <math.h>
@@ -87,7 +90,6 @@ using hfst::StringSet;
 using std::string;
 using std::vector;
 
-using hfst::hfst_fprintf;
 
 // add tools-specific variables here
 static char* lookup_file_name;
@@ -909,9 +911,23 @@ lookup_printf(const char* format, const HfstOneLevelPath* input,
     free(lookupform);
     int rv;
     if (! quote_special)
-      rv = hfst::hfst_fprintf(ofile, "%s", res);
+      {
+#ifdef WINDOWS
+        if (!pipe_output)
+          rv = hfst_fprintf_console(ofile, "%s", res);
+        else
+#endif
+          rv = fprintf(ofile, "%s", res);
+      }
     else
-      rv = hfst::hfst_fprintf(ofile, "%s", get_print_format(res).c_str());
+      {
+#ifdef WINDOWS
+        if (!pipe_output)
+          rv = hfst_fprintf_console(ofile, "%s", get_print_format(res).c_str());
+        else
+#endif
+          rv = fprintf(ofile, "%s", get_print_format(res).c_str());
+      }
     free(res);
     return rv;
 }
@@ -1732,7 +1748,7 @@ int main( int argc, char **argv ) {
       }
 
     // has no effect on windows or mac
-    hfst::print_output_to_console(!pipe_output);
+    //hfst::print_output_to_console(!pipe_output);
 #endif
 
     // close buffers, we use streams

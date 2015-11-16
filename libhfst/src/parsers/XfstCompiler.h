@@ -716,6 +716,7 @@ class XfstCompiler
   std::ostream * error_;
 #ifdef WINDOWS
   std::ostringstream winoss_;
+  std::ostream * redirected_stream_;
 #endif
 }
 ;

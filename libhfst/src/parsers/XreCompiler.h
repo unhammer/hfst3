@@ -150,6 +150,13 @@ class XreCompiler
   void set_error_stream(std::ostream * os);
   std::ostream * get_error_stream();
 
+  XreCompiler& setOutputToConsole(bool value);
+  bool getOutputToConsole();
+
+  // TODO get rid of global variables so these functions can be non-static
+  static std::ostream * get_stream(std::ostream * oss);
+  static void flush(std::ostream * oss);
+
   private:
   std::map<std::string,hfst::HfstTransducer*> definitions_;
   std::map<std::string, std::string> function_definitions_;
@@ -157,6 +164,11 @@ class XreCompiler
   std::map<std::string, std::set<std::string> > list_definitions_;
   hfst::ImplementationType format_;
   bool verbose_;
+#ifdef WINDOWS
+  bool output_to_console_;
+  // global std::ostringstream * winoss_;
+  // global std::ostream * redirected_stream_;
+#endif
 
 }
 ;

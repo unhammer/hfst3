@@ -473,7 +473,12 @@ int main(int argc, char** argv)
 
           if (0 != comp.parse_line((expression + "\n").c_str()))
             {
-              fprintf(stderr, "expression '%s' could not be parsed\n", expression.c_str());
+#ifdef WINDOWS
+              if (!pipe_output)
+                hfst::hfst_fprintf_console(stderr, "expression '%s' could not be parsed\n", expression.c_str());
+              else
+#endif
+                fprintf(stderr, "expression '%s' could not be parsed\n", expression.c_str());
               if (comp.get("quit-on-fail") == "ON")
                 {
                   return EXIT_FAILURE;
@@ -521,7 +526,12 @@ int main(int argc, char** argv)
 
           if (0 != comp.parse_line((expression + "\n").c_str()))
             {
-              fprintf(stderr, "expression '%s' could not be parsed\n", expression.c_str());
+#ifdef WINDOWS
+              if (!pipe_output)
+                hfst::hfst_fprintf_console(stderr, "expression '%s' could not be parsed\n", expression.c_str());
+              else
+#endif
+                fprintf(stderr, "expression '%s' could not be parsed\n", expression.c_str());
               if (comp.get("quit-on-fail") == "ON")
                 {
                   return EXIT_FAILURE;

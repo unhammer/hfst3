@@ -98,7 +98,7 @@ void match_and_print(hfst_ol::PmatchContainer & container,
 #ifndef _MSC_VER
       outstream << container.match(input_text);
 #else
-      hfst::hfst_fprintf(stdout, "%s", container.match(input_text).c_str());
+      hfst::hfst_fprintf_console(stdout, "%s", container.match(input_text).c_str());
 #endif
     } else {
         hfst_ol::LocationVectorVector locations = container.locate(input_text);
@@ -109,7 +109,7 @@ void match_and_print(hfst_ol::PmatchContainer & container,
               outstream << it->at(0).start << "|" << it->at(0).length << "|"
                           << it->at(0).output << "|" << it->at(0).tag << std::endl;
 #else
-              hfst::hfst_fprintf(stdout, "%i|%i|%s|%s\n", it->at(0).start, it->at(0).length, it->at(0).output.c_str(), it->at(0).tag.c_str());
+              hfst::hfst_fprintf_console(stdout, "%i|%i|%s|%s\n", it->at(0).start, it->at(0).length, it->at(0).output.c_str(), it->at(0).tag.c_str());
 #endif
             }
         }
@@ -258,7 +258,7 @@ int main(int argc, char ** argv)
         container.set_extract_tags_mode(extract_tags);
         container.set_profile(profile);
 #ifdef _MSC_VER
-        hfst::print_output_to_console(true);
+        //hfst::print_output_to_console(true);
 #endif
     return process_input(container, std::cout);
     } catch(HfstException & e) {

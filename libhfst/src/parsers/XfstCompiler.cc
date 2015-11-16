@@ -67,7 +67,9 @@ extern void hxfst_delete_buffer(YY_BUFFER_STATE);
 
 using hfst::implementations::HfstBasicTransducer;
 using hfst::implementations::HfstBasicTransition;
-using hfst::hfst_fprintf;
+#ifdef WINDOWS
+  using hfst::hfst_fprintf_console;
+#endif
 
 #define GET_TOP(x) HfstTransducer * x = this->top(); if ((x) == NULL) { xfst_lesser_fail(); return *this; }
 #define PROMPT_AND_RETURN_THIS prompt(); return *this;
@@ -146,7 +148,8 @@ namespace xfst {
         output_(&std::cout),
         error_(&std::cerr)
 #ifdef WINDOWS
-        , winoss_(std::ostringstream())
+        , winoss_(std::ostringstream()),
+        redirected_stream_(NULL)
 #endif
     {       
         xre_.set_expand_definitions(true);
@@ -209,7 +212,8 @@ namespace xfst {
         output_(&std::cout),
         error_(&std::cerr)
 #ifdef WINDOWS
-        , winoss_(std::ostringstream())
+        , winoss_(std::ostringstream()),
+        redirected_stream_(NULL)
 #endif
     {       
         xre_.set_expand_definitions(true);
@@ -264,6 +268,7 @@ namespace xfst {
     if (retval != 0)
       {
         error() << "could not close file " << name << std::endl;
+        flush(&error());
         xfst_fail();
       }
     return retval;
@@ -275,6 +280,7 @@ namespace xfst {
     if (f == NULL)
       {
         error() << "could not open file " << path << std::endl;
+        flush(&error());
         xfst_fail();
       }
     return f;
@@ -283,7 +289,7 @@ namespace xfst {
   void XfstCompiler::set_error_stream(std::ostream & os)
   {
     error_ = &os;
-    this->xre_.set_error_stream(this->error_);
+    //this->xre_.set_error_stream(this->error_);
     this->lexc_.set_error_stream(this->error_);
   }
 
@@ -347,6 +353,7 @@ namespace xfst {
             assert(*p != '\0');
             //hfst_fprintf(errorstream_, "no colon in line\n");
             error() << "no colon in line" << std::endl;
+            flush(&error());
           }
         p++;
         while (isspace(*p))
@@ -657,6 +664,7 @@ namespace xfst {
             if (verbose_)
               {
                 error() << "warning: lookup is infinitely ambiguous, limiting the number of cycles to " << cutoff << std::endl;
+                flush(&error());
             //hfst_fprintf(warnstream_, 
             //                "warning: lookup is infinitely ambiguous, limiting the number of cycles to " SIZE_T_SPECIFIER "\n", cutoff);
               }
@@ -741,6 +749,7 @@ namespace xfst {
         t->get_type() == hfst::HFST_OLW_TYPE)
       {
         error() << "Network is already optimized for lookup." << std::endl;
+        flush(&error());
         //hfst_fprintf(warnstream_, "Network is already optimized for lookup.\n");
         prompt();
         return *this;
@@ -759,6 +768,7 @@ namespace xfst {
       {
         error() << "converting transducer type from " << hfst::implementation_type_to_format(t->get_type()) << " to " 
                 << hfst::implementation_type_to_format(to_format) << ", this might take a while..." << std::endl;
+        flush(&error());
     //hfst_fprintf(warnstream_, "converting transducer type from %s to %s, this might take a while...\n",
     //                hfst::implementation_type_to_format(t->get_type()),
     //                hfst::implementation_type_to_format(to_format));
@@ -797,6 +807,7 @@ namespace xfst {
         t->get_type() != hfst::HFST_OLW_TYPE)
       {
         error() << "Network is already in ordinary format." << std::endl;
+        flush(&error());
         //hfst_fprintf(warnstream_, "Network is already in ordinary format.\n");
         prompt();
         return *this;
@@ -806,12 +817,14 @@ namespace xfst {
       {
         error() << "converting transducer type from " << hfst::implementation_type_to_format(t->get_type()) << " to " 
                 << hfst::implementation_type_to_format(format_) << ", this might take a while..." << std::endl;
+        flush(&error());
         //hfst_fprintf(warnstream_, "converting transducer type from %s to %s, this might take a while...\n",
         //             hfst::implementation_type_to_format(t->get_type()),
         //             hfst::implementation_type_to_format(format_));
         if (! hfst::HfstTransducer::is_safe_conversion(t->get_type(), format_))
           {
             error() << "warning: converting from weighted to unweighted format, loss of information is possible" << std::endl;
+            flush(&error());
             //hfst_fprintf(warnstream_, "warning: converting from weighted to unweighted format, loss of information is possible\n");
           }
       }
@@ -860,6 +873,7 @@ namespace xfst {
             if (verbose_)
               {
                 error() << "warning: transducer is infinitely ambiguous, limiting number of cycles to " << ol_cutoff << std::endl;
+                flush(&error());
             //hfst_fprintf(warnstream_, 
             //                "warning: transducer is infinitely ambiguous, limiting number of cycles to " SIZE_T_SPECIFIER "\n", ol_cutoff);
               }
@@ -877,6 +891,7 @@ namespace xfst {
           {
             error() << "warning: lookdown not implemented, inverting transducer and performing lookup" << std::endl
                     << "for faster performance, invert and minimize top network and do lookup instead" << std::endl << std::endl;
+            flush(&error());
         //hfst_fprintf(warnstream_, 
         //                 "warning: lookdown not implemented, inverting transducer and performing lookup\n"
         //                 "for faster performance, invert and minimize top network and do lookup instead\n\n");
@@ -896,6 +911,7 @@ namespace xfst {
     XfstCompiler::apply_med_line(char* /*line*/)
       {
         error() << "Missing apply med" << std::endl;
+        flush(&error());
         //hfst_fprintf(errorstream_, "Missing apply med %s:%d\n", __FILE__, __LINE__);
 #if 0
         char* token = strstrip(line);
@@ -926,6 +942,7 @@ namespace xfst {
           {
             assert(*p != '\0');
             error() << "no colon in line" << std::endl;
+            flush(&error());
             //hfst_fprintf(errorstream_, "no colon in line\n");
           }
         p++;
@@ -988,11 +1005,13 @@ namespace xfst {
         if (verbose_)
           {
             error() << "Command " << std::string(s) << " is not recognised." << std::endl;
+            flush(&error());
             //fprintf(stderr, "Command %s is not recognised.\n", s);
           }
         return 1;
       }
     error() << "Command " << std::string(s) << " is not recognised." << std::endl;
+    flush(&error());
     //fprintf(stderr, "Command %s is not recognised.\n", s);
     this->prompt();
     return 0;
@@ -1031,6 +1050,7 @@ namespace xfst {
                 t->get_type() == hfst::HFST_OLW_TYPE)
               {
                 error() << "Operation not supported for optimized lookup format. Consider 'remove-optimization' to convert into ordinary format." << std::endl; 
+                flush(&error());
                 //hfst_fprintf(stderr, "Operation not supported for optimized lookup format. "
                 //             "Consider 'remove-optimization' to convert into ordinary format.\n");
                 prompt();
@@ -1042,6 +1062,7 @@ namespace xfst {
               {
                 error() << "warning: lookdown not implemented, inverting transducer and performing lookup" << std::endl
                         << "for faster performance, invert and minimize top network and do lookup instead" << std::endl << std::endl;
+                flush(&error());
                 //hfst_fprintf(warnstream_, 
                 //             "warning: lookdown not implemented, inverting transducer and performing lookup\n"
                 //             "for faster performance, invert and minimize top network and do lookup instead\n\n");
@@ -1063,6 +1084,7 @@ namespace xfst {
                 if (verbose_)
                   {
                     error() << "warning: transducer is infinitely ambiguous, limiting number of cycles to " << ol_cutoff << std::endl;
+                    flush(&error());
                 //hfst_fprintf(warnstream_, 
                 //                 "warning: transducer is infinitely ambiguous, limiting number of cycles to " SIZE_T_SPECIFIER "\n", ol_cutoff);
                   }
@@ -1198,6 +1220,7 @@ namespace xfst {
         if ((strlen(start) > 1) || (strlen(end) > 1))
           {
             error() << "unsupported unicode range " << std::string(start) << "-" << std::string(end) << std::endl;
+            flush(&error());
         //hfst_fprintf(errorstream_, "unsupported unicode range %s-%s\n", start, end);
           }
         std::set<string> l;
@@ -1220,6 +1243,7 @@ namespace xfst {
             error() << "Error: '" << std::string(name) << "' has already been defined as a transducer variable." << std::endl
                     << "It cannot have an incompatible definition as a list." << std::endl
                     << "Please undefine the definition first." << std::endl;
+            flush(&error());
             //fprintf(warnstream_, "Error: '%s' has already been defined as a transducer variable.\n"
             //        "It cannot have an incompatible definition as a list.\n"
             //        "Please undefine the definition first.\n", name);
@@ -1236,7 +1260,7 @@ namespace xfst {
           }
         free(p);
         lists_[name] = l;
-        xre_.define_list(name, l);
+        xre_.define_list(name, l); // XRE
         PROMPT_AND_RETURN_THIS;
       }
 
@@ -1246,7 +1270,7 @@ namespace xfst {
     GET_TOP(top);
     bool was_defined = xre_.is_definition(name);
     //if (!was_defined) {
-      xre_.define(name, *top);
+    xre_.define(name, *top); // XRE
       //}
     HfstTransducer * nu = new HfstTransducer(*top); 
     stack_.pop(); // todo: delete?
@@ -1286,6 +1310,7 @@ namespace xfst {
             error() << "Error: '" << std::string(name) << "' has already been defined as a list variable." << std::endl
                     << "It cannot have an incompatible definition as a transducer." << std::endl
                     << "Please undefine the variable first." << std::endl;
+            flush(&error());
             //fprintf(warnstream_, "Error: '%s' has already been defined as a list variable.\n"
             //        "It cannot have an incompatible definition as a transducer.\n"
             //        "Please undefine the variable first.\n", name);
@@ -1297,9 +1322,10 @@ namespace xfst {
         {
           bool was_defined = xre_.is_definition(name);
           //if (!was_defined)
-          if (! xre_.define(name, xre))  // todo: equal to latest_regex_compiled ?
+          if (! xre_.define(name, xre))  // todo: equal to latest_regex_compiled ?  XRE
             {
               error() << "Could not define variable '" << std::string(name) << "'" << std::endl;
+              flush(&error());
                 //        << xre_.get_error_message() << std::endl;
               //hfst_fprintf(errorstream_, "Could not define variable %s:\n%s\n", 
               //             name, xre_.get_error_message().c_str());
@@ -1324,6 +1350,7 @@ namespace xfst {
       else
         {
           error() << "Could not define variable '" << std::string(name) << "'" << std::endl;
+          flush(&error());
           //        << xre_.get_error_message() << std::endl;
           //hfst_fprintf(errorstream_, "Could not define variable %s:\n%s\n", 
           //        name, xre_.get_error_message().c_str());
@@ -1411,7 +1438,7 @@ namespace xfst {
       {
         std::set<unsigned int> arg_positions; 
         if (! xre_.get_positions_of_symbol_in_xre
-            (*arg, retval, arg_positions) ) 
+            (*arg, retval, arg_positions) )  // XRE
           {
             return std::string("");
           }
@@ -1476,6 +1503,7 @@ namespace xfst {
       if (! extract_function_name(prototype, name))
         {
           error() << "Error extracting function name from prototype '" << std::string(prototype) << "'" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "Error extracting function name "
           //        "from prototype '%s'\n", prototype);
           xfst_fail();
@@ -1485,6 +1513,7 @@ namespace xfst {
       if (! extract_function_arguments(prototype, arguments))
         {
           error() << "Error extracting function arguments from prototype '" << std::string(prototype) << "'" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "Error extracting function arguments "
           //        "from prototype '%s'\n", prototype);
           xfst_fail();
@@ -1496,6 +1525,7 @@ namespace xfst {
       if (xre_converted == std::string(""))
         {
           error() << "Error parsing function definition '" << std::string(xre) << "'" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "Error parsing function definition '%s'\n", xre);
           xfst_fail();
           PROMPT_AND_RETURN_THIS;
@@ -1503,9 +1533,10 @@ namespace xfst {
 
       bool was_defined = xre_.is_function_definition(name);
 
-      if (! xre_.define_function(name, arguments.size(), xre_converted))
+      if (! xre_.define_function(name, arguments.size(), xre_converted)) // XRE
         {
           error() << "Error when defining function" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "Error when defining function\n");
           xfst_fail();
           PROMPT_AND_RETURN_THIS;
@@ -1544,7 +1575,7 @@ namespace xfst {
           if (definitions_.find(name) != definitions_.end())
             {
               definitions_.erase(definitions_.find(name));
-              xre_.undefine(name);
+              xre_.undefine(name);  // XRE
             }
           name = strtok(NULL, " ");
         }
@@ -1771,6 +1802,7 @@ namespace xfst {
     if (def_name == "")
       {
         error() << "warning: loaded transducer definition has no name, skipping it" << std::endl;
+        flush(&error());
         //hfst_fprintf(warnstream_, "warning: loaded transducer definition "
         //        "has no name, skipping it\n");
         // xfst_lesser_fail(); ???
@@ -1781,6 +1813,7 @@ namespace xfst {
     if (it != definitions_.end())
       {
         error() << "warning: a definition named '" << def_name << "' already exists, overwriting it" << std::endl;
+        flush(&error());
         //hfst_fprintf(warnstream_, "warning: a definition named '%s' "
         //        "already exists, overwriting it\n", def_name.c_str());
         // xfst_lesser_fail(); ???
@@ -1802,6 +1835,7 @@ namespace xfst {
             if (verbose_)
               {
                 error() << "warning: transducer is in optimized lookup format, 'apply up' is the only operation it supports" << std::endl;
+                flush(&error());
                 //hfst_fprintf(warnstream_, "warning: transducer is in optimized lookup format, 'apply up' is the only operation it supports\n");
               }
             return;
@@ -1810,21 +1844,25 @@ namespace xfst {
         if (verbose_)
           {
             error() << "warning: converting transducer type from " << hfst::implementation_type_to_format(t->get_type()) << " to " << hfst::implementation_type_to_format(format_);
+            flush(&error());
             //hfst_fprintf(warnstream_, "warning: converting transducer type from %s to %s",
             //        hfst::implementation_type_to_format(t->get_type()),
             //        hfst::implementation_type_to_format(format_));
             if (filename != NULL)
               {
                 error() << " when reading from file '" << to_filename(filename) << "'";
+                flush(&error());
                 //hfst_fprintf(warnstream_, " when reading from file '%s'",
                 //        to_filename(filename));
               }
             if (! hfst::HfstTransducer::is_safe_conversion(t->get_type(), format_))
               {
                 error() << " (loss of information is possible)";
+                flush(&error());
                 //hfst_fprintf(warnstream_, " (loss of information is possible)");
               }
             error() << std::endl;
+            flush(&error());
             //hfst_fprintf(warnstream_, "\n");
           }
         t->convert(format_);
@@ -1840,12 +1878,14 @@ namespace xfst {
     if (infile == NULL)
       {
         error() << "Could not open file " << infilename << std::endl;
+        flush(&error());
         xfst_fail();
         return NULL;
       }
     if (fclose(infile) != 0)
       {
         error() << "Could not close file " << infilename << std::endl;
+        flush(&error());
         xfst_fail();
         return NULL;
       }
@@ -1860,6 +1900,7 @@ namespace xfst {
     catch (NotTransducerStreamException ntse)
       {
         error() << "Unable to read transducers from " << to_filename(infilename) << std::endl;
+        flush(&error());
         //hfst_fprintf(errorstream_, "Unable to read transducers from %s\n", 
         //        to_filename(infilename));
         xfst_fail();
@@ -1891,6 +1932,7 @@ namespace xfst {
                 t->get_type() == hfst::HFST_OLW_TYPE)
               {
                 error() << "cannot load optimized lookup transducers as definitions" << std::endl;
+                flush(&error());
                 //hfst_fprintf(errorstream_, "cannot load optimized lookup transducers as definitions\n");
                 break;
               }
@@ -1919,6 +1961,7 @@ namespace xfst {
   XfstCompiler::collect_epsilon_loops()
     {
       error() << "cannot collect epsilon loops" << std::endl;
+      flush(&error());
       //hfst_fprintf(stderr, "cannot collect epsilon loops %s:%d\n", __FILE__,
       //        __LINE__);
       PROMPT_AND_RETURN_THIS;
@@ -1993,6 +2036,7 @@ namespace xfst {
       if (rv != 0)
         {
           error() << "system " << command << " returned " << rv << std::endl;
+          flush(&error());
           //hfst_fprintf(stderr, "system %s returned %d\n", command, rv);
         }
       PROMPT_AND_RETURN_THIS;
@@ -2006,6 +2050,7 @@ namespace xfst {
           if (strcmp(name, "compose-flag-as-special") == 0)
             {
               error() << "variable compose-flag-as-special not found, using flag-is-epsilon instead" << std::endl;
+              flush(&error());
               //hfst_fprintf(warnstream_, "variable compose-flag-as-special not found, using flag-is-epsilon instead\n");
               variables_["flag-is-epsilon"] = text;
               if (verbose_)
@@ -2019,6 +2064,7 @@ namespace xfst {
           else
             {
               error() << "no such variable: '" << name << "'" << std::endl;
+              flush(&error());
               //hfst_fprintf(warnstream_, "no such variable: '%s'\n", name);
               // xfst_lesser_fail(); ???
               PROMPT_AND_RETURN_THIS;
@@ -2077,6 +2123,7 @@ namespace xfst {
       if (variables_.find(name) == variables_.end())
         {
           error() << "no such variable: '" << name << "'" << std::endl;
+          flush(&error());
           //hfst_fprintf(warnstream_, "no such variable: '%s'\n", name);
           // xfst_lesser_fail(); ???
           PROMPT_AND_RETURN_THIS;
@@ -2101,6 +2148,7 @@ namespace xfst {
       if (variables_.find(name) == variables_.end())
         {
           error() << "no such variable: '" << name << "'" << std::endl;
+          flush(&error());
           //hfst_fprintf(warnstream_, "no such variable: '%s'\n", name);
           // xfst_lesser_fail(); ???
           PROMPT_AND_RETURN_THIS;
@@ -2148,6 +2196,7 @@ namespace xfst {
         {
           error() << "Not enough networks on stack." << std::endl
                   << "Operation requires at least 2." << std::endl;
+          flush(&error());
           //hfst_fprintf(stderr, "Not enough networks on stack. "
           //        "Operation requires at least 2.\n");
           xfst_lesser_fail();
@@ -2190,6 +2239,7 @@ namespace xfst {
         retval->get_type() == hfst::HFST_OLW_TYPE)
       {
         error() << "Operation not supported for optimized lookup format. Consider 'remove-optimization' to convert into ordinary format." << std::endl;
+        flush(&error());
         //hfst_fprintf(stderr, "Operation not supported for optimized lookup format. "
         //             "Consider 'remove-optimization' to convert into ordinary format.\n");
         prompt();
@@ -2202,7 +2252,8 @@ namespace xfst {
   XfstCompiler::test_funct(bool assertion)
     {
       error() << "test funct missing" << std::endl;
-      hfst_fprintf(stderr, "test funct missing %s:%d\n", __FILE__, __LINE__);
+      flush(&error());
+      //hfst_fprintf(stderr, "test funct missing %s:%d\n", __FILE__, __LINE__);
       //MAYBE_ASSERT(assertion, result);
       PROMPT_AND_RETURN_THIS;
     }
@@ -2258,8 +2309,10 @@ namespace xfst {
         value = id.compare(tmp, false);
       else if (level == LOWER_LEVEL)
         value = ! id.compare(tmp, false);
-      else
+      else {
         error() << "ERROR: argument given to function 'test_uni' not recognized" << std::endl;
+        flush(&error());
+      }
       //hfst_fprintf(errorstream_, "ERROR: argument given to function 'test_uni'\n"
       //          "not recognized\n");
 
@@ -2323,6 +2376,7 @@ namespace xfst {
     if (stack_.size() < 2)
       {
         error() << "Not enough networks on stack. Operation requires at least 2." << std::endl;
+        flush(&error());
         //hfst_fprintf(stderr, "Not enough networks on stack. "
         //        "Operation requires at least 2.\n");
         xfst_lesser_fail();
@@ -2366,6 +2420,7 @@ namespace xfst {
             }
           default:
             error() << "ERROR: unknown test operation" << std::endl;
+            flush(&error());
             //hfst_fprintf(errorstream_, "ERROR: unknown test operation\n");
             break;
           }
@@ -2389,6 +2444,7 @@ namespace xfst {
   XfstCompiler::test_unambiguous(bool assertion)
     {
       error() << "test unambiguous missing" << std::endl;
+      flush(&error());
       //hfst_fprintf(stderr, "test unambiguous missing %s:%d\n", __FILE__, __LINE__);
       //MAYBE_ASSERT(assertion, result);
       PROMPT_AND_RETURN_THIS;
@@ -2471,6 +2527,7 @@ namespace xfst {
       if (it == definitions_.end())
         {
           error() << "no such definition '" << variable << "', cannot substitute" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "no such definition '%s', cannot substitute\n", 
           //        variable);
           MAYBE_QUIT;
@@ -2487,6 +2544,7 @@ namespace xfst {
       if (alpha.find(labelstr) == alpha.end())
         {
           error() << "no occurrences of label '" << label << "', cannot substitute" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "no occurrences of label '%s', cannot substitute\n", 
           //        label);
           MAYBE_QUIT;
@@ -2507,6 +2565,7 @@ namespace xfst {
                   (isymbol == labelstr || osymbol == labelstr))
                 {
                   error() << "label '" << label << "' is used as a symbol on one side of an arc, cannot substitute" << std::endl;
+                  flush(&error());
                   //hfst_fprintf(errorstream_, "label '%s' is used as a symbol on one "
                   //        "side of an arc, cannot substitute\n", label);
                   MAYBE_QUIT;
@@ -2553,6 +2612,7 @@ namespace xfst {
               catch (const char * msg)
                 {
                   error() << "error: could not substitute with '" << list << "'" << std::endl;
+                  flush(&error());
                   //hfst_fprintf(errorstream_, "error: could not substitute with '%s'\n", list);
                   MAYBE_QUIT;
                   PROMPT_AND_RETURN_THIS;
@@ -2586,6 +2646,7 @@ namespace xfst {
           if (!target_label_found)
             {
               error() << "no occurrences of '" << target_label.first << ":" << target_label.second << "', cannot substitute" << std::endl;
+              flush(&error());
               //hfst_fprintf(errorstream_, "no occurrences of '%s:%s', cannot substitute\n", 
               //        target_label.first.c_str(), target_label.second.c_str());
               PROMPT_AND_RETURN_THIS;
@@ -2596,6 +2657,7 @@ namespace xfst {
       catch (const char * msg)
         {
           error() << "error: could not substitute '" << target << "'" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "error: could not substitute '%s'\n", target);
           MAYBE_QUIT;
         }
@@ -2613,6 +2675,7 @@ namespace xfst {
       if (alpha.find(target) == alpha.end())
         {
           error() << "no occurrences of symbol '" << target << "', cannot substitute" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "no occurrences of symbol '%s', cannot substitute\n", target);
           MAYBE_QUIT;
           PROMPT_AND_RETURN_THIS;
@@ -2625,11 +2688,11 @@ namespace xfst {
         liststr = "";
 
       // use regex parser:  `[ [TR] , "s" , L ]
-      xre_.define("TempXfstTransducerName", *top);
+      xre_.define("TempXfstTransducerName", *top);  // XRE
       std::string subst_regex("`[ [TempXfstTransducerName] , ");
       subst_regex += "\"" + std::string(target) + "\" , " + liststr + " ]";
-      HfstTransducer * substituted = xre_.compile(subst_regex);
-      xre_.undefine("TempXfstTransducerName");
+      HfstTransducer * substituted = xre_.compile(subst_regex);  // XRE
+      xre_.undefine("TempXfstTransducerName");  // XRE
 
       if (substituted != NULL)
         {
@@ -2640,6 +2703,7 @@ namespace xfst {
       else
         {
           error() << "fatal error in substitution" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "fatal error in substitution\n");
           this->fail_flag_ = true;
           //exit(EXIT_FAILURE);
@@ -2744,6 +2808,7 @@ namespace xfst {
         }
 #else
       error() << "print dir not implemented for windows" << std::endl;
+      flush(&error());
       //hfst_fprintf(stderr, "print dir not implemented for windows\n");
 #endif // WINDOWS
       PROMPT_AND_RETURN_THIS;
@@ -3065,6 +3130,7 @@ namespace xfst {
         {
           error() << "warning: longest string may have flag diacritics that are not shown" << std::endl;
           error() << "         but are used in calculating its length (use 'eliminate flags')" << std::endl;
+          flush(&error());
           //hfst_fprintf(warnstream_ ,"warning: longest string may have flag diacritics that are not shown\n");
           //hfst_fprintf(warnstream_, "         but are used in calculating its length (use 'eliminate flags')\n");
         }
@@ -3239,6 +3305,7 @@ namespace xfst {
           break;
         default:
           error() << "ERROR: argument given to function 'print_words' not recognized" << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "ERROR: argument given to function 'print_words'\n"
           //        "not recognized\n");
           flush(oss);
@@ -3258,6 +3325,7 @@ namespace xfst {
         {
           int cutoff = string_to_size_t(variables_["print-words-cycle-cutoff"]);
           error() << "warning: transducer is cyclic, limiting the number of cycles to " << cutoff << std::endl;
+          flush(&error());
           //hfst_fprintf(warnstream_, "warning: transducer is cyclic, limiting the number of cycles to %i\n", cutoff);
           if (variables_["obey-flags"] == "OFF")
             temp.extract_paths(results, number, cutoff);
@@ -3309,25 +3377,31 @@ namespace xfst {
   std::ostream * XfstCompiler::get_stream(std::ostream * oss)
   {
 #ifdef WINDOWS
-      if (output_to_console_ && (oss == &std::cout))
-        {
-          return &winoss_;
-        }
+    if (output_to_console_ && (oss == &std::cerr || oss == &std::cout))
+      {
+        redirected_stream_ = oss;
+        return &winoss_;
+      }
 #endif
-      return oss;
+    return oss;
   }
 
   void XfstCompiler::flush(std::ostream * oss)
   {
 #ifdef WINDOWS
-      if (output_to_console_ && (oss == &winoss_))
-        {
-          hfst_fprintf(stdout, winoss_.str().c_str());
-          winoss_.str("");
-        }
+    if (output_to_console_ && (oss == &winoss_))
+      {
+        if (redirected_stream_ == &std::cerr)
+          hfst_fprintf_console(stderr, winoss_.str().c_str());
+        else if (redirected_stream_ == &std::cout)
+          hfst_fprintf_console(stdout, winoss_.str().c_str());
+        else
+          ;
+        redirected_stream_ = NULL;
+        winoss_.str("");
+      }
 #endif
   }
-
 
   XfstCompiler& 
   XfstCompiler::print_name(std::ostream * oss_)
@@ -3372,6 +3446,7 @@ namespace xfst {
       if (it == definitions_.end())
         {
           error() << "no such defined network: '" << name << "'" << std::endl;
+          flush(&error());
           //hfst_fprintf(stderr, "no such defined network: '%s'\n", name);
           PROMPT_AND_RETURN_THIS;
         }
@@ -3662,6 +3737,7 @@ namespace xfst {
       if (definitions_.find(name) == definitions_.end())
         {
           error() << "no such defined network: '" << name << "'" << std::endl;
+          flush(&error());
           //hfst_fprintf(stderr, "no such defined network: '%s'\n", name);
           PROMPT_AND_RETURN_THIS;
         }
@@ -3683,7 +3759,8 @@ namespace xfst {
       if (definitions_.empty())
         {
           error() << "no defined networks" << std::endl;
-          hfst_fprintf(stderr, "no defined networks\n");
+          flush(&error());
+          //hfst_fprintf(stderr, "no defined networks\n");
           PROMPT_AND_RETURN_THIS;
         }
 
@@ -3769,7 +3846,7 @@ namespace xfst {
       read = fread(file_data, sizeof(char), MAX_FILE_SIZE, infile);
       if ((read > 0) && (read < MAX_FILE_SIZE) && (feof(infile)))
         {
-          compiled = xre_.compile(file_data);
+          compiled = xre_.compile(file_data);  // XRE
           if (compiled != NULL)
             {
               MAYBE_MINIMIZE(compiled);
@@ -3787,6 +3864,7 @@ namespace xfst {
       else if (!feof(infile))
         {
           error() << "regex file longer than buffer :-(" << std::endl;
+          flush(&error());
           //hfst_fprintf(stderr, "regex file longer than buffer :-(\n");
         }
       if (compiled != NULL)
@@ -3803,7 +3881,7 @@ namespace xfst {
       {
         delete latest_regex_compiled;
       }
-    latest_regex_compiled = xre_.compile_first(indata, chars_read);
+    latest_regex_compiled = xre_.compile_first(indata, chars_read);  // XRE
     return *this;
   }
 
@@ -3823,6 +3901,7 @@ namespace xfst {
       else
         {
           error() << "Error reading regex '" << indata << "'." << std::endl;
+          flush(&error());
           //        << xre_.get_error_message() << std::endl;
           //hfst_fprintf(errorstream_, "Error reading regex '%s':\n%s\n", indata, 
           //        xre_.get_error_message().c_str());
@@ -3844,6 +3923,7 @@ namespace xfst {
       catch (const NotValidPrologFormatException & e)
         {
           error() << e() << std::endl;
+          flush(&error());
           //hfst_fprintf(errorstream_, "%s\n", e().c_str());
           PROMPT_AND_RETURN_THIS;
         }
@@ -3852,6 +3932,7 @@ namespace xfst {
   XfstCompiler::read_prolog(const char* /* indata */)
     {
       error() << "missing read prolog" << std::endl;
+      flush(&error());
       //hfst_fprintf(stderr, "missing read prolog %s:%d\n", __FILE__, __LINE__);
       PRINT_INFO_PROMPT_AND_RETURN_THIS;
     }
@@ -3864,6 +3945,7 @@ namespace xfst {
   XfstCompiler::read_spaced(const char* /* indata */)
     {
       error() << "missing read spaced" << std::endl;
+      flush(&error());
       //hfst_fprintf(stderr, "missing read spaced %s:%d\n", __FILE__, __LINE__);
       PRINT_INFO_PROMPT_AND_RETURN_THIS;
     }
@@ -3874,6 +3956,7 @@ namespace xfst {
     if (infile == NULL)
       {
         error() << "Could not open file " << filename << std::endl;
+        flush(&error());
         xfst_fail();
         prompt();
         return *this;
@@ -3896,6 +3979,7 @@ namespace xfst {
     if (0 != fclose(infile))
       {
         error() << "Could not close file " << filename << std::endl;
+        flush(&error());
         xfst_fail();
       }
       
@@ -3912,6 +3996,7 @@ namespace xfst {
   XfstCompiler::read_text(const char* /* indata */)
     {
       error() << "missing read text" << std::endl;
+      flush(&error());
       //hfst_fprintf(stderr, "missing read text %s:%d\n", __FILE__, __LINE__);
       PRINT_INFO_PROMPT_AND_RETURN_THIS;
     }
@@ -3920,6 +4005,7 @@ namespace xfst {
   XfstCompiler::cleanup_net()
     {
       error() << "cannot cleanup net" << std::endl;
+      flush(&error());
       //hfst_fprintf(stderr, "cannot cleanup net %s:%d\n", __FILE__, __LINE__);
       if (stack_.size() < 1)
         {
@@ -4007,6 +4093,7 @@ namespace xfst {
             break;
           default:
             error() << "ERROR: unknown unary operation" << std::endl;
+            flush(&error());
             //hfst_fprintf(errorstream_, "ERROR: unknown unary operation\n");
             break;
           }
@@ -4018,6 +4105,7 @@ namespace xfst {
     catch (const FunctionNotImplementedException & e)
       {
         error() << "function not available" << std::endl;
+        flush(&error());
         //hfst_fprintf(stderr, "function not available.\n");
         xfst_fail();
         stack_.push(result);
@@ -4032,6 +4120,7 @@ namespace xfst {
       if (stack_.size() < 2)
         {
           error() << "Not enough networks on stack. Operation requires at least 2." << std::endl;
+        flush(&error());
           //hfst_fprintf(stderr, "Not enough networks on stack. "
           //        "Operation requires at least 2.\n");
           xfst_lesser_fail();
@@ -4059,6 +4148,7 @@ namespace xfst {
           catch (const TransducersAreNotAutomataException & e)
             {
               error() << "transducers are not automata" << std::endl;
+        flush(&error());
               //hfst_fprintf(stderr, "transducers are not automata\n");
               xfst_fail();
               stack_.push(another);
@@ -4069,6 +4159,7 @@ namespace xfst {
             }
         default:
           error() << "ERROR: unknown binary operation" << std::endl;
+        flush(&error());
           //hfst_fprintf(errorstream_, "ERROR: unknown binary operation\n");
           xfst_fail();
           break;
@@ -4087,6 +4178,7 @@ namespace xfst {
     if (stack_.size() < 2)
       {
         error() << "Not enough networks on stack. Operation requires at least 2." << std::endl;
+        flush(&error());
         //hfst_fprintf(stderr, "Not enough transducers on stack, operation requires at least 2.\n");
         xfst_lesser_fail();
         return *this;
@@ -4102,6 +4194,7 @@ namespace xfst {
         if (t->get_type() != result->get_type())
           {
             error() << "Stack contains transducers whose type differs." << std::endl;
+        flush(&error());
             //hfst_fprintf(stderr, "Stack contains transducers whose type differs.\n");
             xfst_lesser_fail();
             break;
@@ -4124,6 +4217,7 @@ namespace xfst {
                       if (verbose_)
                         {
                           error() << "Both composition arguments contain flag diacritics. Set harmonize-flags ON to harmonize them." << std::endl;
+        flush(&error());
                           //hfst_fprintf(warnstream_, "Both composition arguments contain flag diacritics. "
                           //             "Set harmonize-flags ON to harmonize them.\n");
                           // xfst_lesser_fail(); ???
@@ -4144,6 +4238,7 @@ namespace xfst {
                   error() << "Error: flag diacritics must be identities in composition if flag-is-epsilon is ON." << std::endl
                           << "I.e. only FLAG:FLAG is allowed, not FLAG1:FLAG2, FLAG:bar or foo:FLAG" << std::endl
                           << "Apply twosided flag-diacritics (tfd) before composition." << std::endl;
+        flush(&error());
                   //hfst_fprintf(outstream_, "Error: flag diacritics must be identities in composition if flag-is-epsilon is ON.\n"
                   //             "I.e. only FLAG:FLAG is allowed, not FLAG1:FLAG2, FLAG:bar or foo:FLAG\n"
                   //             "Apply twosided flag-diacritics (tfd) before composition.\n");
@@ -4165,6 +4260,7 @@ namespace xfst {
             break;
           default:
             error() << "ERROR: unknown binary operation" << std::endl;
+        flush(&error());
             //hfst_fprintf(errorstream_, "ERROR: unknown binary operation\n");
             break;
           }
@@ -4351,6 +4447,7 @@ namespace xfst {
   XfstCompiler::sort_net()
     {
       error() << "missing sort net" << std::endl;
+        flush(&error());
       //hfst_fprintf(stderr, "cannot sort net %s:%d\n", __FILE__, __LINE__);
       PRINT_INFO_PROMPT_AND_RETURN_THIS;
     }
@@ -4358,6 +4455,7 @@ namespace xfst {
   XfstCompiler::substring_net()
     {
       error() << "missing substring net" << std::endl;
+        flush(&error());
       //hfst_fprintf(stderr, "missing substring net %s:%d\n", __FILE__, __LINE__);
       PRINT_INFO_PROMPT_AND_RETURN_THIS;
     }
@@ -4371,6 +4469,7 @@ namespace xfst {
   XfstCompiler::print_file_info(std::ostream * oss)
     {
       error() << "file info not implemented (cf. summarize)" << std::endl;
+        flush(&error());
       //hfst_fprintf(outfile, "file info not implemented (cf. summarize) %s:%d\n",
       //        __FILE__, __LINE__);
       PROMPT_AND_RETURN_THIS;
@@ -4380,6 +4479,7 @@ namespace xfst {
   XfstCompiler::print_properties(const char* /* name */, std::ostream * oss)
     {
       error() << "missing print properties" << std::endl;
+        flush(&error());
       //hfst_fprintf(outfile, "missing print properties %s:%d\n", __FILE__, __LINE__);
       PROMPT_AND_RETURN_THIS;
     }
@@ -4692,6 +4792,7 @@ namespace xfst {
                                          whole_path.size() - 1))
                 {
                   error() << "FATAL ERROR: could not return to level '" << (int)(whole_path.size() - 1) << "'" << std::endl; 
+        flush(&error());
                   //hfst_fprintf(errorstream_, "FATAL ERROR: could not return to level '%i'\n", 
                   //        (int)(whole_path.size() - 1));
                   ignore_history_after_index(ind);
@@ -4709,6 +4810,7 @@ namespace xfst {
               else if (! return_to_level(whole_path, shortest_path, level))
                 {
                   error() << "FATAL ERROR: could not return to level '" << level << "'" << std::endl;
+        flush(&error());
                   //hfst_fprintf(errorstream_, "FATAL ERROR: could not return to level '%i'\n", level);
                   ignore_history_after_index(ind);
                   PROMPT_AND_RETURN_THIS;
@@ -4761,8 +4863,8 @@ namespace xfst {
   // Returns an automaton that contains one ore more "^[" "^]" expressions.
   static HfstTransducer * contains_regexps(hfst::xre::XreCompiler & xre_)
   {
-    HfstTransducer * not_bracket_star = xre_.compile("[? - \"^[\" - \"^]\"]* ;");
-    xre_.define("TempNotBracketStar", *not_bracket_star);
+    HfstTransducer * not_bracket_star = xre_.compile("[? - \"^[\" - \"^]\"]* ;");  // XRE
+    xre_.define("TempNotBracketStar", *not_bracket_star);  // XRE
     // all paths that contain one or more well-formed ^[ ^] expressions
     HfstTransducer * well_formed = xre_.compile("TempNotBracketStar \"^[\" TempNotBracketStar  [ \"^]\" TempNotBracketStar \"^[\"  TempNotBracketStar ]*  \"^]\" TempNotBracketStar ;");
     xre_.undefine("TempNotBracketStar");
@@ -4770,6 +4872,7 @@ namespace xfst {
     return well_formed;
   }
 
+  // XRE
   static HfstTransducer * contains_regexp_markers_on_one_side(hfst::xre::XreCompiler & xre_, bool input_side)
   {
     HfstTransducer * retval = NULL;
@@ -4785,7 +4888,7 @@ namespace xfst {
     return retval;
   }
 
-  // @pre \a t must be an automaton
+  // @pre \a t must be an automaton  XRE
   static bool is_well_formed_for_compile_replace(const HfstTransducer * t, hfst::xre::XreCompiler & xre_)
   {
     HfstTransducer * well_formed = contains_regexps(xre_);
@@ -4847,7 +4950,7 @@ namespace xfst {
     // debug
     //std::cerr << "to_literal_transducer: compiling expression: " << pathstr << std::endl;
     char * p = strdup(pathstr.c_str());
-    HfstTransducer * retval = xre_.compile(p);
+    HfstTransducer * retval = xre_.compile(p);  // XRE
     free(p);
     return retval;
   }
@@ -4890,13 +4993,15 @@ namespace xfst {
 
       if (is_well_formed_for_compile_replace(&tmp_cp, xre_))
         {
-          if (verbose_)
+          if (verbose_) {
             error() << "Network is well-formed." << std::endl; //fprintf(stderr, "Network is well-formed.\n");
+            flush(&error()); }
         }
       else
         {
-          if (verbose_)
+          if (verbose_) {
             error() << "Network is not well-formed." << std::endl; //fprintf(stderr, "Network is not well-formed.\n");
+            flush(&error()); }
           xfst_lesser_fail();
           prompt();
           return *this;
@@ -4932,10 +5037,11 @@ namespace xfst {
                    char * cpr = strdup(CPR.c_str());
                    // debug
                    //fprintf(stderr, "compiling replacement '%s'...\n", cpr);
-                   HfstTransducer * replacement = xre_.compile(cpr);
+                   HfstTransducer * replacement = xre_.compile(cpr);  // XRE
                    if (replacement == NULL)
                      {
                        error() << "Could not compile regular expression in compile-replace: " << cpr << "." << std::endl;
+        flush(&error());
                        //fprintf(stderr, "Could not compile regular expression in compile-replace: %s.\n", cpr);
                        xfst_lesser_fail();
                        prompt();
@@ -4976,6 +5082,7 @@ namespace xfst {
       catch(const char * msg)
         {
           error() << "compile_replace threw an error: '" << msg << "'" << std::endl;
+        flush(&error());
           //fprintf(stderr, "compile_replace threw an error: '%s'\n", msg);
         }
       HfstTransducer * result = new HfstTransducer(fsm, format_);
@@ -5016,6 +5123,7 @@ namespace xfst {
   XfstCompiler::hfst(const char* text)
     {
       error() << "HFST: " << text << std::endl;
+        flush(&error());
       //hfst_fprintf(stderr, "HFST: %s\n", text);
       PROMPT_AND_RETURN_THIS;
     }
@@ -5042,6 +5150,7 @@ namespace xfst {
     if (infile == NULL)
       {
         error() << "could not read lexc file" << std::endl;
+        flush(&error());
         //hfst_fprintf(errorstream_, "could not read lexc file\n");
         xfst_fail();
         PROMPT_AND_RETURN_THIS;
@@ -5052,6 +5161,7 @@ namespace xfst {
     if (0 != fclose(infile))
       {
         error() << "Could not close file " << filename << std::endl;
+        flush(&error());
         xfst_fail();
       }
 
@@ -5071,6 +5181,7 @@ namespace xfst {
     if (t == NULL)
       {
         error() << "error compiling file in lexc format" << std::endl;
+        flush(&error());
         //hfst_fprintf(errorstream_, "error compiling file in lexc format\n");
         xfst_fail();
         PROMPT_AND_RETURN_THIS;
@@ -5089,6 +5200,7 @@ namespace xfst {
       if (infile == NULL)
         {
           error() << "could not read att file " << filename << std::endl;
+        flush(&error());
           //hfst_fprintf(errorstream_, "could not read att file\n");
           xfst_fail();
           PROMPT_AND_RETURN_THIS;
@@ -5107,16 +5219,19 @@ namespace xfst {
         }
       catch (const HfstException & e)
         {
-          if (0 != fclose(infile))
+          if (0 != fclose(infile)) {
             error() << "Could not close file " << filename << std::endl;
+            flush(&error()); }
 
           error() << "error reading in att format" << std::endl;
+        flush(&error());
           //hfst_fprintf(errorstream_, "error reading file in att format\n");
           xfst_fail();
         }
       if (0 != fclose(infile))
         {
           error() << "could not close att file " << filename << std::endl;
+        flush(&error());
           xfst_fail();
         }
       PROMPT_AND_RETURN_THIS;
@@ -5151,6 +5266,7 @@ namespace xfst {
       if (hxfstin == NULL)
         {
           error() << "could not open " << filename << " for reading" << std::endl;
+        flush(&error());
           //hfst_fprintf(stderr, "could not open %s for reading\n", filename);
           return -1;
         }
@@ -5211,7 +5327,7 @@ namespace xfst {
   XfstCompiler::setOutputToConsole(bool value)
   {
     output_to_console_ = value;
-    hfst::print_output_to_console(output_to_console_);
+    //hfst::print_output_to_console(output_to_console_);
     return *this;
   }
   bool
@@ -5244,6 +5360,7 @@ namespace xfst {
     return *this;
   }
 
+  // CONSOLE
   const XfstCompiler&
   XfstCompiler::prompt()
     {
@@ -5251,12 +5368,12 @@ namespace xfst {
         {
           // On windows, prompt is always printed to console. On other platforms,
           // this has no effect.
-          bool val = hfst::is_output_printed_to_console();
-          hfst::print_output_to_console(true);
+          //bool val = hfst::is_output_printed_to_console();
+          //hfst::print_output_to_console(true);
           output() << "hfst[" << stack_.size() << "]: ";
           flush(&output());
           //hfst_fprintf(outstream_, "hfst[" SIZE_T_SPECIFIER "]: ", stack_.size());
-          hfst::print_output_to_console(val);
+          //hfst::print_output_to_console(val);
         }
       return *this;
     }

@@ -1,7 +1,7 @@
 #ifdef WINDOWS
-#  include <windows.h>
-#  include <string>
-#endif // WINDOWS
+
+#include <windows.h>
+#include <string>
 
 #include <cstdarg>
 #include <cstdio>
@@ -10,31 +10,12 @@
 
 namespace hfst 
 {
-#ifdef WINDOWS
-  /*  std::string wide_string_to_string(const std::wstring & wstr)
-    {
-      int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), NULL, 0, NULL, NULL);
-      std::string str( size_needed, 0 );
-      WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), &str[0], size_needed, NULL, NULL);
-      return str;
-      }*/
-#endif // WINDOWS*/
-
-#ifdef WINDOWS
-  bool output_to_console = false;
-  void print_output_to_console(bool val) { output_to_console = val; }
-  bool is_output_printed_to_console() { return output_to_console; }
-#else
-  void print_output_to_console(bool val) { (void)val; }
-  bool is_output_printed_to_console() { return false; }
-#endif // WINDOWS
-
-  int hfst_fprintf(FILE * stream, const char * format, ...)
+  int hfst_fprintf_console(FILE * stream, const char * format, ...)
   {
     va_list args;
     va_start(args, format);
-#ifdef WINDOWS
-    if (output_to_console && (stream == stdout || stream == stderr))
+
+    if ((stream == stdout || stream == stderr))
       {
         char buffer [1024];
         int r = vsprintf(buffer, format, args);
@@ -63,14 +44,8 @@ namespace hfst
         va_end(args);
         return retval;
       }
-#else
-    int retval = vfprintf(stream, format, args);
-    va_end(args);
-    return retval;
-#endif // WINDOWS
   }
 
-#ifdef WINDOWS
   bool get_line_from_console(std::string & str, size_t buffer_size, bool keep_newline /* = false*/)
   {
     bool DEBUG = false;  
@@ -126,6 +101,7 @@ namespace hfst
   {
     SetConsoleCP(65001);
   }
-#endif // WINDOWS
 
 } // namespace hfst
+
+#endif // WINDOWS

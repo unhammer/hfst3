@@ -11,6 +11,7 @@
 #include "xre_utils.h"
 #include "HfstTransducer.h"
 #include "HfstXeroxRules.h"
+#include "XreCompiler.h"
 
 using std::string;
 using std::map;
@@ -35,6 +36,16 @@ namespace hfst {
   }
 }
 
+std::ostream * xreerrstr()
+{
+  return hfst::xre::XreCompiler::get_stream(hfst::xre::error_);
+}
+
+void xreflush(std::ostream * os)
+{
+  hfst::xre::XreCompiler::flush(os);
+} 
+
 int xreerror(yyscan_t scanner, const char* msg)
 { 
   char buffer [1024];
@@ -53,7 +64,11 @@ int xreerror(yyscan_t scanner, const char* msg)
 
   buffer[1023] = '\0';
   if (hfst::xre::verbose_)
-    *(hfst::xre::error_) << std::string(buffer);
+    {
+      std::ostream * err = xreerrstr();
+      *(err) << std::string(buffer);
+      xreflush(err);
+    }
   return 0;
 }
 
@@ -63,7 +78,9 @@ xreerror(const char *msg)
   char buffer [1024];
   int n = sprintf(buffer, "*** xre parsing failed: %s\n", msg);
   buffer[1023] = '\0';
-  *(hfst::xre::error_) << std::string(buffer);
+  std::ostream * err = xreerrstr();
+  *err << std::string(buffer);
+  xreflush(err);
   return 0;
 }
 
@@ -261,6 +278,8 @@ get_quoted(const char *s)
 char*
 parse_quoted(const char *s)
 {
+  std::ostream * err = xreerrstr();
+
     char* quoted = get_quoted(s);
     char* rv = static_cast<char*>(malloc(sizeof(char)*strlen(quoted) + 1)); // added + 1
     char* p = quoted;
@@ -285,7 +304,8 @@ parse_quoted(const char *s)
               case '5':
               case '6':
               case '7':
-                *(hfst::xre::error_) << "*** XRE unimplemented: parse octal escape in " << std::string(p);
+                *err << "*** XRE unimplemented: parse octal escape in " << std::string(p);
+                xreflush(err);
                 *r = '\0';
                 p = p + 5;
                 break;
@@ -320,7 +340,8 @@ parse_quoted(const char *s)
                 p = p + 2;
                 break;
               case 'u':
-                *(hfst::xre::error_) << "Unimplemented: parse unicode escapes in " << std::string(p);
+                *err << "Unimplemented: parse unicode escapes in " << std::string(p);
+                xreflush(err);
                 *r = '\0';
                 r++;
                 p = p + 6;
@@ -340,7 +361,8 @@ parse_quoted(const char *s)
                       }
                     else
                       {
-                        *(hfst::xre::error_) << "*** XRE unimplemented: parse \\x" << i << std::endl;
+                        *err << "*** XRE unimplemented: parse \\x" << i << std::endl;
+                        xreflush(err);
                         //fprintf(stderr, "*** XRE unimplemented: "
                         //        "parse \\x%d\n", i);
                         *r = '\0';
@@ -351,7 +373,8 @@ parse_quoted(const char *s)
                    break;
                 }
               case '\0':
-                *(hfst::xre::error_) << "End of line after \\ escape" << std::endl;
+                *err << "End of line after \\ escape" << std::endl;
+                xreflush(err);
                 //fprintf(stderr, "End of line after \\ escape\n");
                 *r = '\0';
                 r++;
@@ -545,7 +568,9 @@ bool is_valid_function_call
   if (name2xre == function_definitions.end() || 
       name2args == function_arguments.end())
     {
-      *(hfst::xre::error_) << "No such function defined: '" << name << "'" << std::endl;
+      std::ostream * err = xreerrstr();
+      *err << "No such function defined: '" << name << "'" << std::endl;
+      xreflush(err);
       //fprintf(stderr, "No such function defined: '%s'\n", name);
       return false;
     }
@@ -554,8 +579,10 @@ bool is_valid_function_call
 
   if ( number_of_args != args->size())
     {
-      *(hfst::xre::error_) << "Wrong number of arguments: function '" << name << "' expects " 
+      std::ostream * err = xreerrstr();
+      *err << "Wrong number of arguments: function '" << name << "' expects " 
                            << (int)number_of_args << ", " << (int)args->size() << " given" << std::endl;
+      xreflush(err);
         //fprintf(stderr, "Wrong number of arguments: function '%s' expects %i, %i given\n", 
         //       name, (int)number_of_args, (int)args->size());
       return false;
@@ -957,7 +984,9 @@ xfst_label_to_transducer(const char* input, const char* output)
     if (!verbose_)
       return;
     
-    *(hfst::xre::error_) << msg;
+    std::ostream * err = xreerrstr();
+    *err << msg;
+    xreflush(err);
   }
 
 void warn_about_xfst_special_symbol(const char * symbol)
@@ -981,7 +1010,9 @@ void warn_about_xfst_special_symbol(const char * symbol)
     return;
   if (!verbose_)
     return;
-  *(hfst::xre::error_) << "warning: '" << symbol << " ' is an ordinary symbol in hfst" << std::endl;
+  std::ostream * err = xreerrstr();
+  *err << "warning: '" << symbol << " ' is an ordinary symbol in hfst" << std::endl;
+  xreflush(err);
 }
 
 void warn_about_hfst_special_symbol(const char * symbol)
@@ -1002,13 +1033,17 @@ void warn_about_hfst_special_symbol(const char * symbol)
     return;
   if (!verbose_)
     return;
-  *(hfst::xre::error_) << "warning: '" << symbol << "' is not an ordinary symbol in hfst" << std::endl;
+  std::ostream * err = xreerrstr();
+  *err << "warning: '" << symbol << "' is not an ordinary symbol in hfst" << std::endl;
+  xreflush(err);
 }
 
 void warn_about_special_symbols_in_replace(HfstTransducer * t)
 {
   if (!verbose_)
     return;
+
+  std::ostream * err = xreerrstr();  
 
   StringSet alphabet = t->get_alphabet();
   for (StringSet::const_iterator it = alphabet.begin(); 
@@ -1018,10 +1053,11 @@ void warn_about_special_symbols_in_replace(HfstTransducer * t)
           *it != hfst::internal_epsilon &&
           *it != hfst::internal_unknown &&
           *it != hfst::internal_identity)
-        {         
-          *(hfst::xre::error_) << "warning: using special symbol '" << *it << "' in replace rule, use substitute instead" << std::endl;
+        {  
+          *err << "warning: using special symbol '" << *it << "' in replace rule, use substitute instead" << std::endl;
         }
     }
+  xreflush(err);
 }
 
 bool has_non_identity_pairs(const HfstTransducer * t)
