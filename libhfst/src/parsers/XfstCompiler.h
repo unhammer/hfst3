@@ -513,16 +513,38 @@ class XfstCompiler
   // For xfst parser.
   bool get_fail_flag() const;
 
+  /* Set the stream where error messages and warnings are printed. */
   void set_error_stream(std::ostream & os);
+  /* Get the stream where error messages and warnings are printed. */
   std::ostream & get_error_stream();
+  /* Set the stream where output is printed. */
   void set_output_stream(std::ostream & os);
+  /* Get the stream where output is printed. */
   std::ostream & get_output_stream();
 
+  /* A wrapper around file close function. */
   int xfst_fclose(FILE * f, const char * name);
+  /* A wrapper around file open function. */
   FILE * xfst_fopen(const char* path, const char* mode);
 
+  /* The following three functions are wrappers around output and error streams.
+     On Unix and Mac, output() and error() just return members output_ and error_,
+     and flush(std::ostream *) does nothing. On windows, it is possible that
+     output() and error() return an ostringstream which is actually printed when
+     flush(std::ostream *) is called. 
+
+     This delayed printing is needed because Windows makes a difference between
+     standard output and error streams and console output and error streams.
+     If output_to_console_ is true and the stream where we are writing is a
+     standard stream, we first need to write everything in a ostringstream and
+     then call a specific function hfst_fprintf_console that prints the contents
+     of the ostringstream to console. */
+
+  /* Get the output stream. */
   std::ostream & output();
+  /* Get the error stream. */
   std::ostream & error();
+  /* Flush the stream. */
   void flush(std::ostream * oss);
 
  protected:
@@ -655,6 +677,7 @@ class XfstCompiler
   //! @brief Remove all readline history after \a index. 
   void ignore_history_after_index(int index);
 
+  //! @brief Get the precision that is used when printing weights.
   int get_precision();
 
   private:
@@ -673,14 +696,21 @@ class XfstCompiler
   XfstCompiler& print_bool(bool value);
   XfstCompiler& read_prop_line(char* line);
 
+  /* A wrapper around stream objects, see flush(std::ostream *) for more information. */
   std::ostream * get_stream(std::ostream * oss);
 
+  /* Whether readline library is used when reading user input. */
   bool use_readline_;
+  /* Whether interactive text is read from standard input. */
   bool read_interactive_text_from_stdin_;
+  /* Windows-specific: whether output, error messages and warnings are printed to the console. */
   bool output_to_console_;
+  /* The regular expression compiler. */
   hfst::xre::XreCompiler xre_;
+  /* The lexc compiler. */
   hfst::lexc::LexcCompiler lexc_;
 #if HAVE_TWOLC
+  /* The twolc compiler. */
   hfst::twolc::TwolcCompiler twolc_;
 #endif
   std::map<std::string,std::string> original_definitions_;
@@ -713,10 +743,15 @@ class XfstCompiler
   bool fail_flag_;
   // Where output is printed.
   std::ostream * output_;
+  // Where error messages and warnings are printed.
   std::ostream * error_;
 #ifdef WINDOWS
-  std::ostringstream winoss_;
-  std::ostream * redirected_stream_;
+  // On Windows: when printing to console standard output, the contents are stored here
+  // and actually written when flush(std::ostream *) is called.
+  std::ostringstream winoss_stdout_;
+  // On Windows: when printing to console standard error, the contents are stored here
+  // and actually written when flush(std::ostream *) is called.
+  std::ostringstream winoss_stderr_;
 #endif
 }
 ;

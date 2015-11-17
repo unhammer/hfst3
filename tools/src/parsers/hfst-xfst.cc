@@ -265,7 +265,6 @@ static bool expression_continues(std::string & expr)
   return false;
 }
 
-
 #ifdef HAVE_READLINE
 #include "cmd.h"
 #include "abbrcmd.h"
@@ -483,6 +482,8 @@ int main(int argc, char** argv)
                 {
                   return EXIT_FAILURE;
                 }
+              if (!silent)
+                comp.prompt();
             }
           if (comp.quit_requested())
             {

@@ -148,8 +148,9 @@ namespace xfst {
         output_(&std::cout),
         error_(&std::cerr)
 #ifdef WINDOWS
-        , winoss_(std::ostringstream()),
-        redirected_stream_(NULL)
+        , winoss_stderr_(std::ostringstream()),
+        winoss_stdout_(std::ostringstream())
+        //        redirected_stream_(NULL)
 #endif
     {       
         xre_.set_expand_definitions(true);
@@ -213,7 +214,8 @@ namespace xfst {
         error_(&std::cerr)
 #ifdef WINDOWS
         , winoss_(std::ostringstream()),
-        redirected_stream_(NULL)
+        winoss_stdout_(std::ostringstream())
+        //redirected_stream_(NULL)
 #endif
     {       
         xre_.set_expand_definitions(true);
@@ -3377,10 +3379,12 @@ namespace xfst {
   std::ostream * XfstCompiler::get_stream(std::ostream * oss)
   {
 #ifdef WINDOWS
-    if (output_to_console_ && (oss == &std::cerr || oss == &std::cout))
+    if (output_to_console_)
       {
-        redirected_stream_ = oss;
-        return &winoss_;
+        if (oss == &std::cerr)
+          return &winoss_stderr_;
+        if (oss == &std::cout)
+          return &winoss_stdout_;
       }
 #endif
     return oss;
@@ -3389,16 +3393,20 @@ namespace xfst {
   void XfstCompiler::flush(std::ostream * oss)
   {
 #ifdef WINDOWS
-    if (output_to_console_ && (oss == &winoss_))
+    if (output_to_console_)
       {
-        if (redirected_stream_ == &std::cerr)
-          hfst_fprintf_console(stderr, winoss_.str().c_str());
-        else if (redirected_stream_ == &std::cout)
-          hfst_fprintf_console(stdout, winoss_.str().c_str());
-        else
-          ;
-        redirected_stream_ = NULL;
-        winoss_.str("");
+        if (oss == &winoss_stderr_)
+          {
+            hfst_fprintf_console(stderr, winoss_stderr_.str().c_str());
+            winoss_stderr_.str("");
+            return;
+          }
+        if (oss == &winoss_stdout_)
+          {
+            hfst_fprintf_console(stdout, winoss_stdout_.str().c_str());
+            winoss_stdout_.str("");
+            return;
+          }
       }
 #endif
   }
