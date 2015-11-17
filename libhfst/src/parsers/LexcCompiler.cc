@@ -1177,119 +1177,65 @@ LexcCompiler::compileLexical()
 
     // Preserve only first flag of consecutive P and R lexname flag series, 
     // e.g. change P.LEXNAME.1 R.LEXNAME.1 P.LEXNAME.2 R.LEXNAME.2 into P.LEXNAME.1 
-    
     if (with_flags_ && minimize_flags_)
-          {
-            // To substitute "@[P|R].LEXNAME...@" with "$[P|R].LEXNAME...$" and vice versa. 
-            std::map<String, String> flag_substitutions;             // @ -> $
-            std::map<String, String> reverse_flag_substitutions;     // $ -> @
-
-            // TEST: rename all $P$ and $R$ flags so that they have the same name
-            std::map<String, String> dollar_to_foo_substitutions;
-
-            StringSet transducerAlphabet = rv->get_alphabet();
-            for (StringSet::const_iterator s = transducerAlphabet.begin();
-                 s != transducerAlphabet.end();
-                 ++s)
+    {
+        StringSet transducerAlphabet = rv->get_alphabet();
+        StringSet flagD;
+        for (StringSet::const_iterator s = transducerAlphabet.begin();
+             s != transducerAlphabet.end();
+             ++s)
+        {
+            String alph = *s;
+            String alph10 = alph.substr(0,10);
+            if ( alph10 == "@P.LEXNAME" || alph10 == "@R.LEXNAME" )  
             {
-              String alph = *s;
-              String alph10 = alph.substr(0,10);
-              if ( alph10 == "@P.LEXNAME" || alph10 == "@R.LEXNAME" )  
-                {
-                  replace(alph.begin(), alph.end(), '@', '$');
-                  //fprintf(stderr, "flag found:\t\t%s\t->\t%s\n", s->c_str(), alph.c_str());
-                  flag_substitutions[*s] = alph;
-                  reverse_flag_substitutions[alph] = *s;
-                  // insert mapping: $[P|R].LEXNAME.SOMETHING$  <->  $[P|R]$.FOO.BAR$
-                  dollar_to_foo_substitutions[alph] = alph.substr(0, 2).append(".FOO.BAR$");
-                  //fprintf(stderr, "dollar_to_foo_substitutions[%s] = %s\n", alph.c_str(), (dollar_to_foo_substitutions[alph]).c_str());
-                }
-              else
-                {
-                  //fprintf(stderr, "other found:\t\t%s\n", alph.c_str());
-                }
+                flagD.insert(alph);
             }
+        }
 
-            // Substitute "@[P|R].LEXNAME...@" with "$[P|R].LEXNAME...$"
-            rv->substitute(flag_substitutions);
+        // Construct a rule for consecutive flag removal: 
+        // [FLAG1 | FLAG2 ... FLAGN] -> 0 || [FLAG1 | FLAG2 ... FLAGN] _
+        // and also an inverted rule
+        std::string flag_remover_regexp("[ ");
+        bool first_flag = true;
+        
+        for (StringSet::const_iterator it 
+               = flagD.begin(); it != flagD.end(); ++it)
+        {
+            if (!first_flag)
+            {
+                flag_remover_regexp.append("| ");
+            }
+            flag_remover_regexp.append("\"").append(*it).append("\" ");
+            first_flag = false;
+        }
+        flag_remover_regexp.append("]");
+        std::string context_regexp(flag_remover_regexp);
+        flag_remover_regexp.append(" -> 0 || ").append(context_regexp).append(" _ ");
 
-            //fprintf(stderr, "rv:\n");
-            //rv->write_in_att_format(stderr, 1);
-            //fprintf(stderr, "--\n");
+        if (debug) 
+        { 
+            fprintf(stderr, "flag_remover_regexp: %s\n", flag_remover_regexp.c_str()); 
+        }
+         
+        hfst::xre::XreCompiler xre_comp(format_);
+        
+        HfstTransducer * flag_filter = xre_comp.compile(flag_remover_regexp);
+        flag_filter->minimize();
+        HfstTransducer * inverted_flag_filter = new HfstTransducer(*flag_filter);
+        inverted_flag_filter->invert().minimize();
 
-            
-            // Construct a rule for consecutive flag removal: 
-            // [FLAG1 | FLAG2 ... FLAGN] -> 0 || [FLAG1 | FLAG2 ... FLAGN] _
-            // and also an inverted rule
-            std::string flag_remover_regexp("[ ");
-            bool first_flag = true;
-            for (std::map<String, String>::const_iterator it 
-                   = flag_substitutions.begin(); it != flag_substitutions.end(); it++)
-              {
-                //fprintf(stderr, "adding flag to rule:\t%s\n", it->second.c_str());
-                if (!first_flag)
-                      {
-                        flag_remover_regexp.append("| ");
-                      }
-                flag_remover_regexp.append("\"").append(it->second).append("\" ");
-                first_flag = false;
-              }
-            flag_remover_regexp.append("]");
-            std::string context_regexp(flag_remover_regexp);
-            flag_remover_regexp.append(" -> 0 || ").append(context_regexp).append(" _ ");
-            
-            if (debug) 
-              { 
-                *err << "flag_remover_regexp: " << flag_remover_regexp << std::endl;
-                flush(err);
-                //fprintf(stderr, "flag_remover_regexp: %s\n", flag_remover_regexp.c_str()); 
-              }
-            
-            hfst::xre::XreCompiler xre_comp(format_);
-            HfstTransducer * flag_filter = xre_comp.compile(flag_remover_regexp);
-            flag_filter->minimize();
-            HfstTransducer * inverted_flag_filter = new HfstTransducer(*flag_filter);
-            inverted_flag_filter->invert().minimize();
-            
-            //fprintf(stderr, "flag_filter:\n");
-            //flag_filter->write_in_att_format(stderr, 1);
-            //fprintf(stderr, "--\n");            
-
-            //fprintf(stderr, "inverted flag_filter:\n");
-            //inverted_flag_filter->write_in_att_format(stderr, 1);
-            //fprintf(stderr, "--\n");            
-            
-
-            // [ [FLAG1 | FLAG2 ... FLAGN] -> 0 || [FLAG1 | FLAG2 ... FLAGN] _ ].inv
-            //                        .o.
-            //                       RESULT
-            //                        .o. 
-            // [FLAG1 | FLAG2 ... FLAGN] -> 0 || [FLAG1 | FLAG2 ... FLAGN] _
-            HfstTransducer filtered_lexicons(*inverted_flag_filter);
-            filtered_lexicons.harmonize_flag_diacritics(*rv);
-            filtered_lexicons.compose(*rv, true);
-            filtered_lexicons.harmonize_flag_diacritics(*flag_filter);
-            filtered_lexicons.compose(*flag_filter, true).minimize();
-
-            //fprintf(stderr, "filtered_lexicons:\n");
-            //filtered_lexicons.write_in_att_format(stderr, 1);
-            //fprintf(stderr, "--\n");                        
-
-            // TEST: Rename all $P$ and $R$ flags so that they have the same name
-            if (rename_flags_)
-              {
-                filtered_lexicons.substitute(dollar_to_foo_substitutions);
-                filtered_lexicons.substitute("$P.FOO.BAR$", "@P.FOO.BAR@");
-                filtered_lexicons.substitute("$R.FOO.BAR$", "@R.FOO.BAR@");
-              }
-            else
-              {
-                // Convert symbols "$[P|R].LEXNAME...$" back to "@[P|R].LEXNAME...@"                    
-                filtered_lexicons.substitute(reverse_flag_substitutions);
-              }
-
-            rv->assign(filtered_lexicons);
-          }
+        // [ [FLAG1 | FLAG2 ... FLAGN] -> 0 || [FLAG1 | FLAG2 ... FLAGN] _ ].inv
+        //                        .o.
+        //                       RESULT
+        //                        .o. 
+        // [FLAG1 | FLAG2 ... FLAGN] -> 0 || [FLAG1 | FLAG2 ... FLAGN] _
+        HfstTransducer filtered_lexicons(*inverted_flag_filter);
+        filtered_lexicons.compose(*rv, true);
+        filtered_lexicons.compose(*flag_filter, true).minimize();
+         
+        rv->assign(filtered_lexicons);
+    }
 
     rv->minimize();
     return rv;

@@ -14,7 +14,6 @@
 
 #ifndef MAIN_TEST
 
-
 namespace hfst
 {
   namespace xeroxRules
@@ -41,6 +40,11 @@ namespace hfst
         epsilonContext.push_back(contextPair);
 
         mapping = mappingPairVector;
+              
+       // HfstTransducerPairVector tmpV = mappingPairVector;
+       // tmpV[0].first = encodeFlagDiacritics(tmpV[0].first);
+        
+        //mapping = tmpV;
         context = epsilonContext;
         replType = REPL_UP;
 
@@ -68,11 +72,26 @@ namespace hfst
             }
         }
 
+        
+          
+        //HfstTransducerPairVector tmpV = mappingPairVector;
+        //tmpV[0].first = encodeFlagDiacritics(tmpV[0].first);
+        
         mapping = mappingPairVector;
+       // mapping = tmpV                       ;
         context = a_context;
         replType = a_replType;
       }
 
+      
+       Rule::Rule ( const Rule &a_rule )
+        {
+            mapping = a_rule.get_mapping();
+            context = a_rule.get_context();
+            replType = a_rule.get_replType();
+           
+        }
+       
       HfstTransducerPairVector Rule::get_mapping() const
       {
         return mapping;
@@ -85,6 +104,31 @@ namespace hfst
       ReplaceType Rule::get_replType() const
       {
         return replType;
+      }
+      void Rule::encodeFlags()
+      {
+        //cerr << "\n Encode flags " << endl;
+         HfstTransducerPairVector tmpM = this->mapping;
+        
+        //cerr << "\n mapping size: " << tmpM.size() << endl;
+        for ( unsigned int i = 0; i < tmpM.size(); i++ )
+        {
+            tmpM[i].first = encodeFlagDiacritics(tmpM[i].first);
+            tmpM[i].second = encodeFlagDiacritics(tmpM[i].second);
+        }
+        
+        
+        HfstTransducerPairVector tmpC = this->context;
+        
+        //cerr << "\n context size: " << tmpC.size() << endl;
+        for ( unsigned int i = 0; i < tmpC.size(); i++ )
+        {
+            tmpC[i].first = encodeFlagDiacritics(tmpC[i].first);
+            tmpC[i].second = encodeFlagDiacritics(tmpC[i].second);
+        }
+        
+        this->mapping = tmpM;  
+        this->context = tmpC;  
       }
 
     std::ostream & operator<<(std::ostream &out, const Rule & r)
@@ -160,6 +204,94 @@ namespace hfst
 
 
       //////////////////////////////////////
+      // In the transducer tr, change all flag diacritics to "non-special" multichar symbols
+      // It means that @ sign will be changed to $ sign
+      // ie. @P.FOO.BAR@ will be changed into $P.FOO.BAR$
+     HfstTransducer encodeFlagDiacritics( const HfstTransducer &tr )
+      { 
+        //std::cerr << "\n encodeFlagDiacritics " << endl;
+        HfstSymbolSubstitutions realFlagstoFakeFlags;
+        StringSet removeFromAlphabet;
+        //printf("alphabet lexicons: \n");
+        StringSet transducerAlphabet = tr.get_alphabet();
+        for (StringSet::const_iterator s = transducerAlphabet.begin();
+                       s != transducerAlphabet.end();
+                       ++s)
+        {
+         
+            String alph = *s;
+            String alphFirst3 = alph.substr(0,3);
+         //   String alphLast = alph.back();
+
+            //@operator.feature.value@ and @operator.feature@
+            
+            //std::cout << "debug: " << alphFirst3 << endl;
+            if ( alphFirst3 == "@P." || alphFirst3 == "@R." 
+                 || alphFirst3 == "@U." || alphFirst3 == "@D." 
+                 || alphFirst3 == "@C." || alphFirst3 == "@N."
+                 ||alphFirst3 == "@p." || alphFirst3 == "@r." 
+                 || alphFirst3 == "@u." || alphFirst3 == "@d." 
+                 || alphFirst3 == "@c." || alphFirst3 == "@n.")  
+            {
+
+                replace(alph.begin(), alph.end(), '@', '$');
+                //std::cout << alph << '\n';
+                realFlagstoFakeFlags.insert(StringPair(*s, alph));
+                removeFromAlphabet.insert(*s);
+            }
+        }
+    
+        HfstTransducer retval(tr);
+        retval.substitute(realFlagstoFakeFlags);
+        
+        //std::cerr << "\n flag substitute done" << endl;
+        retval.remove_from_alphabet(removeFromAlphabet);
+        //std::cerr << "\n alph substitute done" << endl;
+        return retval;
+
+      }  
+      
+       HfstTransducer decodeFlagDiacritics( const HfstTransducer &tr )
+      { 
+        //std::cerr << "\n decodeFlagDiacritics " << endl;
+        HfstSymbolSubstitutions fakeFlagsToRealFlags;
+
+        //printf("alphabet lexicons: \n");
+        StringSet transducerAlphabet = tr.get_alphabet();
+        StringSet removeFromAlphabet;
+        for (StringSet::const_iterator s = transducerAlphabet.begin();
+                       s != transducerAlphabet.end();
+                       ++s)
+        {
+         
+            String alph = *s;
+            String alphFirst3 = alph.substr(0,3);
+         //   String alphLast = alph.back();
+
+            //@operator.feature.value@ and @operator.feature@
+            
+            //std::cout << "debug: " << alphFirst3 << endl;
+            if ( alphFirst3 == "$P." || alphFirst3 == "$R." 
+                 || alphFirst3 == "$U." || alphFirst3 == "$D." 
+                 || alphFirst3 == "$C." || alphFirst3 == "$N."
+                 || alphFirst3 == "$p." || alphFirst3 == "$r." 
+                 || alphFirst3 == "$u." || alphFirst3 == "$d." 
+                 || alphFirst3 == "$c." || alphFirst3 == "$n.")  
+            {
+
+                replace(alph.begin(), alph.end(), '$', '@');
+                //std::cout << alph << '\n';
+                fakeFlagsToRealFlags.insert(StringPair(*s, alph));
+                removeFromAlphabet.insert(*s);
+            }
+        }
+    
+        HfstTransducer retval(tr);
+        retval.substitute(fakeFlagsToRealFlags);
+        retval.remove_from_alphabet(removeFromAlphabet);
+        return retval;
+
+      }  
 
 
 
@@ -187,16 +319,6 @@ namespace hfst
         String leftMarker("@LM@");
         String rightMarker("@RM@");
 
-        /*
-        String newEpsilon("$Epsilon$");
-        HfstTokenizer TOK;
-        TOK.add_multichar_symbol(newEpsilon);
-        TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
-        TOK.add_multichar_symbol("@_IDENTITY_SYMBOL_@");
-        ImplementationType type = retval.get_type();
-
-*/
-
         retval.substitute(StringPair(leftMarker, leftMarker), StringPair("@_EPSILON_SYMBOL_@", "@_EPSILON_SYMBOL_@")).minimize();
         retval.substitute(StringPair(rightMarker, rightMarker), StringPair("@_EPSILON_SYMBOL_@", "@_EPSILON_SYMBOL_@")).minimize();
 
@@ -207,29 +329,12 @@ namespace hfst
         retval.minimize();
 
 
-        /*
+        
         //printf("tr without markers: \n");
         //retval.write_in_att_format(stdout, 1);
-
-
-        //replace tmp_epsilon with real one
-
-        HfstTransducer tmpEpsToEps(newEpsilon, "@_EPSILON_SYMBOL_@", TOK, type);
-        // Identity (normal)
-        HfstTransducer identityPair = HfstTransducer::identity_pair( type );
-        HfstTransducer identity (identityPair);
-        identity.insert_to_alphabet(newEpsilon);
-
-        tmpEpsToEps.disjunct(identity).repeat_star().minimize();
-        //identity.repeat_star().minimize();
-
-        printf("tmpEpsToEps: \n");
-        tmpEpsToEps.write_in_att_format(stdout, 1);
-
-        retval.invert().compose(tmpEpsToEps).invert().minimize();
-        printf("retval: \n");
-        retval.write_in_att_format(stdout, 1);
-        */
+        
+        retval = decodeFlagDiacritics(retval);
+        
         return retval;
       }
 
@@ -493,7 +598,7 @@ namespace hfst
        *         (same for left context, (.* Cl))
       */
 
-      HfstTransducer bracketedReplace( const Rule &rule, bool optional)
+      HfstTransducer bracketedReplace(const Rule &rule, bool optional)
       {
         //printf("bracketedReplace function..... \n");
 
@@ -517,11 +622,13 @@ namespace hfst
         TOK.add_multichar_symbol(newEpsilon);
         TOK.add_multichar_symbol( ".#.");
 
+        //first, encode all flag diacritics
+        Rule ruletmp(rule);
+        ruletmp.encodeFlags();
 
-
-        HfstTransducerPairVector mappingPairVector( rule.get_mapping() );
-        HfstTransducerPairVector ContextVector( rule.get_context() );
-        ReplaceType replType( rule.get_replType() );
+        HfstTransducerPairVector mappingPairVector( ruletmp.get_mapping() );
+        HfstTransducerPairVector ContextVector( ruletmp.get_context() );
+        ReplaceType replType( ruletmp.get_replType() );
 
         ImplementationType type = mappingPairVector[0].first.get_type();
 
@@ -547,7 +654,7 @@ namespace hfst
             oneMappingPair.cross_product(mappingPairVector[i].second);
 
 
-           //printf("aftrer cross product \n");
+          // printf("aftrer cross product \n");
            //oneMappingPair.minimize().write_in_att_format(stdout, 1);
 
 
@@ -880,8 +987,11 @@ namespace hfst
         // go through vector and do everything for each rule
         for ( unsigned int i = 0; i < ruleVector.size(); i++ )
         {
+            Rule ruletmp(ruleVector[i]);
+            ruletmp.encodeFlags();
+            
           HfstTransducerPairVector mappingPairVector 
-            = ruleVector[i].get_mapping();
+            = ruletmp.get_mapping();
           HfstTransducer mapping(type);
           for ( unsigned int j = 0; j < mappingPairVector.size(); j++ )
             {
@@ -918,8 +1028,8 @@ namespace hfst
             }
           
           
-          HfstTransducerPairVector contextVector = ruleVector[i].get_context();
-          //ReplaceType replaceType = ruleVector[i].get_replType();
+          HfstTransducerPairVector contextVector = ruletmp.get_context();
+          //ReplaceType replaceType = ruletmp.get_replType();
 
           // when there aren't any contexts, result is identityExpanded
           if ( contextVector.size() == 1 )
@@ -1017,9 +1127,6 @@ namespace hfst
           }
         
         // if they have contexts, process them
-        
-
-
         if ( ruleVector.size() != mappingWithBracketsVector.size() )
           {
             HFST_THROW_MESSAGE(TransducerTypeMismatchException, 
@@ -1036,6 +1143,8 @@ namespace hfst
         //HfstTransducer unionContextReplace_labels(type);
         for ( unsigned int i = 0; i < ruleVector.size(); i++ )
           {
+            Rule ruletmp(ruleVector[i]);
+            ruletmp.encodeFlags();
             
             // Surround mapping with brackets with tmp boudaries
             HfstTransducer mappingWithBracketsAndTmpBoundary(tmpBracket);
@@ -1063,9 +1172,9 @@ namespace hfst
             //
             // where the second rule yields caCac -> cbCbc and the first one
             // again cbCbc -> cbdbc.
-            HfstTransducerPairVector cont = ruleVector[i].get_context();
+            HfstTransducerPairVector cont = ruletmp.get_context();
 
-            if (ruleVector[i].get_replType() != REPL_UP)
+            if (ruletmp.get_replType() != REPL_UP)
               {
                 for (HfstTransducerPairVector::iterator cont_it = cont.begin();
                      cont_it != cont.end(); cont_it++)
@@ -1089,7 +1198,7 @@ namespace hfst
               = expandContextsWithMapping ( cont,
                                             mappingWithBracketsAndTmpBoundary,
                                             identityExpanded,
-                                            ruleVector[i].get_replType(),
+                                            ruletmp.get_replType(),
                                             optional);
             
             unionContextReplaceTmp.transform_weights(&zero_weight);
@@ -2224,48 +2333,59 @@ namespace hfst
                                                           const HfstTransducerPair &marks )
         {
             HfstTokenizer TOK;
-            TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
+            String epsilon = "@_EPSILON_SYMBOL_@";
+        //    String epsilon = "$_$";
+            TOK.add_multichar_symbol(epsilon);
+             TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
 
             ImplementationType type = mappingPair.first.get_type();
 
             HfstTransducer leftMark(marks.first);
             HfstTransducer rightMark(marks.second);
 
+            // printf("leftMark: \n");
+            // leftMark.minimize().write_in_att_format(stdout, 1);
+            
+            // printf("rightMark: \n");
+            // rightMark.minimize().write_in_att_format(stdout, 1);
+            
+            
             HfstTransducer epsilonToLeftMark("@_EPSILON_SYMBOL_@", TOK, type);
             epsilonToLeftMark.cross_product(leftMark).minimize();
             //printf("epsilonToLeftMark: \n");
             //epsilonToLeftMark.write_in_att_format(stdout, 1);
 
-            HfstTransducer epsilonToRightMark("@_EPSILON_SYMBOL_@", TOK, type);
+            HfstTransducer epsilonToRightMark(epsilon, TOK, type);
             epsilonToRightMark.cross_product(rightMark).minimize();
 
-            //printf("epsilonToRightMark: \n");
-            //epsilonToRightMark.write_in_att_format(stdout, 1);
+            // printf("epsilonToRightMark: \n");
+            // epsilonToRightMark.write_in_att_format(stdout, 1);
 
             //Go through left part of every mapping pair
             // and concatenate: epsilonToLeftMark.leftMapping.epsilonToRightMark
             //then put it into right part of the new transducerPairVector
             HfstTransducer mappingCrossProduct(epsilonToLeftMark);
             mappingCrossProduct.concatenate(mappingPair.first).
-                    minimize().
                     concatenate(epsilonToRightMark).
                     minimize();
 
-            //printf("mappingCrossProduct: \n");
-            //mappingCrossProduct.write_in_att_format(stdout, 1);
+            // printf("mappingCrossProduct: \n");
+            // mappingCrossProduct.minimize().write_in_att_format(stdout, 1);
 
             HfstTransducer in(mappingCrossProduct);
             in.input_project();
             in.transform_weights(&zero_weight);
-            //printf("in: \n");
-            //in.write_in_att_format(stdout, 1);
+            
+            // printf("in: \n");
+            // in.minimize().write_in_att_format(stdout, 1);
 
             //printf("out: \n");
 
             HfstTransducer out(mappingCrossProduct);
             out.output_project();
-            //printf("out: \n");
-            //out.write_in_att_format(stdout, 1);
+            
+            // printf("out: \n");
+            // out.minimize().write_in_att_format(stdout, 1);
 
             out.set_property("isMarkup", "yes");
             HfstTransducerPair retval(in, out);
@@ -2408,6 +2528,9 @@ namespace hfst
 
 
 
+        
+        
+      
 
 
 
@@ -2424,7 +2547,6 @@ namespace hfst
       // replace up, left, right, down
       HfstTransducer replace( const Rule &rule, bool optional)
       {
-
           HfstTransducer retval( bracketedReplace(rule, optional) );
 
           //printf("---bracketed replace done---: \n");
@@ -3231,6 +3353,15 @@ int main(int argc, char * argv[])
             test10a( types[i] );
             // empty -> non-empty
             test10b( types[i] );
+            
+           
+            // flag diacritics
+            //a ->  "@P.FOO.BAR@" || a _ "@u.a.b@"
+            //test11 (types[i] );
+            
+            
+             //markup rules
+            //test12 (types[i] );
 
             // restriction functions =>
 
