@@ -488,7 +488,7 @@ public:
     hfst::HfstTransducer * compileLexical();
     //const std::map<std::string,hfst::HfstTransducer>& getStringTries() const;
     //const std::map<std::string,hfst::HfstTransducer>& getRegexpUnions() const;
-    const LexcCompiler& printConnectedness(bool & warnings) const;
+    const LexcCompiler& printConnectedness(bool & warnings);
   };
   };
 
