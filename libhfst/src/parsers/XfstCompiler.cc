@@ -213,7 +213,7 @@ namespace xfst {
         output_(&std::cout),
         error_(&std::cerr)
 #ifdef WINDOWS
-        , winoss_(std::ostringstream()),
+        , winoss_stderr_(std::ostringstream()),
         winoss_stdout_(std::ostringstream())
         //redirected_stream_(NULL)
 #endif

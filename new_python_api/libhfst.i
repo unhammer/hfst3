@@ -8,6 +8,10 @@
 
 %feature("autodoc", "3");
 
+%init %{
+    hfst::set_warning_stream(&std::cerr);
+%}
+
 %{
 #define HFSTIMPORT
 #include "HfstDataTypes.h"
@@ -111,6 +115,7 @@ HfstTransducer * copy_hfst_transducer_from_basic_transducer(const hfst::implemen
         return new HfstTransducer(t, impl);
 }
 
+/* Wrapper variables for an IOString output. */
 std::string hfst_regex_error_message("");
 std::string get_hfst_regex_error_message() { return hfst::hfst_regex_error_message; }
 
@@ -134,12 +139,15 @@ hfst::HfstTransducer * hfst_regex(const std::string & regex_string, const std::s
         {
           std::ostringstream os(std::ostringstream::ate);
           comp.set_error_stream(&os);
+          hfst::set_warning_stream(&os);
           hfst::HfstTransducer * retval = comp.compile(regex_string);
           hfst_regex_error_message = os.str();
+          hfst::set_warning_stream(&std::cerr);
           return retval;
         }
 }
 
+/* Wrapper variables for an IOString output. */
 std::string hfst_lexc_output("");
 std::string get_hfst_lexc_output() { return hfst::hfst_lexc_output; }
 
@@ -177,6 +185,7 @@ hfst::HfstTransducer * hfst_compile_lexc(hfst::lexc::LexcCompiler & comp, const 
         {
           std::ostringstream os(std::ostringstream::ate);
           comp.set_error_stream(&os);
+          hfst::set_warning_stream(&os);
           if (comp.getVerbosity() > 1)
             os << "Parsing the lexc file..." << std::endl;
           comp.parse(filename.c_str());
@@ -186,38 +195,73 @@ hfst::HfstTransducer * hfst_compile_lexc(hfst::lexc::LexcCompiler & comp, const 
           if (comp.getVerbosity() > 1)
             os << "Compilation done." << std::endl;
           hfst_lexc_output = os.str();
+          hfst::set_warning_stream(&std::cerr);
           return retval;
         }        
 }
 
-std::string hfst_xfst_output("");
-std::string get_hfst_xfst_output() { return hfst::hfst_xfst_output; }
+/* Wrapper variables for an IOString output. */
+std::string hfst_xfst_string_one("");
+std::string get_hfst_xfst_string_one() { return hfst::hfst_xfst_string_one; }
+std::string hfst_xfst_string_two("");
+std::string get_hfst_xfst_string_two() { return hfst::hfst_xfst_string_two; }
 
-int hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream)
+int hfst_compile_xfst_to_string_one(hfst::xfst::XfstCompiler & comp, std::string input)
 {
-        hfst_xfst_output="";
+        hfst_xfst_string_one="";
+        hfst_xfst_string_two="";
+
+        std::ostringstream os(std::ostringstream::ate);
+        hfst::set_warning_stream(&os);
+        comp.set_output_stream(os);
+        comp.set_error_stream(os);
+        int retval = comp.parse_line(input);
+        hfst_xfst_string_one = os.str();
+        hfst::set_warning_stream(&std::cerr);
+        return retval;
+}
+
+int hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream, const std::string & error_stream)
+{
+        hfst_xfst_string_one="";
+        hfst_xfst_string_two="";
+        std::ostringstream * os1 = NULL;
+        std::ostringstream * os2 = NULL;
 
         if (output_stream == "cout")
-        {
           comp.set_output_stream(std::cout);
-          comp.set_error_stream(std::cout);
-          return comp.parse_line(input);
-        }
         else if (output_stream == "cerr")
-        {
           comp.set_output_stream(std::cerr);
+        else {
+          os1 = new std::ostringstream(std::ostringstream::ate);
+          comp.set_output_stream(*os1);
+        }
+
+        if (error_stream == "cout") {
+          comp.set_error_stream(std::cout);
+          hfst::set_warning_stream(&std::cout);
+        }
+        else if (error_stream == "cerr")
           comp.set_error_stream(std::cerr);
-          return comp.parse_line(input);
+        else {
+          os2 = new std::ostringstream(std::ostringstream::ate);
+          comp.set_error_stream(*os2);
+          hfst::set_warning_stream(os2);
         }
-        else
-        {
-          std::ostringstream os(std::ostringstream::ate);
-          comp.set_output_stream(os);
-          comp.set_error_stream(os);
-          int retval = comp.parse_line(input);
-          hfst_xfst_output = os.str();
-          return retval;
+
+        int retval = comp.parse_line(input);
+        hfst::set_warning_stream(&std::cerr);
+        
+        if (output_stream == "") {
+          hfst_xfst_string_one = os1->str();
+          delete os1;
         }
+        if (error_stream == "") {
+          hfst_xfst_string_two = os2->str();
+          delete os2;
+        }
+
+        return retval;
 }
 
 
@@ -384,6 +428,9 @@ enum ImplementationType
 };
 
 enum PushType { TO_INITIAL_STATE, TO_FINAL_STATE };
+
+//std::ostream * get_warning_stream();
+//void set_warning_stream(std::ostream * os);
 
 /*
 %typemap(out) HfstOneLevelPaths* {
@@ -1308,7 +1355,7 @@ namespace lexc {
       hfst::HfstTransducer* compileLexical();
       // not implemented?: const std::map<std::string,hfst::HfstTransducer>& getStringTries() const;
       // not implemented?: const std::map<std::string,hfst::HfstTransducer>& getRegexpUnions() const;
-      const LexcCompiler& printConnectedness(bool & warnings_printed) const;
+      const LexcCompiler& printConnectedness(bool & warnings_printed);
   };
 // ugh, the global
 //extern LexcCompiler* lexc_;
@@ -1336,7 +1383,7 @@ namespace xfst {
       XfstCompiler& setPromptVerbosity(bool verbosity);
       bool quit_requested();
       std::string get(const char *);
-      const XfstCompiler& prompt() const;
+      const XfstCompiler& prompt();
       char* get_prompt() const;
       XfstCompiler& set(const char* name, const char* text);
   };
@@ -1346,11 +1393,13 @@ namespace xfst {
 std::string hfst::get_hfst_regex_error_message();
 hfst::HfstTransducer * hfst::hfst_regex(const std::string & regex_string, const std::string & error_stream);
 
-std::string hfst::get_hfst_xfst_output();
-int hfst::hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream);
+std::string hfst::get_hfst_xfst_string_one();
+std::string hfst::get_hfst_xfst_string_two();
+int hfst::hfst_compile_xfst_to_string_one(hfst::xfst::XfstCompiler & comp, std::string input);
+int hfst::hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream, const std::string & error_stream);
 
 std::string hfst::get_hfst_lexc_output();
-hfst::HfstTransducer * hfst_compile_lexc(hfst::lexc::LexcCompiler & comp, const std::string & filename, const std::string & error_stream);
+hfst::HfstTransducer * hfst::hfst_compile_lexc(hfst::lexc::LexcCompiler & comp, const std::string & filename, const std::string & error_stream);
 
 void hfst::set_default_fst_type(hfst::ImplementationType t);
 hfst::ImplementationType hfst::get_default_fst_type();
@@ -1465,6 +1514,7 @@ def compile_xfst_file(filename, **kvargs):
     quit_on_fail='ON'
     type = _libhfst.get_default_fst_type()
     output=None
+    error=None
 
     for k,v in kvargs.items():
       if k == 'verbosity':
@@ -1474,6 +1524,8 @@ def compile_xfst_file(filename, **kvargs):
           quit_on_fail='OFF'
       elif k == 'output':
           output=v
+      elif k == 'error':
+          error=v
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
@@ -1492,17 +1544,31 @@ def compile_xfst_file(filename, **kvargs):
 
     retval=-1
     import sys
-    if output == None:
-       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, "")
-    elif output == sys.stdout:
-       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, "cout")
-    elif output == sys.stderr:
-       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, "cerr")
-    else:
-       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, "")
-       output.write(_libhfst.get_hfst_xfst_output())
+    from io import StringIO
 
-    # retval = xfstcomp.parse_line(data)
+    # check special case
+    if isinstance(output, StringIO) and isinstance(error, StringIO) and output == error:
+       retval =_libhfst.hfst_compile_xfst_to_string_one(xfstcomp, data)
+       output.write(_libhfst.get_hfst_xfst_string_one())
+    else:
+       arg1 = ""
+       arg2 = ""
+       if output == None or output == sys.stdout:
+          arg1 = "cout"
+       if output == sys.stderr:
+          arg1 == "cerr"
+       if error == None or error == sys.stderr:
+          arg2 = "cerr"
+       if error == sys.stdout:
+          arg2 == "cout"
+
+       retval = _libhfst.hfst_compile_xfst(xfstcomp, data, arg1, arg2)
+
+       if isinstance(output, StringIO):
+          output.write(_libhfst.get_hfst_xfst_string_one())
+       if isinstance(error, StringIO):
+          error.write(_libhfst.get_hfst_xfst_string_two())
+
     if verbosity > 1:
       print('Parsed file with return value %i (0 indicating succesful parsing).' % retval)
     return retval
@@ -1539,17 +1605,7 @@ def compile_lexc_file(filename, **kvargs):
        retval = _libhfst.hfst_compile_lexc(lexccomp, filename, "")
        output.write(_libhfst.get_hfst_lexc_output())
 
-    return retval    
-
-    #if verbosity > 1:
-    #  print('Parsing the lexc file...')
-    #lexccompiler.parse(filename)
-    #if verbosity > 1:
-    #  print('Compiling...')
-    #retval = lexccompiler.compileLexical()
-    #if verbosity > 1:
-    #  print('Compilation done.')
-    #return retval
+    return retval
 
 def is_weighted_word(arg):
     if isinstance(arg, tuple) and len(arg) == 2 and isinstance(arg[0], str) and isinstance(arg[1], (int, float)):
