@@ -55,7 +55,7 @@ class LexcCompiler
 
   //! @brief create a lexc compiler with @c impl as transducer format and @c withFlags
   // as indicator as the trasnducer should be build with or without flags
-  LexcCompiler(hfst::ImplementationType impl, bool withFlags);
+  LexcCompiler(hfst::ImplementationType impl, bool withFlags, bool alignStrings);
 
   //! @brief compile lexc description from @c infile into current compiler
   LexcCompiler& parse(FILE* infile);
@@ -91,7 +91,9 @@ class LexcCompiler
   bool areWarningsTreatedAsErrors();
 
   LexcCompiler& setAllowMultipleSublexiconDefinitions(bool value);
-
+  
+  LexcCompiler& setAlignStrings(bool value);
+  
   LexcCompiler& setWithFlags(bool value);
 
   LexcCompiler& setMinimizeFlags(bool value);
@@ -153,6 +155,7 @@ class LexcCompiler
   private:
   bool quiet_;
   bool verbose_;
+  bool align_strings_;
   bool with_flags_;
   bool minimize_flags_;
   bool rename_flags_;

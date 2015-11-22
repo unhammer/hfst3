@@ -60,6 +60,7 @@ static FILE** lexcfiles = 0;
 static unsigned int lexccount = 0;
 static bool is_input_stdin = true;
 static ImplementationType format = hfst::UNSPECIFIED_TYPE;
+static bool align_strings = false;
 static bool with_flags = false;
 static bool minimize_flags = false;
 static bool rename_flags = false;
@@ -80,6 +81,7 @@ print_usage()
                "  -f, --format=FORMAT     compile into FORMAT transducer\n"
                "  -o, --output=OUTFILE    write result into OUTFILE\n");
         fprintf(message_out, "Lexc options:\n"
+               "  -A, --alignStrings      align characters in input and output strings\n"
                "  -E, --encode-weights    encode weights when minimizing (default is false)\n"
                "  -F, --withFlags         use flags to hyperminimize result\n"
                "  -M, --minimizeFlags     if --withFlags is used, minimize the number of flags\n"
@@ -133,6 +135,7 @@ parse_options(int argc, char** argv)
           {"encode-weights", no_argument, 0, 'E'},
           {"format", required_argument, 0, 'f'},
           {"output", required_argument, 0, 'o'},
+          {"alignStrings", no_argument,    0, 'A'},
           {"withFlags", no_argument,    0, 'F'},
           {"minimizeFlags", no_argument,    0, 'M'},
           {"renameFlags", no_argument,    0, 'R'},
@@ -143,7 +146,7 @@ parse_options(int argc, char** argv)
         };
         int option_index = 0;
         char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT
-                             "Ef:o:FMRx:X:W",
+                             "Ef:o:AFMRx:X:W",
                              long_options, &option_index);
         if (-1 == c)
         {
@@ -152,6 +155,9 @@ parse_options(int argc, char** argv)
         switch (c)
         {
 #include "inc/getopt-cases-common.h"
+        case 'A':
+          align_strings = true;
+          break;
         case 'E':
           encode_weights = true;
           break;
@@ -348,7 +354,7 @@ int main( int argc, char **argv ) {
         new HfstOutputStream(outfilename, format) :
         new HfstOutputStream(format);
     hfst::set_xerox_composition(xerox_composition);
-    LexcCompiler lexc(format, with_flags);
+    LexcCompiler lexc(format, with_flags, align_strings);
     lexc.setMinimizeFlags(minimize_flags);
     lexc.setRenameFlags(rename_flags);
    // lexc.with_flags_ = with_flags;

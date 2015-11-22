@@ -1,9 +1,7 @@
 //! @file LexcCompiler.cc
 //!
 //! @brief Implementation of lexc compilation.
-//! 
-//! @author Tommi A. Pirinen
-//!
+
 
 //       This program is free software: you can redistribute it and/or modify
 //       it under the terms of the GNU General Public License as published by
@@ -92,6 +90,7 @@ LexcCompiler::LexcCompiler() :
     currentEntries_(0),
     parseErrors_(false),
     with_flags_(false),
+    align_strings_(false),
     minimize_flags_(false),
     rename_flags_(false),
     allow_multiple_sublexicon_definitions_(false),
@@ -118,6 +117,7 @@ LexcCompiler::LexcCompiler(ImplementationType impl) :
     currentEntries_(0),
     parseErrors_(false),
     with_flags_(false),
+    align_strings_(false),
     minimize_flags_(false),
     rename_flags_(false),
     allow_multiple_sublexicon_definitions_(false),
@@ -140,7 +140,7 @@ LexcCompiler::LexcCompiler(ImplementationType impl) :
     xre_.set_verbosity(!quiet_);
 }
 
-LexcCompiler::LexcCompiler(ImplementationType impl, bool withFlags) :
+LexcCompiler::LexcCompiler(ImplementationType impl, bool withFlags, bool alignStrings) :
     quiet_(false),
     verbose_(false),
     treat_warnings_as_errors_(false),
@@ -151,6 +151,7 @@ LexcCompiler::LexcCompiler(ImplementationType impl, bool withFlags) :
     currentEntries_(0),
     parseErrors_(false),
     with_flags_(withFlags),
+    align_strings_(alignStrings),
     minimize_flags_(false),
     rename_flags_(false),
     allow_multiple_sublexicon_definitions_(false),
@@ -337,6 +338,12 @@ LexcCompiler::setAllowMultipleSublexiconDefinitions(bool value)
     return *this;
 }
 
+LexcCompiler&
+LexcCompiler::setAlignStrings(bool value)
+{
+    align_strings_ = value;
+    return *this;
+}
 
 LexcCompiler&
 LexcCompiler::setWithFlags(bool value)
@@ -521,62 +528,105 @@ LexcCompiler::addStringPairEntry(const string& upper, const string& lower,
     }
     tokenizer_.add_multichar_symbol(joinerEnc);
 
-    StringPairVector upperV;
-    upperV = tokenizer_.tokenize(upper_string);
-
-    StringPairVector lowerV;
-    lowerV = tokenizer_.tokenize(lower_string);
-
-    int upperSize = upperV.size();
-    int lowerSize = lowerV.size();
-
-    //cout << "u: "  << upperSize << "\n";
-    //cout << "L: "  << lowerSize << "\n";
-
-
-
-    StringVector upV;
-    StringVector loV;
-
-    StringPairVector newVector;
-
     // information for function pointer &warn_about_one_sided_flags
     treat_one_sided_flags_as_errors_ = treat_warnings_as_errors_;
     quiet_one_sided_flags_ = quiet_;
     errorstr_ = this->get_stream(this->error_);
+    
+    StringPairVector newVector;
 
-    if ( upperSize > lowerSize)
+    
+    if (align_strings_)
     {
-        std::string epsilons = "";
-        for(int i=1; i <= upperSize-lowerSize ; i++)
+        StringPairVector tmp = tokenizer_.tokenize(upper_string, lower_string);
+        vector<string> one;
+        vector<string> two;
+        
+
+        for(StringPairVector::iterator it = tmp.begin() ; it < tmp.end(); ++it)
         {
-            //cout << "another epsilon \n";
-            epsilons = epsilons + string("@@ANOTHER_EPSILON@@");
+            if (it->first != "@_EPSILON_SYMBOL_@" )
+                one.push_back(it->first);
+            if (it->second != "@_EPSILON_SYMBOL_@" )
+                two.push_back(it->second);
+        }
+        
+        
+        pair<vector<string>, vector<string> > med_vectors = find_med_alingment(one, two);
+        
+        
+        std::stringstream ss1;
+        for(size_t i = 0; i < med_vectors.first.size(); ++i)
+        {
+          ss1 << med_vectors.first[i];
+        }
+        std::string as1 = ss1.str();
+        
+         std::stringstream ss2;
+        for(size_t i = 0; i < med_vectors.second.size(); ++i)
+        {
+          ss2 << med_vectors.second[i];
+        }
+        std::string as2 = ss2.str();
+        
+        
+        newVector = tokenizer_.tokenize(joinerEnc + as1 + encodedCont,
+                                            joinerEnc + as2 + encodedCont,
+                                            &warn_about_one_sided_flags);
+    }else
+    {
+        StringPairVector upperV;
+        upperV = tokenizer_.tokenize(upper_string);
+
+        StringPairVector lowerV;
+        lowerV = tokenizer_.tokenize(lower_string);
+
+        int upperSize = upperV.size();
+        int lowerSize = lowerV.size();
+
+        //cout << "u: "  << upperSize << "\n";
+        //cout << "L: "  << lowerSize << "\n";
+
+
+
+        // StringVector upV;
+        // StringVector loV;
+        
+
+        if ( upperSize > lowerSize)
+        {
+            std::string epsilons = "";
+            for(int i=1; i <= upperSize-lowerSize ; i++)
+            {
+                //cout << "another epsilon \n";
+                epsilons = epsilons + string("@@ANOTHER_EPSILON@@");
+
+            }
+            newVector = tokenizer_.tokenize(joinerEnc + upper_string + encodedCont,
+                                            joinerEnc + lower_string + epsilons + encodedCont,
+                                            &warn_about_one_sided_flags);
 
         }
-        newVector = tokenizer_.tokenize(joinerEnc + upper_string + encodedCont,
-                                        joinerEnc + lower_string + epsilons + encodedCont,
-                                        &warn_about_one_sided_flags);
-
-    }
-    else if (upperSize < lowerSize)
-    {
-        std::string epsilons = "";
-        for(int i=1; i <= lowerSize-upperSize ; i++)
+        else if (upperSize < lowerSize)
         {
-            //cout << "another epsilon \n";
-            epsilons = epsilons + string("@@ANOTHER_EPSILON@@");
+            std::string epsilons = "";
+            for(int i=1; i <= lowerSize-upperSize ; i++)
+            {
+                //cout << "another epsilon \n";
+                epsilons = epsilons + string("@@ANOTHER_EPSILON@@");
 
+            }
+            newVector = tokenizer_.tokenize(joinerEnc + upper_string + epsilons + encodedCont,
+                                            joinerEnc + lower_string + encodedCont,
+                                            &warn_about_one_sided_flags);
         }
-        newVector = tokenizer_.tokenize(joinerEnc + upper_string + epsilons + encodedCont,
-                                        joinerEnc + lower_string + encodedCont,
-                                        &warn_about_one_sided_flags);
-    }
-    else
-    {
-        newVector = tokenizer_.tokenize(joinerEnc + upper_string + encodedCont,
-                                        joinerEnc + lower_string + encodedCont,
-                                        &warn_about_one_sided_flags);
+        else
+        {
+            newVector = tokenizer_.tokenize(joinerEnc + upper_string + encodedCont,
+                                            joinerEnc + lower_string + encodedCont,
+                                            &warn_about_one_sided_flags);
+        }
+        
     }
     stringsTrie_.disjunct(newVector, weight);
 
@@ -654,6 +704,7 @@ LexcCompiler::addXreEntry(const string& regexp, const string& continuation,
             flush(err);
             //fprintf(stderr, SIZE_T_SPECIFIER "...", currentEntries_);
           }
+          
       }
 
 
@@ -1238,6 +1289,9 @@ LexcCompiler::compileLexical()
     }
 
     rv->minimize();
+    
+    if(!quiet_) *err << endl;
+    
     return rv;
 }
 

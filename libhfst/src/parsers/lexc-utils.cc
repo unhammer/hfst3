@@ -1,8 +1,6 @@
 //! @file lexc-utils.cc
 //!
 //! @brief Implementation of some string handling in HFST lexc.
-//!
-//! @author Tommi A. Pirinen
 
 
 //  This program is free software: you can redistribute it and/or modify
@@ -468,5 +466,117 @@ error_at_current_token(int, int, const char* format)
     free(leader);
 }
 
+
+
+pair<vector<string>, vector<string> > find_med_alingment(const vector<string> &s1, const vector<string> &s2)
+{
+   // cout << "s1 " << s1 << endl;
+    //cout << "s2 " << s2 << endl;
+    const size_t substitution = 100;
+    const size_t deletion = 1;
+    const size_t insertion = 1;
+
+    const size_t len1 = s1.size(), len2 = s2.size();
+    vector<vector<unsigned int> > d(len1 + 1, vector<unsigned int>(len2 + 1));
+    vector<vector<unsigned int> > dir(len1 + 1, vector<unsigned int>(len2 + 1));
+    d[0][0] = 0;
+    dir[0][0] = 0;
+    for(unsigned int i = 1; i <= len1; ++i)
+    {
+        d[i][0] = deletion * i;
+        dir[i][0] = DELETE;
+        
+    }
+    for(unsigned int i = 1; i <= len2; ++i)
+    {    
+        d[0][i] = insertion * i;
+        dir[0][i] = INSERT;
+    }
+   
+    for(unsigned int i = 1; i <= len1; ++i)
+    {
+        for(unsigned int j = 1; j <= len2; ++j)
+        {
+           
+            int sub = d[i - 1][j - 1] + (s1[i - 1] == s2[j - 1] ? 0 : substitution);
+            int ins = d[i][j - 1] + insertion ;
+            int del = d[i - 1][j] + deletion ;
+            
+           
+            if ( sub <= ins &&  sub <= ins )
+            {
+                d[i][j] = sub;
+                dir[i][j] = SUBSTITUTE;
+            }
+            else if (del <= sub && del <= ins)
+            {
+                d[i][j] = del;
+                dir[i][j] = DELETE;
+            }
+            else
+            {
+                d[i][j] = ins;
+                dir[i][j] = INSERT;
+            }
+        }
+    }
+    
+
+    
+    vector<string> medcwordin;
+    vector<string> medcwordout;
+    
+    int x, y, i ;
+    for ( x = s1.size(), y = s2.size(), i = 0; (x > 0) || (y > 0); i++)
+    {
+        int dirValue = dir[x][y];
+         
+        if (dirValue == SUBSTITUTE)
+        {
+            medcwordin.push_back(s1[x-1]) ;
+            medcwordout.push_back(s2[y-1]);
+            x--;
+            y--;
+        }
+        else if (dirValue == INSERT)
+        {
+            medcwordin.push_back(EPSILON_);
+            medcwordout.push_back(s2[y-1]);
+            y--;
+        }
+        else
+        {
+            medcwordin.push_back(s1[x-1]);
+            medcwordout.push_back(EPSILON_);
+            x--;
+        }
+    }
+
+    
+    std::reverse(medcwordin.begin(), medcwordin.end());
+    std::reverse(medcwordout.begin(), medcwordout.end());
+    
+    /*
+    cout << "\n\n";
+    for (auto i : medcwordin)
+    {
+        cout << "in ---" << i << endl;
+
+    }
+    
+    for (auto i : medcwordout)
+    {
+        cout << "out ---" << i << endl;
+
+    }
+    */
+    // cout << w1 << endl;
+    // cout << w2 << endl;
+    
+    pair<vector<string>, vector<string> > returnValue (medcwordin,medcwordout);
+    return returnValue;
+}
+        
+    
 } } 
 
