@@ -202,9 +202,9 @@ hfst::HfstTransducer * hfst_compile_lexc(hfst::lexc::LexcCompiler & comp, const 
 
 /* Wrapper variables for an IOString output. */
 std::string hfst_xfst_string_one("");
-std::string get_hfst_xfst_string_one() { return hfst::hfst_xfst_string_one; }
+char * get_hfst_xfst_string_one() { return strdup(hfst::hfst_xfst_string_one.c_str()); }
 std::string hfst_xfst_string_two("");
-std::string get_hfst_xfst_string_two() { return hfst::hfst_xfst_string_two; }
+char * get_hfst_xfst_string_two() { return strdup(hfst::hfst_xfst_string_two.c_str()); }
 
 int hfst_compile_xfst_to_string_one(hfst::xfst::XfstCompiler & comp, std::string input)
 {
@@ -1324,7 +1324,7 @@ namespace lexc {
     public:
       LexcCompiler();
       LexcCompiler(hfst::ImplementationType impl);
-      LexcCompiler(hfst::ImplementationType impl, bool withFlags);
+      LexcCompiler(hfst::ImplementationType impl, bool withFlags, bool alignStrings);
       LexcCompiler& parse(FILE* infile);
       LexcCompiler& parse(const char* filename);
       LexcCompiler& setVerbosity(unsigned int verbose);
@@ -1393,8 +1393,8 @@ namespace xfst {
 std::string hfst::get_hfst_regex_error_message();
 hfst::HfstTransducer * hfst::hfst_regex(const std::string & regex_string, const std::string & error_stream);
 
-std::string hfst::get_hfst_xfst_string_one();
-std::string hfst::get_hfst_xfst_string_two();
+char * hfst::get_hfst_xfst_string_one();
+char * hfst::get_hfst_xfst_string_two();
 int hfst::hfst_compile_xfst_to_string_one(hfst::xfst::XfstCompiler & comp, std::string input);
 int hfst::hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream, const std::string & error_stream);
 
@@ -1515,6 +1515,7 @@ def compile_xfst_file(filename, **kvargs):
     type = _libhfst.get_default_fst_type()
     output=None
     error=None
+    to_console=False
 
     for k,v in kvargs.items():
       if k == 'verbosity':
@@ -1526,17 +1527,20 @@ def compile_xfst_file(filename, **kvargs):
           output=v
       elif k == 'error':
           error=v
+      elif k == 'output_to_console':
+          to_console=v
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
     if verbosity > 1:
       print('Compiling with %s implementation...' % _libhfst.fst_type_to_string(type))
     xfstcomp = XfstCompiler(type)
+    xfstcomp.setOutputToConsole(to_console)
     xfstcomp.setVerbosity(verbosity > 0)
     xfstcomp.set('quit-on-fail', quit_on_fail)
     if verbosity > 1:
       print('Opening xfst file %s...' % filename)
-    f = open(filename, 'r')
+    f = open(filename, 'r', encoding='utf-8')
     data = f.read()
     f.close()
     if verbosity > 1:
@@ -1576,6 +1580,7 @@ def compile_xfst_file(filename, **kvargs):
 def compile_lexc_file(filename, **kvargs):
     verbosity=0
     withflags=False
+    alignstrings=False
     type = _libhfst.get_default_fst_type()
     output=None
 
@@ -1585,12 +1590,14 @@ def compile_lexc_file(filename, **kvargs):
       elif k == 'with_flags':
         if v == True:
           withflags = v
+      elif k == 'align_strings':
+          alignstrings = v
       elif k == 'output':
           output=v
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
-    lexccomp = LexcCompiler(type, withflags)
+    lexccomp = LexcCompiler(type, withflags, alignstrings)
     lexccomp.setVerbosity(verbosity)
 
     retval=-1
