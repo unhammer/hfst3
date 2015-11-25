@@ -119,11 +119,9 @@ HfstTransducer * copy_hfst_transducer_from_basic_transducer(const hfst::implemen
 std::string hfst_regex_error_message("");
 std::string get_hfst_regex_error_message() { return hfst::hfst_regex_error_message; }
 
-hfst::HfstTransducer * hfst_regex(const std::string & regex_string, const std::string & error_stream)
+hfst::HfstTransducer * hfst_regex(hfst::xre::XreCompiler & comp, const std::string & regex_string, const std::string & error_stream)
 {
         hfst_regex_error_message="";
-        hfst::xre::XreCompiler comp(type);
-        comp.set_verbosity(true);
         
         if (error_stream == "cout")
         {
@@ -208,23 +206,23 @@ char * get_hfst_xfst_string_two() { return strdup(hfst::hfst_xfst_string_two.c_s
 
 int hfst_compile_xfst_to_string_one(hfst::xfst::XfstCompiler & comp, std::string input)
 {
-        hfst_xfst_string_one="";
-        hfst_xfst_string_two="";
+        hfst::hfst_xfst_string_one="";
+        hfst::hfst_xfst_string_two="";
 
         std::ostringstream os(std::ostringstream::ate);
         hfst::set_warning_stream(&os);
         comp.set_output_stream(os);
         comp.set_error_stream(os);
         int retval = comp.parse_line(input);
-        hfst_xfst_string_one = os.str();
+        hfst::hfst_xfst_string_one = os.str();
         hfst::set_warning_stream(&std::cerr);
         return retval;
 }
 
 int hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const std::string & output_stream, const std::string & error_stream)
 {
-        hfst_xfst_string_one="";
-        hfst_xfst_string_two="";
+        hfst::hfst_xfst_string_one="";
+        hfst::hfst_xfst_string_two="";
         std::ostringstream * os1 = NULL;
         std::ostringstream * os2 = NULL;
 
@@ -253,11 +251,11 @@ int hfst_compile_xfst(hfst::xfst::XfstCompiler & comp, std::string input, const 
         hfst::set_warning_stream(&std::cerr);
         
         if (output_stream == "") {
-          hfst_xfst_string_one = os1->str();
+          hfst::hfst_xfst_string_one = os1->str();
           delete os1;
         }
         if (error_stream == "") {
-          hfst_xfst_string_two = os2->str();
+          hfst::hfst_xfst_string_two = os2->str();
           delete os2;
         }
 
@@ -1314,6 +1312,8 @@ class XreCompiler
   void set_harmonization(bool harmonize);
   void set_flag_harmonization(bool harmonize_flags);
   void set_verbosity(bool verbose);
+  XreCompiler& setOutputToConsole(bool value);
+  bool getOutputToConsole();
 };
 }
 
@@ -1356,6 +1356,8 @@ namespace lexc {
       // not implemented?: const std::map<std::string,hfst::HfstTransducer>& getStringTries() const;
       // not implemented?: const std::map<std::string,hfst::HfstTransducer>& getRegexpUnions() const;
       const LexcCompiler& printConnectedness(bool & warnings_printed);
+      void setOutputToConsole(bool);
+      bool getOutputToConsole();
   };
 // ugh, the global
 //extern LexcCompiler* lexc_;
@@ -1391,7 +1393,7 @@ namespace xfst {
 
 
 std::string hfst::get_hfst_regex_error_message();
-hfst::HfstTransducer * hfst::hfst_regex(const std::string & regex_string, const std::string & error_stream);
+hfst::HfstTransducer * hfst::hfst_regex(hfst::xre::XreCompiler & comp, const std::string & regex_string, const std::string & error_stream);
 
 char * hfst::get_hfst_xfst_string_one();
 char * hfst::get_hfst_xfst_string_two();
@@ -1419,16 +1421,35 @@ EPSILON='@_EPSILON_SYMBOL_@'
 UNKNOWN='@_UNKNOWN_SYMBOL_@'
 IDENTITY='@_IDENTITY_SYMBOL_@'
 
-def regex(re, err=None):
+OUTPUT_TO_CONSOLE=False
+def set_output_to_console(val):
+    global OUTPUT_TO_CONSOLE
+    OUTPUT_TO_CONSOLE=val
+def get_output_to_console():
+    return OUTPUT_TO_CONSOLE
+
+def regex(re, err=None, **kvargs):
+    type = _libhfst.get_default_fst_type()
+    to_console=get_output_to_console()
+
+    for k,v in kvargs.items():
+      if k == 'output_to_console':
+          to_console=v
+      else:
+        print('Warning: ignoring unknown argument %s.' % (k))
+
+    comp = XreCompiler(type)
+    comp.setOutputToConsole(to_console)
+
     import sys
     if err == None:
-       return _libhfst.hfst_regex(re, "")
+       return _libhfst.hfst_regex(comp, re, "")
     elif err == sys.stdout:
-       return _libhfst.hfst_regex(re, "cout")
+       return _libhfst.hfst_regex(comp, re, "cout")
     elif err == sys.stderr:
-       return _libhfst.hfst_regex(re, "cerr")
+       return _libhfst.hfst_regex(comp, re, "cerr")
     else:
-       retval = _libhfst.hfst_regex(re, "")
+       retval = _libhfst.hfst_regex(comp, re, "")
        err.write(_libhfst.get_hfst_regex_error_message())
        return retval
 
@@ -1478,11 +1499,21 @@ def read_att_input():
     return HfstTransducer(fsm, _libhfst.get_default_fst_type())
 
 def start_xfst(**kvargs):
+    import sys
+    idle = 'idlelib' in sys.modules
+    if idle:
+        print('It seems that you are running python in in IDLE. Note that all output from xfst will be buffered.')
+        print('This means that all warnings, e.g. about time-consuming operations, will be printed only after the operation is carried out.')
+        print('Consider running python from shell, for example command prompt, if you wish to see output with no delays.')
+
     type = _libhfst.get_default_fst_type()
     quit_on_fail = 'OFF'
+    to_console=get_output_to_console()
     for k,v in kvargs.items():
       if k == 'type':
         type = v
+      elif k == 'output_to_console':
+        to_console=v
       elif k == 'quit_on_fail':
         if v == True:
           quit_on_fail='ON'
@@ -1491,7 +1522,11 @@ def start_xfst(**kvargs):
 
     comp = XfstCompiler(type)
     comp.setReadInteractiveTextFromStdin(True)
-    comp.setOutputToConsole(True) # no effect on linux
+
+    if to_console and idle:
+        print('Cannot output to console when running libhfst from IDLE.')
+        to_console=False
+    comp.setOutputToConsole(to_console)
     comp.set('quit-on-fail', quit_on_fail)
 
     expression=""
@@ -1501,7 +1536,13 @@ def start_xfst(**kvargs):
         if expression[-1] == '\\':
            expression = expression[:-2] + '\n'
            continue
-        if 0 != comp.parse_line(expression + "\n"):
+        retval = -1
+        if idle:
+            retval = _libhfst.hfst_compile_xfst_to_string_one(comp, expression)
+            print(_libhfst.get_hfst_xfst_string_one(), end='')
+        else:
+            retval = comp.parse_line(expression + "\n")
+        if retval != 0:
            print("expression '%s' could not be parsed" % expression)
            if comp.get("quit-on-fail") == "ON":
               return
@@ -1515,7 +1556,7 @@ def compile_xfst_file(filename, **kvargs):
     type = _libhfst.get_default_fst_type()
     output=None
     error=None
-    to_console=False
+    to_console=get_output_to_console()
 
     for k,v in kvargs.items():
       if k == 'verbosity':
@@ -1583,6 +1624,7 @@ def compile_lexc_file(filename, **kvargs):
     alignstrings=False
     type = _libhfst.get_default_fst_type()
     output=None
+    to_console=get_output_to_console()
 
     for k,v in kvargs.items():
       if k == 'verbosity':
@@ -1594,11 +1636,14 @@ def compile_lexc_file(filename, **kvargs):
           alignstrings = v
       elif k == 'output':
           output=v
+      elif k == 'output_to_console':
+          to_console=v
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 
     lexccomp = LexcCompiler(type, withflags, alignstrings)
     lexccomp.setVerbosity(verbosity)
+    lexccomp.setOutputToConsole(to_console)
 
     retval=-1
     import sys
