@@ -685,6 +685,9 @@ HfstOneLevelPaths * HfstTransducer::lookup_fd(const StringVector& s,
     case (ERROR_TYPE):
       HFST_THROW(TransducerHasWrongTypeException);
     default:
+      HFST_THROW(FunctionNotImplementedException);
+
+      /*
       hfst::implementations::HfstBasicTransducer net(*this);    
       HfstTransducer * tmp;
       if (this->type == TROPICAL_OPENFST_TYPE) {
@@ -694,7 +697,7 @@ HfstOneLevelPaths * HfstTransducer::lookup_fd(const StringVector& s,
       HfstOneLevelPaths * retval = tmp->lookup_fd(s, limit);
       delete tmp;
       return retval;
-
+      */
     }
 }
 
@@ -710,6 +713,9 @@ HfstOneLevelPaths * HfstTransducer::lookup_fd(const std::string & s,
     case (ERROR_TYPE):
       HFST_THROW(TransducerHasWrongTypeException);
     default:
+      HFST_THROW(FunctionNotImplementedException);
+
+      /*
       hfst::implementations::HfstBasicTransducer net(*this);    
       HfstTransducer * tmp;
       if (this->type == TROPICAL_OPENFST_TYPE) {
@@ -719,7 +725,7 @@ HfstOneLevelPaths * HfstTransducer::lookup_fd(const std::string & s,
       HfstOneLevelPaths * retval = tmp->lookup_fd(s, limit);
       delete tmp;
       return retval;
-
+      */
     }
 }
 
