@@ -1228,7 +1228,7 @@ LexcCompiler::compileLexical()
 
     // Preserve only first flag of consecutive P and R lexname flag series, 
     // e.g. change P.LEXNAME.1 R.LEXNAME.1 P.LEXNAME.2 R.LEXNAME.2 into P.LEXNAME.1 
-    if (with_flags_ && minimize_flags_)
+    if (with_flags_) //&& minimize_flags_)
     {
         StringSet transducerAlphabet = rv->get_alphabet();
         StringSet flagD;

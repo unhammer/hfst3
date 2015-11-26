@@ -125,6 +125,9 @@ void error_at_current_token(int status, int errnum, const char* format);
 //! This means that if we have a lexicon entry like:
 //! abc:bc
 //! As this is compiled into a transducer for the entry, we align it a:0 b:b c:c (instead of the default a:b b:c c:0).
+//! Additionally, if we have a lexicon entry like:
+//! abc:xyz
+//! we align it 0:x 0:y 0:z a:0 b:0 c:0 (instead of x:0 y:0 z:0 0:a 0:b 0:c)
 std::pair<vector<string>, vector<string> > find_med_alingment(const vector<string> &s1, const vector<string> &s2);
 
 } }

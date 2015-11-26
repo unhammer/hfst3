@@ -470,8 +470,6 @@ error_at_current_token(int, int, const char* format)
 
 pair<vector<string>, vector<string> > find_med_alingment(const vector<string> &s1, const vector<string> &s2)
 {
-   // cout << "s1 " << s1 << endl;
-    //cout << "s2 " << s2 << endl;
     const size_t substitution = 100;
     const size_t deletion = 1;
     const size_t insertion = 1;
@@ -492,7 +490,7 @@ pair<vector<string>, vector<string> > find_med_alingment(const vector<string> &s
         d[0][i] = insertion * i;
         dir[0][i] = INSERT;
     }
-   
+    
     for(unsigned int i = 1; i <= len1; ++i)
     {
         for(unsigned int j = 1; j <= len2; ++j)
@@ -503,11 +501,17 @@ pair<vector<string>, vector<string> > find_med_alingment(const vector<string> &s
             int del = d[i - 1][j] + deletion ;
             
            
-            if ( sub <= ins &&  sub <= ins )
+            if ( sub <= ins &&  sub <= del )
             {
                 d[i][j] = sub;
                 dir[i][j] = SUBSTITUTE;
             }
+             // It's important to prioritize "del" when it has the same value as "ins"" because we want the first 
+             // string to have zeroes before the second one.
+             // For example, if we have two strings: abc and xyz, we would prefer the output 000abc:xyz000 
+             // over abc000:000xyz, because we need to invert the transducer to use it for the analysis and in lookup
+             // we want zeroes as late as possible on the upper side.
+             // Anyway, the order of this two following blocks determines the order of zeroes on upper/lower side
             else if (del <= sub && del <= ins)
             {
                 d[i][j] = del;
@@ -520,8 +524,6 @@ pair<vector<string>, vector<string> > find_med_alingment(const vector<string> &s
             }
         }
     }
-    
-
     
     vector<string> medcwordin;
     vector<string> medcwordout;
@@ -552,26 +554,8 @@ pair<vector<string>, vector<string> > find_med_alingment(const vector<string> &s
         }
     }
 
-    
     std::reverse(medcwordin.begin(), medcwordin.end());
     std::reverse(medcwordout.begin(), medcwordout.end());
-    
-    /*
-    cout << "\n\n";
-    for (auto i : medcwordin)
-    {
-        cout << "in ---" << i << endl;
-
-    }
-    
-    for (auto i : medcwordout)
-    {
-        cout << "out ---" << i << endl;
-
-    }
-    */
-    // cout << w1 << endl;
-    // cout << w2 << endl;
     
     pair<vector<string>, vector<string> > returnValue (medcwordin,medcwordout);
     return returnValue;
