@@ -3904,16 +3904,25 @@
          HFSTDLL void lookup_fd
            (const StringVector &lookup_path,
             HfstTwoLevelPaths &results,
-            size_t infinite_cutoff,
+            size_t * infinite_cutoff = NULL,
             float * max_weight = NULL)
          {
            HfstState state = 0;
            unsigned int lookup_index = 0;
            HfstTwoLevelPath path_so_far;
            StringSet alphabet = this->get_alphabet();
-           HfstEpsilonHandler Eh(infinite_cutoff);
-           lookup_fd(lookup_path, results, state, lookup_index, path_so_far, 
-                     alphabet, Eh, infinite_cutoff, max_weight);
+           if (infinite_cutoff != NULL)
+             {
+               HfstEpsilonHandler Eh(*infinite_cutoff);
+               lookup_fd(lookup_path, results, state, lookup_index, path_so_far, 
+                     alphabet, Eh, *infinite_cutoff, max_weight);
+             }
+           else
+             {
+               HfstEpsilonHandler Eh(100000);
+               lookup_fd(lookup_path, results, state, lookup_index, path_so_far, 
+                     alphabet, Eh, 100000, max_weight);
+             }
          }
 
 

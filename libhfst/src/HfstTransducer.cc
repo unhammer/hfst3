@@ -664,13 +664,13 @@ void HfstTransducer::print_alphabet()
 HfstOneLevelPaths * HfstTransducer::lookup(const StringVector& s,
                                            ssize_t limit, double time_cutoff) const
 {
-    return lookup_fd(s, limit);
+    return lookup_fd(s, limit, time_cutoff);
 }
 
 HfstOneLevelPaths * HfstTransducer::lookup(const std::string & s,
                                            ssize_t limit, double time_cutoff) const
 {
-    return lookup_fd(s, limit);
+    return lookup_fd(s, limit, time_cutoff);
 }
 
 HfstOneLevelPaths * HfstTransducer::lookup_fd(const StringVector& s,

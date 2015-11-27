@@ -691,14 +691,14 @@ int longest_path_size(bool obey_flags=true) const;
 
 // Wrappers for lookup functions
 
-HfstOneLevelPaths lookup_fd_vector(const StringVector& s, int limit = -1 /*ignored?*/ ) const
-{ return *($self->lookup_fd(s, limit)); }
-HfstOneLevelPaths lookup_fd_string(const std::string& s, int limit /*=-1*/ ) const
-{ return *($self->lookup_fd(s, limit)); }
-HfstOneLevelPaths lookup_vector(const StringVector& s, int limit = -1) const
-{ return *($self->lookup(s, limit)); }
-HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
-{ return *($self->lookup(s, limit)); }
+HfstOneLevelPaths lookup_fd_vector(const StringVector& s, int limit = -1, double time_cutoff = 0.0) const throw(FunctionNotImplementedException)
+{ return *($self->lookup_fd(s, limit, time_cutoff)); }
+HfstOneLevelPaths lookup_fd_string(const std::string& s, int limit = -1, double time_cutoff = 0.0) const throw(FunctionNotImplementedException)
+{ return *($self->lookup_fd(s, limit, time_cutoff)); }
+HfstOneLevelPaths lookup_vector(const StringVector& s, int limit = -1, double time_cutoff = 0.0) const throw(FunctionNotImplementedException)
+{ return *($self->lookup(s, limit, time_cutoff)); }
+HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1, double time_cutoff = 0.0) const throw(FunctionNotImplementedException)
+{ return *($self->lookup(s, limit, time_cutoff)); }
 
 
 %pythoncode{
@@ -707,6 +707,7 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
       
       obey_flags=True
       max_number=-1
+      time_cutoff=0.0
       output='tuple' # 'tuple' (default), 'text', 'raw'
 
       for k,v in kvargs.items():
@@ -730,6 +731,8 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
                 print("Possible values are 'tuple' (default), 'text', 'raw'.")
           elif k == 'max_number' :
              max_number=v
+          elif k == 'time_cutoff' :
+             time_cutoff=v
           else:
              print('Warning: ignoring unknown argument %s.' % (k))
 
@@ -737,14 +740,14 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1) const
 
       if isinstance(input, tuple):
          if obey_flags:
-            retval=self.lookup_fd_vector(input, max_number)
+            retval=self.lookup_fd_vector(input, max_number, time_cutoff)
          else:
-            retval=self.lookup_vector(input, max_number)
+            retval=self.lookup_vector(input, max_number, time_cutoff)
       elif isinstance(input, str):
          if obey_flags:
-            retval=self.lookup_fd_string(input, max_number)
+            retval=self.lookup_fd_string(input, max_number, time_cutoff)
          else:
-            retval=self.lookup_string(input, max_number)
+            retval=self.lookup_string(input, max_number, time_cutoff)
       else:
          raise RuntimeError('Input argument must be string or tuple.')
 
@@ -1111,7 +1114,7 @@ class HfstBasicTransducer {
 
 %extend {
 
-  HfstTwoLevelPaths lookup_fd_(const StringVector &lookup_path, size_t infinite_cutoff, float * max_weight)
+  HfstTwoLevelPaths lookup_fd_(const StringVector &lookup_path, size_t * infinite_cutoff, float * max_weight)
   {
     hfst::HfstTwoLevelPaths results;
     $self->lookup_fd(lookup_path, results, infinite_cutoff, max_weight);
@@ -1156,7 +1159,7 @@ class HfstBasicTransducer {
 
   def lookup_fd(self, lookup_path, **kvargs):
       max_weight = None
-      infinite_cutoff = -1 # Is this right?
+      infinite_cutoff = None
       output='dict' # 'dict' (default), 'text', 'raw'
 
       for k,v in kvargs.items():

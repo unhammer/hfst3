@@ -193,7 +193,22 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     tr = libhfst.regex('foo:bar::0.5 | foo:baz')
 
     print('tr.lookup')
-    print(tr.lookup('foo', max_number=5, output='text'))
+    try:
+        print(tr.lookup('foo', max_number=5, output='text'))
+    except libhfst.FunctionNotImplementedException:
+        print('converting...')
+        TR = libhfst.HfstTransducer(tr)
+        TR.convert(libhfst.HFST_OLW_TYPE)
+        print(TR.lookup('foo', max_number=5, output='text'))
+
+#  def lookup_fd(self, lookup_path, **kvargs):
+#      max_weight = None
+#      infinite_cutoff = -1 # Is this right?
+#      output='dict' # 'dict' (default), 'text', 'raw'
+
+
+    fsm = libhfst.HfstBasicTransducer(tr)
+    print(fsm.lookup_fd((('foo'))))
 
     print('tr.extract_paths')
     print(tr.extract_paths(obey_flags='True', filter_flags='False', max_number=3, output='dict'))

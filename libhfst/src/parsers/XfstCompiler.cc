@@ -677,11 +677,11 @@ namespace xfst {
         // todo: variables_["obey-flags"] == ["ON"|"OFF"]
 
         if (variables_["maximum-weight"] == "OFF")
-          t->lookup_fd(lookup_path, results, cutoff, NULL);
+          t->lookup_fd(lookup_path, results, &cutoff, NULL);
         else
           {
             float max_weight = string_to_float(variables_["maximum-weight"]);
-            t->lookup_fd(lookup_path, results, cutoff, &max_weight);
+            t->lookup_fd(lookup_path, results, &cutoff, &max_weight);
           }
 
         HfstOneLevelPaths paths = extract_output_paths(results);
