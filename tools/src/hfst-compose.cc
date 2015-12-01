@@ -73,6 +73,8 @@ print_usage()
         print_common_binary_program_parameter_instructions(message_out);
         fprintf(message_out, "\n");
         fprintf(message_out, "Xfst variables are {flag-is-epsilon (default OFF)}.\n");
+        fprintf(message_out, "VALUE can be one of the following: [true|false], [yes|no] or [ON|OFF],\n");
+        fprintf(message_out, "false being the default.\n");
         fprintf(message_out,
             "\n"
             "Examples:\n"
