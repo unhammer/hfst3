@@ -1431,9 +1431,11 @@ def set_output_to_console(val):
 def get_output_to_console():
     return OUTPUT_TO_CONSOLE
 
-def regex(re, err=None, **kvargs):
+def regex(re, **kvargs):
     type = _libhfst.get_default_fst_type()
     to_console=get_output_to_console()
+    import sys
+    err=sys.stderr
 
     for k,v in kvargs.items():
       if k == 'output_to_console':
@@ -1444,7 +1446,6 @@ def regex(re, err=None, **kvargs):
     comp = XreCompiler(type)
     comp.setOutputToConsole(to_console)
 
-    import sys
     if err == None:
        return _libhfst.hfst_regex(comp, re, "")
     elif err == sys.stdout:

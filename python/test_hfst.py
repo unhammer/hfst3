@@ -374,13 +374,13 @@ for type in (libhfst.TROPICAL_OPENFST_TYPE, libhfst.FOMA_TYPE):
     import io
     msg = io.StringIO()
     msg.write('This is the error message:\n')
-    tr = libhfst.regex('foo\\', msg)
+    tr = libhfst.regex('foo\\', error=msg)
     if (tr == None):
         msg.write('This was the error message.\n')
         print(msg.getvalue())
     import sys
     msg = sys.stdout
-    tr = libhfst.regex('foo\\', msg)
+    tr = libhfst.regex('foo\\', error=msg)
 
     # lexc compiler
     msg = io.StringIO()

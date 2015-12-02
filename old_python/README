@@ -1,4 +1,5 @@
-This is the SWIG binding for using HFST library with Python.
+This is the old SWIG binding for using HFST library with Python.
+A newer binding is in the directory "../python".
 
 It is recommended to use python version 3 as it has a better support for
 UTF-8 than version 2. All examples are tested with python3.

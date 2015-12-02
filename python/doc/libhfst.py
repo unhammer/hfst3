@@ -1593,7 +1593,11 @@ class HfstTransducer:
 
     ## Lookup string \a input.
     # @param input The input.
-    # @param kvargs Possible parameters and their default values are: obey_flags=True, limit=-1, simple_output=True
+    # @param kvargs Possible parameters and their default values are: obey_flags=True, max_number=-1, time_cutoff=0.0, output='tuple'
+    # @param obey_flags Whether flag diacritics are obeyed. Currently always True.
+    # @param max_number Maximum number of results returned, defaults to -1, i.e. infinity.
+    # @param time_cutoff How long the function can search for results before returning, expressed in seconds. Defaults to 0.0, i.e. infinitely.
+    # @param output Possible values are 'tuple', 'text' and 'raw', 'tuple' being the default.
     def lookup(self, input, **kvargs):
         pass
 
