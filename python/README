@@ -1,8 +1,8 @@
 
-------------------------------------------------
-*** THIS IS THE NEW PYTHON3 WRAPPER FOR HFST ***
-     *** IT IS STILL UNDER CONSTRUCTION ***
-------------------------------------------------
+         ------------------------------------------------
+         *** THIS IS THE NEW PYTHON3 WRAPPER FOR HFST ***
+              *** IT IS STILL UNDER CONSTRUCTION ***
+         ------------------------------------------------
 
 This is the SWIG binding for using HFST library with python3.
 
@@ -13,15 +13,17 @@ Python extension eg. like so:
     python3 setup.py build_ext --inplace
 
 
+NOTE: if you already have hfst installed, it is possible that SWIG will use 
+the installed version of hfst library instead of the default located in
+"../libhfst/src/.libs/". To avoid this, add the full path to hfst library to
+LD_LIBRARY_PATH before building the Python extension, e.g. by executing
+
+    LD_LIBRARY_PATH="path/to/hfst-top-dir/libhfst/src/.libs/:"$LD_LIBRARY_PATH
+
+
 If you wish to install the extension, run
 
     python3 setup.py install
-
-
-To test the Python bindings after installation, go to directory 'test' and
-run there
-
-    ./test.sh (--python python3.X)
 
 
 For further information, consult
@@ -32,7 +34,7 @@ For further information, consult
 and the distutils documentation.
 
 
-Some version combinations of SWIG and Python make HFST exception classes
+NOTE: Some version combinations of SWIG and Python make HFST exception classes
 subclasses of Python's _object instead of Exception. Then you will get an
 error like
 
@@ -42,11 +44,16 @@ If this is the case, run
 
     sed -i 's/class HfstException(_object):/class HfstException(Exception):/' libhfst.py
 
-after build to be able to use HfstException and its subclasses in Python. 
+after build/installation to be able to use HfstException and its subclasses in Python. 
 
 
-If you are using SWIG bindings locally, or want to run ./test/test.sh before
-installation, add path/to/hfst-top-dir/swig/ to PYTHONPATH and 
-path/to/hfst-top-dir/libhfst/src/.libs/ to LD_LIBRARY_PATH.
+If you want to use Python bindings locally, add path/to/hfst-top-dir/python to
+PYTHONPATH, e.g. by executing
 
+    PYTHONPATH="path/to/hfst-top-dir/python:"$PYTHONPATH
+
+If this does not work, you can do the following in Python before importing libhfst:
+
+    import sys
+    sys.path.insert(1, 'path/to/hfst-top-dir/python')
 

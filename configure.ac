@@ -759,8 +759,8 @@ AC_CONFIG_FILES([Makefile doc/Makefile test/Makefile
 		 back-ends/foma/Makefile
 		 back-ends/sfst/Makefile
 		 man/Makefile
-		 swig/Makefile
-		 swig/test/Makefile
+		 python/Makefile
+		 python/test/Makefile
 		 scripts/Makefile])
 AC_CONFIG_FILES([scripts/hfst-foma-wrapper.sh], [chmod +x scripts/hfst-foma-wrapper.sh])
 AC_CONFIG_FILES([scripts/hfst-foma], [chmod +x scripts/hfst-foma])

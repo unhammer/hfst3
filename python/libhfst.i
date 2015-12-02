@@ -1440,6 +1440,8 @@ def regex(re, **kvargs):
     for k,v in kvargs.items():
       if k == 'output_to_console':
           to_console=v
+      if k == 'error':
+          err=v
       else:
         print('Warning: ignoring unknown argument %s.' % (k))
 

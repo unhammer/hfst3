@@ -506,8 +506,9 @@ def epsilon_fst(weight=0):
 
 ## Get a transducer as defined by regular expression \a regexp.
 # @param regexp The regular expression defined with <a href="http://www.fsmbook.com/">Xerox transducer notation</a>.
-# @param err Where warnings and errors are printed. Possible values are sys.stdout, sys.stderr, a StringIO or None, indicating a quiet mode.
-def regex(regexp, err=None):
+# @param kvargs Argumnets recognized are: error.
+# @param error Where warnings and errors are printed. Possible values are sys.stdout, sys.stderr (the default), a StringIO or None, indicating a quiet mode.
+def regex(regexp, **kvargs):
     pass
 
 ## Compile lexc file \a filename into a transducer.

@@ -1,0 +1,11 @@
+
+This directory contains tests for HFST python bindings. The tests are
+still under construction, as are the python bindings.
+
+For the time being, run
+
+  python3 test_hfst.py && python3 examples.py && echo "TESTS PASSED"
+
+If "TESTS PASSED" is the last line that gets printed, it means that 
+the tests have passed.
+
