@@ -1981,7 +1981,16 @@ namespace xfst {
     {
       GET_TOP(tmp);
       std::string name_(name);
-      tmp->eliminate_flag(name);
+      try 
+        {
+          tmp->eliminate_flag(name);
+        }
+      catch (HfstException & e)
+        {
+          error() << "error: could not eliminate flag '" << name << "': " << e.name << std::endl;
+          flush(&error());
+          MAYBE_QUIT;
+        }
       PROMPT_AND_RETURN_THIS;
     }
 

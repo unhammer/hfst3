@@ -2013,6 +2013,26 @@ HfstTransducer &HfstTransducer::eliminate_flags()
 
 HfstTransducer &HfstTransducer::eliminate_flag(const std::string & flag)
 {
+
+  HfstBasicTransducer basic(*this);
+  StringSet flags = basic.get_flags();
+  bool feature_found = false;
+  for (StringSet::const_iterator it = flags.begin(); it != flags.end(); it++)
+    {
+      if (FdOperation::get_feature(*it) == flag)
+        {
+          feature_found = true;
+          break;
+        }
+    }
+  if (! feature_found)
+    {
+      if (flag.find('.') == std::string::npos)
+        HFST_THROW_MESSAGE(HfstException, "HfstTransducer::eliminate_flag: flag feature does not occur in the transducer: " + flag);
+      else
+        HFST_THROW_MESSAGE(HfstException, "HfstTransducer::eliminate_flag: only the flag feature must be given, no value or operator: " + flag);
+    }
+
 #if HAVE_FOMA
   if (type == FOMA_TYPE)
     {
@@ -2029,8 +2049,6 @@ HfstTransducer &HfstTransducer::eliminate_flag(const std::string & flag)
     }
 #endif
 
-  HfstBasicTransducer basic(*this);
-  StringSet flags = basic.get_flags();
   HfstTransducer * filter = get_flag_filter(this, flags, flag);
   if (filter != NULL) 
     {

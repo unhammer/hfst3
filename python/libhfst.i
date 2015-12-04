@@ -566,7 +566,7 @@ HfstTransducer & determinize();
 HfstTransducer & minimize();
 HfstTransducer & prune();
 HfstTransducer & eliminate_flags();
-HfstTransducer & eliminate_flag(const std::string&);
+HfstTransducer & eliminate_flag(const std::string&) throw(HfstException);
 HfstTransducer & n_best(unsigned int n);
 HfstTransducer & convert(ImplementationType impl);
 
