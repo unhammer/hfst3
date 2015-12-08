@@ -42,6 +42,8 @@ HarmonizeUnknownAndIdentitySymbols.cpp ^
 HfstLookupFlagDiacritics.cpp ^
 HfstEpsilonHandler.cpp ^
 HfstStrings2FstTokenizer.cpp ^
+HfstPrintDot.cpp ^
+HfstPrintPCKimmo.cpp ^
 implementations\HfstTransitionGraph.cpp ^
 implementations\ConvertTransducerFormat.cpp ^
 implementations\HfstTropicalTransducerTransitionData.cpp ^

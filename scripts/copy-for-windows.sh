@@ -74,7 +74,8 @@ HfstDataTypes.h HfstEpsilonHandler.h HfstExceptionDefs.h \
 HfstExceptions.h HfstExtractStrings.h HfstFlagDiacritics.h \
 HfstInputStream.h HfstLookupFlagDiacritics.h HfstOutputStream.h \
 HfstSymbolDefs.h HfstTokenizer.h HfstTransducer.h HfstXeroxRules.h \
-HfstStrings2FstTokenizer.h hfst.h hfst.hpp.in hfst_apply_schemas.h hfstdll.h;
+HfstStrings2FstTokenizer.h hfst.h hfst.hpp.in hfst_apply_schemas.h hfstdll.h \
+HfstPrintDot.h HfstPrintPCKimmo.h;
 do
     cp libhfst/src/$file $1/libhfst/src/
 done
@@ -84,7 +85,7 @@ HarmonizeUnknownAndIdentitySymbols HfstApply HfstDataTypes \
 HfstEpsilonHandler HfstExceptionDefs HfstExceptions HfstFlagDiacritics \
 HfstInputStream HfstLookupFlagDiacritics HfstOutputStream HfstRules \
 HfstSymbolDefs HfstTokenizer HfstTransducer HfstXeroxRules \
-HfstStrings2FstTokenizer HfstXeroxRulesTest;
+HfstStrings2FstTokenizer HfstXeroxRulesTest HfstPrintDot HfstPrintPCKimmo;
 do
     cp libhfst/src/$file.cc $1/libhfst/src/$file.cpp
 done
@@ -164,10 +165,10 @@ sed -i 's/hxfstwrap( )/hxfstwrap(void)/' $1/libhfst/src/parsers/xfst-lexer.cpp
 
 
 cp scripts/make-python-bindings.bat $1/libhfst/src/
-cp new_python_api/test_hfst.py $1/libhfst/src/
-cp new_python_api/examples.py $1/libhfst/src/
-cp new_python_api/foobar.hfst $1/libhfst/src/
-cp new_python_api/libhfst.i $1/libhfst/src/
+cp python/test/test_hfst.py $1/libhfst/src/
+cp python/test/examples.py $1/libhfst/src/
+cp python/test/foobar.hfst $1/libhfst/src/
+cp python/libhfst.i $1/libhfst/src/
 cp scripts/make-hfst-xfst.bat $1/libhfst/src/
 cp scripts/make-hfst-proc.bat $1/libhfst/src/
 cp scripts/make-hfst-lexc.bat $1/libhfst/src/
