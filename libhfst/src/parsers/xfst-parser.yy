@@ -321,8 +321,9 @@ COMMAND: ADD_PROPS REDIRECT_IN END_COMMAND {
             free($1); CHECK;
        }
        | VIEW END_COMMAND {
-            hxfsterror("view not implemented\n");
-            return EXIT_FAILURE;
+            hfst::xfst::xfst_->view_net(); CHECK;
+            //hxfsterror("view not implemented\n");
+            //return EXIT_FAILURE;
        }
        // vars
        | SET NAMETOKEN NAMETOKEN END_COMMAND {

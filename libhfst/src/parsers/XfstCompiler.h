@@ -293,6 +293,8 @@ class XfstCompiler
   XfstCompiler& print_random_words(const char * name, unsigned int number, std::ostream * oss);
   //! @brief Print name of top network
   XfstCompiler& print_name(std::ostream * oss);
+  //! @brief View top network
+  XfstCompiler& view_net();
   //! @brief Print network
   XfstCompiler& print_net(std::ostream * oss);
   //! @brief Print network named @a name

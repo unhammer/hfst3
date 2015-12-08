@@ -47,6 +47,7 @@ using std::stack;
 #include "xfst-parser.hh"
 
 #include "HfstStrings2FstTokenizer.h"
+#include "HfstPrintDot.h"
 
 #ifdef HAVE_READLINE
   #include <readline/readline.h>
@@ -3443,6 +3444,52 @@ namespace xfst {
       flush(oss);
       PROMPT_AND_RETURN_THIS;
     }
+
+  XfstCompiler&
+  XfstCompiler::view_net()
+  {
+#ifdef WINDOWS
+    error() << "view net not implemented for windows" << std::endl;
+    flush(&error());
+    PROMPT_AND_RETURN_THIS;
+#else
+    GET_TOP(tmp);
+    char * dotfilename = tempnam(NULL, "hfst");
+    char * pngfilename = tempnam(NULL, "hfst");
+    if (false || verbose_)
+      {
+        error() << "Writing net in dot format to temporary file '" << dotfilename << "'." << std::endl;
+        flush(&error());
+      }
+    FILE * dotfile = fopen(dotfilename, "wb");
+    hfst::print_dot(dotfile, *tmp);
+    fclose(dotfile);
+    if (false || verbose_)
+      {
+        error() << "Wrote net, closing file and converting into png format." << std::endl;
+        flush(&error());
+      }
+    if (::system(("dot -Tpng " + std::string(dotfilename) + " > " + std::string(pngfilename) + " 2> /dev/null" ).c_str()) != 0)
+      {
+        error() << "Converting failed." << std::endl;
+        flush(&error());
+        xfst_lesser_fail();
+      }
+    if (false || verbose_)
+      {
+        error() << "Converted to png format, viewing the graph." << std::endl;
+        flush(&error());
+      }
+    if (::system(("/usr/bin/xdg-open " + std::string(pngfilename) + " 2> /dev/null &").c_str()) != 0)
+      {
+        error() << "Viewing failed." << std::endl;
+        flush(&error());
+        xfst_lesser_fail();
+      }
+    PROMPT_AND_RETURN_THIS;
+#endif // WINDOWS
+  }
+
   XfstCompiler& 
   XfstCompiler::print_net(std::ostream * oss_)
     {
@@ -3668,25 +3715,42 @@ namespace xfst {
       flush(oss);
       PROMPT_AND_RETURN_THIS;
     }
-        
   XfstCompiler& 
   XfstCompiler::write_dot(std::ostream * oss_)
     {
       std::ostream * oss = get_stream(oss_);
-      *oss << "missing write dot" << std::endl;
-      //hfst_fprintf(outfile, "missing write dot %s:%d\n", __FILE__, __LINE__);
+      if (stack_.size() < 1)
+        {
+          EMPTY_STACK;
+          xfst_lesser_fail();
+          PROMPT_AND_RETURN_THIS;
+        }
+      GET_TOP(tmp);
+      hfst::print_dot(*oss, *tmp);
       flush(oss);
       PROMPT_AND_RETURN_THIS;
     }
   XfstCompiler&
-  XfstCompiler::write_dot(const char* /*name*/, std::ostream * oss_)
-    {
-      std::ostream * oss = get_stream(oss_);
-      *oss << "missing write dot" << std::endl;
-      //hfst_fprintf(outfile, "missing write dot %s:%d\n", __FILE__, __LINE__);
-      flush(oss);
-      PROMPT_AND_RETURN_THIS;
-    }
+  XfstCompiler::write_dot(const char* name, std::ostream * oss_)
+  {
+    if (stack_.size() < 1)
+      {
+        EMPTY_STACK;
+        xfst_lesser_fail();
+        PROMPT_AND_RETURN_THIS;
+      }
+    FILE * outfile = fopen(name, "wb");
+    if (outfile == NULL)
+      {
+        error() << "Could not open file " << name << std::endl;
+        flush(&error());
+        xfst_fail();
+        PROMPT_AND_RETURN_THIS;
+      }
+    GET_TOP(tmp);
+    hfst::print_dot(outfile, *tmp);
+    PROMPT_AND_RETURN_THIS;
+  }
   XfstCompiler& 
   XfstCompiler::write_prolog(std::ostream * oss_)
     {
