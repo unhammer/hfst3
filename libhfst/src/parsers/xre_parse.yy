@@ -562,8 +562,19 @@ CONTEXTS_VECTOR: CONTEXT
       ;
 CONTEXT: REPLACE CENTER_MARKER REPLACE 
          {
-             HfstTransducer t1(*$1);
-             HfstTransducer t2(*$3);
+            if (hfst::xre::has_non_identity_pairs($1)) // if non-identity symbols present..
+            {
+              xreerror("Contexts need to be automata");
+              YYABORT;
+            }
+            if (hfst::xre::has_non_identity_pairs($3)) // if non-identity symbols present..
+            {
+              xreerror("Contexts need to be automata");
+              YYABORT;
+            }
+            
+            HfstTransducer t1(*$1);
+            HfstTransducer t2(*$3); 
 
              if (hfst::xre::is_weighted())
              {
@@ -584,8 +595,14 @@ CONTEXT: REPLACE CENTER_MARKER REPLACE
          }
       | REPLACE CENTER_MARKER
          {
-            HfstTransducer t1(*$1);
+            if (hfst::xre::has_non_identity_pairs($1)) // if non-identity symbols present..
+            {
+              xreerror("Contexts need to be automata");
+              YYABORT;
+            }
 
+            HfstTransducer t1(*$1);
+            
             if (hfst::xre::is_weighted())
             {
               hfst::xre::has_weight_been_zeroed=false;
@@ -600,6 +617,13 @@ CONTEXT: REPLACE CENTER_MARKER REPLACE
          }
       | CENTER_MARKER REPLACE
          {
+
+            if (hfst::xre::has_non_identity_pairs($2)) // if non-identity symbols present..
+            {
+              xreerror("Contexts need to be automata");
+              YYABORT;
+            }
+            
             HfstTransducer t1(*$2);
 
             if (hfst::xre::is_weighted())

@@ -111,7 +111,7 @@ do
         substitute_defined_4 substitute_defined_5 substitute_defined_6 \
         at_re_1 at_re_2 at_re_3 at_txt at_stxt at_txt_and_stxt at_pl \
         quoted_literals replace_identity one_transition_regex merge \
-		replace_test_flags_1 \
+		replace_test_flags_1 #replace_test_flags_2\
 		#markup_replace_rule_1 markup_replace_rule_2
 		
         
