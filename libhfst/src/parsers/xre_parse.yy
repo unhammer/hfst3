@@ -118,7 +118,7 @@ int xrelex ( YYSTYPE * , yyscan_t );
 %type <transducerVector> REGEXP_LIST   // function call
 %type <label> FUNCTION                 // function call
 
-%nonassoc <weight> WEIGHT END_OF_WEIGHTED_EXPRESSION
+%nonassoc <weight> WEIGHT
 %nonassoc <label> SYMBOL CURLY_BRACKETS
 
 %left  CROSS_PRODUCT COMPOSITION LENIENT_COMPOSITION INTERSECTION MERGE_RIGHT_ARROW MERGE_LEFT_ARROW
@@ -180,17 +180,6 @@ REGEXP1: REGEXP2 END_OF_EXPRESSION {
        if (hfst::xre::allow_extra_text_at_end) {
          return 0;
        }
-   }
-   | REGEXP2 END_OF_WEIGHTED_EXPRESSION {
-        //std::cerr << "regexp1:regexp2 end of weighted expr \n"<< std::endl; 
-       // Symbols of form <foo> are not harmonized in xfst, that is why
-       // they are escaped as @_<foo>_@ and need to be unescaped finally.  
-        // hfst::xre::last_compiled = & hfst::xre::unescape_enclosing_angle_brackets($1)->minimize().set_final_weights($2, true);
-        hfst::xre::last_compiled = & $1->minimize().set_final_weights($2, true);
-        $$ = hfst::xre::last_compiled;
-        if (hfst::xre::allow_extra_text_at_end) {
-          return 0;
-        }
    }
    | REGEXP2 {
    

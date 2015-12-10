@@ -269,18 +269,6 @@ BRACED      [{]([^}]|[\300-\337].|[\340-\357]..|[\360-\367]...)+[}]
     return FUNCTION_NAME;
 }
 
-";\t"{WEIGHT} {
-    CR; 
-    yylval->weight = hfst::xre::get_weight(yytext + 2);
-    return END_OF_WEIGHTED_EXPRESSION;
-}
-
-";"" "+{WEIGHT} {
-    CR; 
-    yylval->weight = hfst::xre::get_weight(yytext + 2);
-    return END_OF_WEIGHTED_EXPRESSION;
-}
-
 ";" { 
     CR; 
     return END_OF_EXPRESSION;
