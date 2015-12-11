@@ -3963,11 +3963,14 @@ HfstTransducer &HfstTransducer::compose
  bool harmonize)
 { is_trie = false;
 
+  if (this->type != another.type)
+    HFST_THROW(TransducerTypeMismatchException);
+
     HfstTransducer * another_copy = new HfstTransducer(another);
 
-    if (this->type != another_copy->type) {
-        another_copy->convert(this->type);
-    }
+    //if (this->type != another_copy->type) {
+    //    another_copy->convert(this->type);
+    //}
 
     /* If we want flag diacritcs to be handled in the same way as epsilons
        in composition, we substitute output flags of first transducer with
