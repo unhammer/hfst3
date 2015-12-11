@@ -546,11 +546,12 @@ process_stream(HfstInputStream& instream)
   hfst::ImplementationType output_type = hfst::UNSPECIFIED_TYPE;
 
   HfstTransducer* to_transducer = NULL;
-  if (to_transducer_filename)
+  if (to_transducer_filename != NULL)
     {
       try {
         HfstInputStream tostream(to_transducer_filename);
         to_transducer = new HfstTransducer(tostream);
+        tostream.close();
       } catch (NotTransducerStreamException ntse)  
         {
           error(EXIT_FAILURE, 0, "%s is not a valid transducer file",
@@ -561,26 +562,32 @@ process_stream(HfstInputStream& instream)
       hfst::ImplementationType instream_type = instream.get_type();
       if (to_transducer_type != instream_type)
           {
-            int ct = conversion_type(instream_type, to_transducer_type);
-            std::string warnstr("Transducer type mismatch in " + std::string(inputfilename) + " and " + std::string(to_transducer_filename) + "; ");
-            if (ct == 1)
-              { warnstr.append("using former type as output"); output_type = instream_type; }
-            else if (ct == 2)
-              { warnstr.append("using latter type as output"); output_type = to_transducer_type; }
-            else if (ct == -1)
-              { warnstr.append("using former type as output, loss of information is possible"); output_type = instream_type; }
-            else /* should not happen */
-              { throw "Error: hfst-disjunct: conversion_type returned an invalid integer"; }
-            warning(0, 0, warnstr.c_str());
-            to_transducer->convert(output_type);
+            if (allow_transducer_conversion)
+              {
+                int ct = conversion_type(instream_type, to_transducer_type);
+                std::string warnstr("Transducer type mismatch in " + std::string(inputfilename) + " and " + std::string(to_transducer_filename) + "; ");
+                if (ct == 1)
+                  { warnstr.append("using former type as output"); output_type = instream_type; }
+                else if (ct == 2)
+                  { warnstr.append("using latter type as output"); output_type = to_transducer_type; }
+                else if (ct == -1)
+                  { warnstr.append("using former type as output, loss of information is possible"); output_type = instream_type; }
+                else /* should not happen */
+                  { throw "Error: hfst-disjunct: conversion_type returned an invalid integer"; }
+                warning(0, 0, warnstr.c_str());
+                to_transducer->convert(output_type);
+              }
+            else
+              {
+                error(EXIT_FAILURE, 0, "Transducer type mismatch in %s and %s; "
+                      "formats %s and %s are not compatible for substitution (--do-not-convert was requested)",
+                      inputfilename, to_transducer_filename, hfst_strformat(instream_type), hfst_strformat(to_transducer_type));
+              }
           }
-        else
-          {
-            error(EXIT_FAILURE, 0, "Transducer type mismatch in %s and %s; "
-                  "formats %s and %s are not compatible for substitution (--do-not-convert was requested)",
-                  inputfilename, to_transducer_filename, hfst_strformat(instream_type), hfst_strformat(to_transducer_type));
-          }
-      
+      else
+        {
+          output_type = instream.get_type();
+        }
     }
   else
     {
