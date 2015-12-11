@@ -256,21 +256,47 @@ void harmonize_rules(HfstTransducer & lexicon, std::vector<HfstTransducer> & rul
 }
 
 int
-compose_streams(HfstInputStream& firststream, HfstInputStream& secondstream,
-                HfstOutputStream& outstream)
+compose_streams(HfstInputStream& firststream, HfstInputStream& secondstream)
 {
+  // there must be at least one transducer in both input streams
+  //bool continueReading = firststream.is_good() && secondstream.is_good();
+
+  hfst::ImplementationType type1 = firststream.get_type();
+  hfst::ImplementationType type2 = secondstream.get_type();
+  hfst::ImplementationType output_type = hfst::UNSPECIFIED_TYPE;
+  if (type1 != type2)
+    {
+      if (allow_transducer_conversion)
+        {
+          int ct = conversion_type(type1, type2);
+          std::string warnstr("Transducer type mismatch in " + std::string(firstfilename) + " and " + std::string(secondfilename) + "; ");
+          if (ct == 1)
+            { warnstr.append("using former type as output"); output_type = type1; }
+          else if (ct == 2)
+            { warnstr.append("using latter type as output"); output_type = type2; }
+          else if (ct == -1)
+            { warnstr.append("using former type as output, loss of information is possible"); output_type = type1; }
+          else /* should not happen */
+            { throw "Error: hfst-compose-intersect: conversion_type returned an invalid integer"; }
+          warning(0, 0, warnstr.c_str());
+        }
+      else
+        {
+          error(EXIT_FAILURE, 0, "Transducer type mismatch in %s and %s; "
+                "formats %s and %s are not compatible for compose-intersect (--do-not-convert was requested)",
+                firstfilename, secondfilename, hfst_strformat(type1), hfst_strformat(type2));
+        }
+    }
+  else
+    {
+      output_type = type1;
+    }
+
+  HfstOutputStream outstream = (outfile != stdout) ?
+    HfstOutputStream(outfilename, output_type) : HfstOutputStream(output_type);
+
     bool bothInputs = firststream.is_good() && secondstream.is_good();
     (void)bothInputs;
-    if (firststream.get_type() != secondstream.get_type())
-      {
-        warning(0, 0, "Transducer type mismatch in %s and %s "
-                "(types %s and %s);\n"
-                "using type %s as output",
-                firstfilename, secondfilename,
-                hfst_strformat(firststream.get_type()),
-                hfst_strformat(secondstream.get_type()),
-                hfst_strformat(secondstream.get_type()));
-      }
 
     if ( is_input_stream_in_ol_format(&firststream, "hfst-compose-intersect") ||
          is_input_stream_in_ol_format(&secondstream, "hfst-compose-intersect") )
@@ -278,12 +304,12 @@ compose_streams(HfstInputStream& firststream, HfstInputStream& secondstream,
         return EXIT_FAILURE;
       }
 
-
     HfstTransducerVector rules;
     size_t rule_n = 1;  
 
     while (secondstream.is_good()) {
       HfstTransducer rule(secondstream);
+      rule.convert(output_type);
       const char* rulename = rule.get_name().c_str();
       if (strlen(rulename) > 0)
         {
@@ -314,6 +340,7 @@ compose_streams(HfstInputStream& firststream, HfstInputStream& secondstream,
       {
         verbose_printf("Reading lexicon...");
         HfstTransducer lexicon(firststream);
+        lexicon.convert(output_type);
         char* lexiconname = hfst_get_name(lexicon, firstfilename);
         verbose_printf(" %s read\n", lexiconname);
      
@@ -440,14 +467,10 @@ int main( int argc, char **argv ) {
         error(EXIT_FAILURE, 0, "%s is not a valid transducer file",
               secondfilename);
     }
-    HfstOutputStream* outstream = (outfile != stdout) ?
-        new HfstOutputStream(outfilename, firststream->get_type()) :
-        new HfstOutputStream(firststream->get_type());
 
-    retval = compose_streams(*firststream, *secondstream, *outstream);
+    retval = compose_streams(*firststream, *secondstream);
     delete firststream;
     delete secondstream;
-    delete outstream;
     free(firstfilename);
     free(secondfilename);
     free(outfilename);

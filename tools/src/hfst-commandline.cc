@@ -185,6 +185,52 @@ verbose_printf(const char* fmt, ...)
     }
 }
 
+int
+conversion_type(hfst::ImplementationType type1, hfst::ImplementationType type2)
+{
+  if (type1 == type2)
+    return 0;
+  if (hfst::HfstTransducer::is_safe_conversion(type2, type1))
+    return 1;
+  else if (hfst::HfstTransducer::is_safe_conversion(type1, type2))
+    return 2;
+  else
+    return -1;
+}
+
+void
+convert_transducers(hfst::HfstTransducer & first, hfst::HfstTransducer & second)
+{
+  hfst::ImplementationType type1 = first.get_type();
+  hfst::ImplementationType type2 = second.get_type();
+  int ct = conversion_type(type1, type2);
+
+  if (ct == 0)
+    return;
+  else if (ct == 1)
+    {
+      verbose_printf("warning: transducers have different types, converting to format %s\n", 
+                     hfst_strformat(type1));
+      second.convert(type1);
+    }
+  else if (ct == 2)
+    {
+      verbose_printf("warning: transducers have different types, converting to format %s\n", 
+                     hfst_strformat(type2));
+      first.convert(type2);
+    }
+  else if (ct == -1)
+    {
+      verbose_printf("warning: transducers have different types, converting to format %s,"
+                     " loss of information is possible\n", hfst_strformat(type1));
+      second.convert(type1);
+    }
+  else /* This should not happen. */
+    HFST_THROW_MESSAGE(HfstFatalException, "convert_transducers: conversion_type returned an invalid integer");
+
+  return;
+}
+
 bool
 is_input_stream_in_ol_format(const hfst::HfstInputStream * is, const char * program)
 {
