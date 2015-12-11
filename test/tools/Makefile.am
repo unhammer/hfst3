@@ -161,6 +161,7 @@ TESTS += proc-functionality.sh
 endif
 
 TESTS += $(STRESSES)
+TESTS += mismatching-input-streams.sh
 
 # XFAIL_TESTS=incompatible-formats.sh latin-1-strings.sh
 
