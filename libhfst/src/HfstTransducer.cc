@@ -3254,6 +3254,9 @@ bool is_flag_suffix
 void HfstTransducer::harmonize_flag_diacritics(HfstTransducer &another,
                                                bool insert_renamed_flags)
 {
+  if (this->type != another.type)
+    HFST_THROW(TransducerTypeMismatchException);
+
   bool this_has_flag_diacritics    = has_flags(*this);
   bool another_has_flag_diacritics = has_flags(another);
 

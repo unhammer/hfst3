@@ -355,17 +355,17 @@ An example:
        ordering of flag diacritics. */
     HfstTransducer &remove_illegal_flag_paths(void);
 
-    /* Whether the conversion requested can be done without losing 
-       any information */
-    static bool is_safe_conversion(ImplementationType original,
-                                   ImplementationType conversion);
-
 
     /* For internal use */
     static HfstTransducer &read_in_att_format
       (FILE *ifile, ImplementationType type, const std::string &epsilon_symbol);
 
   public:
+    /* Whether the conversion requested can be done without losing 
+       any information */
+    static bool is_safe_conversion(ImplementationType original,
+                                   ImplementationType conversion);
+
     /* whether HFST is linked to the transducer library 
        needed by implementation type \a type. */
     HFSTDLL static bool is_implementation_type_available(ImplementationType type);
