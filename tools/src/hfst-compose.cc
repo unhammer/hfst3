@@ -273,9 +273,6 @@ compose_streams(HfstInputStream& firststream, HfstInputStream& secondstream)
               }
           }
 
-        hfst_set_name(*first, *first, *second, "compose");
-        hfst_set_formula(*first, *first, *second, "∘");
-
         try
           {
             first->compose(*second, harmonize);
@@ -296,6 +293,9 @@ compose_streams(HfstInputStream& firststream, HfstInputStream& secondstream)
                       hfst_strformat(secondstream.get_type()));
               }
           }
+
+        hfst_set_name(*first, *first, *second, "compose");
+        hfst_set_formula(*first, *first, *second, "∘");
 
         outstream << *first;
 
