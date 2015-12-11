@@ -79,6 +79,7 @@ static bool delayed = false;
 static HfstSymbolSubstitutions* label_substitution_map = 0;
 static HfstSymbolPairSubstitutions* pair_substitution_map = 0;
 static bool in_order = false;
+static bool allow_transducer_conversion = true;
 
 /**
  * @brief parse string pair from arc label.
@@ -166,6 +167,9 @@ print_usage()
             "  -F, --from-file=LABELFILE    read replacements from LABELFILE\n"
             "  -R, --in-order               keep the order of the replacements\n"
             "                               (with -F)\n"
+            "Input options:\n"
+            "  -C, --do-not-convert         require that transducers in TFILE and INFILE\n"
+            "                               have the same type\n"
             "Transient optimisation schemes:\n"
             "  -9, --compose                compose substitutions when possible\n"
            );
@@ -211,12 +215,13 @@ parse_options(int argc, char** argv)
             {"to-transducer", required_argument, 0, 'T'},
             {"in-order", no_argument, 0, 'R'},
             {"compose", no_argument, 0, '9'},
+            {"do-not-convert", no_argument, 0, 'C'},
             {0,0,0,0}
         };
         int option_index = 0;
         // add tool-specific options here 
         char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT
-                             HFST_GETOPT_UNARY_SHORT "f:F:t:T:R9",
+                             HFST_GETOPT_UNARY_SHORT "f:F:t:T:R9C",
                              long_options, &option_index);
         if (-1 == c)
         {
@@ -283,6 +288,9 @@ parse_options(int argc, char** argv)
             break;
         case '9':
             compose = true;
+            break;
+        case 'C':
+            allow_transducer_conversion = false;
             break;
 #include "inc/getopt-cases-error.h"
         }
@@ -528,12 +536,15 @@ perform_delayed(HfstTransducer& trans)
 }
 
 int
-process_stream(HfstInputStream& instream, HfstOutputStream& outstream)
+process_stream(HfstInputStream& instream)
 {
   bool symbol_pair_map_in_use=false;
   bool symbol_map_in_use=false;
 
   size_t transducer_n = 0;
+
+  hfst::ImplementationType output_type = hfst::UNSPECIFIED_TYPE;
+
   HfstTransducer* to_transducer = NULL;
   if (to_transducer_filename)
     {
@@ -546,7 +557,39 @@ process_stream(HfstInputStream& instream, HfstOutputStream& outstream)
                 to_transducer_filename);
           return EXIT_FAILURE;
         }
+      hfst::ImplementationType to_transducer_type = to_transducer->get_type();
+      hfst::ImplementationType instream_type = instream.get_type();
+      if (to_transducer_type != instream_type)
+          {
+            int ct = conversion_type(instream_type, to_transducer_type);
+            std::string warnstr("Transducer type mismatch in " + std::string(inputfilename) + " and " + std::string(to_transducer_filename) + "; ");
+            if (ct == 1)
+              { warnstr.append("using former type as output"); output_type = instream_type; }
+            else if (ct == 2)
+              { warnstr.append("using latter type as output"); output_type = to_transducer_type; }
+            else if (ct == -1)
+              { warnstr.append("using former type as output, loss of information is possible"); output_type = instream_type; }
+            else /* should not happen */
+              { throw "Error: hfst-disjunct: conversion_type returned an invalid integer"; }
+            warning(0, 0, warnstr.c_str());
+            to_transducer->convert(output_type);
+          }
+        else
+          {
+            error(EXIT_FAILURE, 0, "Transducer type mismatch in %s and %s; "
+                  "formats %s and %s are not compatible for substitution (--do-not-convert was requested)",
+                  inputfilename, to_transducer_filename, hfst_strformat(instream_type), hfst_strformat(to_transducer_type));
+          }
+      
     }
+  else
+    {
+      output_type = instream.get_type();
+    }
+
+  HfstOutputStream outstream = (outfile != stdout) ?
+    HfstOutputStream(outfilename, output_type) : HfstOutputStream(output_type);
+
   HfstBasicTransducer* fallback = 0;
   bool warnedAlready = false;
   bool fellback = false;
@@ -872,16 +915,13 @@ int main( int argc, char **argv )
           inputfilename);
             return EXIT_FAILURE;
     }
-    HfstOutputStream* outstream = (outfile != stdout) ?
-            new HfstOutputStream(outfilename, instream->get_type()) :
-            new HfstOutputStream(instream->get_type());
 
     if ( is_input_stream_in_ol_format(instream, "hfst-substitute"))
       {
         return EXIT_FAILURE;
       }
 
-    process_stream(*instream, *outstream);
+    process_stream(*instream);
     free(inputfilename);
     free(outfilename);
     return EXIT_SUCCESS;
