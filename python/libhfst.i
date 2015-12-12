@@ -460,7 +460,7 @@ enum PushType { TO_INITIAL_STATE, TO_FINAL_STATE };
 
 bool is_diacritic(const std::string & symbol);
 
-%pythoncode{
+%pythoncode %{
   def is_string(s):
       if isinstance(s, str):
          return True
@@ -1150,7 +1150,7 @@ class HfstBasicTransducer {
     $self->add_transition(source, tr);
   }
 
-%pythoncode{
+%pythoncode %{
   def __iter__(self):
       return self.states_and_transitions().__iter__()
 
