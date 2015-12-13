@@ -701,7 +701,7 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1, double ti
 { return *($self->lookup(s, limit, time_cutoff)); }
 
 
-%pythoncode{
+%pythoncode %{
 
   def lookup(self, input, **kvargs):
       
@@ -948,7 +948,7 @@ HfstOneLevelPaths lookup_string(const std::string & s, int limit = -1, double ti
             raise RuntimeError('...')
       else:
          raise RuntimeError('...')
-}
+%}
 
 };
 
@@ -976,7 +976,7 @@ HfstOutputStream & write(hfst::HfstTransducer & transducer) throw(StreamIsClosed
 
 HfstOutputStream() { return new hfst::HfstOutputStream(hfst::get_default_fst_type()); }
 
-%pythoncode {
+%pythoncode %{
 
 def __init__(self, **kvargs):
     filename = ""
@@ -993,7 +993,7 @@ def __init__(self, **kvargs):
        self.this = _libhfst.create_hfst_output_stream("", type, hfst_format)
     else:
        self.this = _libhfst.create_hfst_output_stream(filename, type, hfst_format)
-}
+%}
 
 }
 
@@ -1435,7 +1435,7 @@ def regex(re, **kvargs):
     type = _libhfst.get_default_fst_type()
     to_console=get_output_to_console()
     import sys
-    err=sys.stderr
+    err=None
 
     for k,v in kvargs.items():
       if k == 'output_to_console':
