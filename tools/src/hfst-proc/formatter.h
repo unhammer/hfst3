@@ -16,11 +16,7 @@
 #include "lookup-path.h"
 #include "tokenizer.h"
 
-// This was changed to std::vector<std::string> in revision 4427 to preserve
-// the order of results, but later is was discovered that sometimes duplicate
-// values get printed (see bug #328 in SF bug tracker). So the changes were
-// reverted until there is a way to prevent duplicates when using a vector.
-typedef std::set<std::string> ProcResult;
+typedef std::vector<std::string> ProcResult;
 
 /**
  * Abstract base class for handling the outputting of lookup results. Subclasses
