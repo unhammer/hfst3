@@ -278,7 +278,8 @@ FST_STRINGS=cat.strings proc-caps-in.strings proc-caps-gen.strings \
 			utf-8.strings latin-1.strings \
 			cat2dog.strings heavycat.strings \
 			cat_weight_ambig_out.strings cat_weight_ambig_W_out.strings \
-			proc-cat-NUL.strings
+			proc-cat-NUL.strings cat_cat.strings cat_weight_ambig_xerox.strings \
+			cat_weight_ambig_W_xerox.strings cat_weight_ambig_W1_xerox.strings
 FST_PAIRS=cat2dog.pairs
 FST_PAIRSTRINGS=cat2dog.pairstring
 FST_SPACESTRINGS=cat2dog.spaces
