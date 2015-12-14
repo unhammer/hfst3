@@ -1,3 +1,1058 @@
+2015-12-13 10:49  eaxelson
+
+	* python/libhfst.i: Change all pythoncode delimiters from '{' and
+	  '}' to '%{' and '%}'.
+	  
+	  The delimiters without a percent sign make swig interpret python
+	  comment lines with a leading hash sign as preprocessor
+	  directives.
+
+2015-12-12 12:15  jezral
+
+	* python/libhfst.i: Add two missing %
+
+2015-12-11 17:10  eaxelson
+
+	* test/tools/Makefile.am, test/tools/substitute-functionality.sh,
+	  test/tools/substituted_transducer.txt,
+	  test/tools/substituting_transducer.txt,
+	  tools/src/hfst-substitute.cc: Add tests for hfst-substitute.
+	  
+	  Disable the tests until option -T works correctly in
+	  hfst-substitute.
+	  Also fix a bug in transducer conversion in hfst-substitute.
+
+2015-12-11 15:25  eaxelson
+
+	* test/tools/mismatching-input-streams.sh: Add tests where one or
+	  both inputs are archives.
+
+2015-12-11 14:44  eaxelson
+
+	* tools/src/hfst-compose.cc: Set name of composition transducer
+	  after composition is called.
+
+2015-12-11 14:42  eaxelson
+
+	* test/tools/Makefile.am, test/tools/mismatching-input-streams.sh:
+	  Add tests for binary tools that use input streams whose types
+	  differ.
+
+2015-12-11 14:41  eaxelson
+
+	* libhfst/src/HfstTransducer.cc: Make HfstTransducer::compose throw
+	  and exception if transducers have mismatching types.
+
+2015-12-11 13:11  eaxelson
+
+	* tools/src/hfst-substitute.cc: Implement conversion of mismatching
+	  transducers also in hfst-substitute.
+
+2015-12-11 12:20  eaxelson
+
+	* tools/src/hfst-commandline.cc, tools/src/hfst-commandline.h,
+	  tools/src/hfst-compose-intersect.cc, tools/src/hfst-compose.cc,
+	  tools/src/hfst-concatenate.cc, tools/src/hfst-conjunct.cc,
+	  tools/src/hfst-disjunct.cc, tools/src/hfst-program-options.cc,
+	  tools/src/hfst-program-options.h, tools/src/hfst-shuffle.cc,
+	  tools/src/hfst-subtract.cc, tools/src/inc/getopt-cases-binary.h,
+	  tools/src/inc/globals-binary.h: Make binary command line tools
+	  convert mismatching input streams into common format.
+	  
+	  If the input streams have a different implementation type,
+	  convert transducers from the second stream into the type of the
+	  first stream.
+	  If information can be lost, i.e. weighted format is to be
+	  converted into unweighted format, convert the streams vice versa.
+	  Option --do-not-convert, in short form -C, can be used to
+	  disallow conversion and return with a failure value.
+
+2015-12-11 11:57  eaxelson
+
+	* libhfst/src/HfstTransducer.cc, libhfst/src/HfstTransducer.h: Make
+	  'harmonize_flag_diacritics' throw an exception if transducer
+	  types differ. Make 'is_safe_conversion' public.
+
+2015-12-10 13:11  eaxelson
+
+	* libhfst/src/parsers/xre_lex.ll, libhfst/src/parsers/xre_parse.yy,
+	  test/tools/cats_and_dogs.xre,
+	  test/tools/regexp2fst-functionality.sh,
+	  tools/src/hfst-regexp2fst.cc: Fix a bug in hfst-regexp2fst
+	  related to comments and remove support for legacy way of defining
+	  weights from regexp parser.
+	  
+	  If hfst-regexp2fst cannot output any transducers because the
+	  input contains
+	  only whitespace or comments, exit with a failure. Remove support
+	  for legacy
+	  way of defining weights at the end of expression separated by a
+	  colon from
+	  the regexp parser.
+
+2015-12-09 10:22  sdrobac
+
+	* libhfst/src/parsers/xre_parse.yy, tools/src/parsers/test/test.sh:
+	  Xre parser - added check if contexts in replace rules are
+	  automata
+
+2015-12-08 15:34  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  libhfst/src/parsers/xfst-parser.yy: Implement commands 'view net'
+	  and 'write dot' as system calls for non-windows platforms.
+
+2015-12-08 12:25  eaxelson
+
+	* scripts/copy-for-windows.sh, scripts/make-hfst-lexc.bat,
+	  scripts/make-hfst-proc.bat, scripts/make-hfst-tool.bat,
+	  scripts/make-hfst-xfst.bat, scripts/make-htwolcpre1.bat,
+	  scripts/make-htwolcpre2.bat, scripts/make-htwolcpre3.bat,
+	  scripts/make-python-bindings.bat: Update windows scripts so that
+	  they will work with the latest changes in dot and pckimmo
+	  printing functions.
+
+2015-12-08 12:13  eaxelson
+
+	* libhfst/src/HfstPrintDot.cc, libhfst/src/HfstPrintDot.h,
+	  libhfst/src/HfstPrintPCKimmo.cc, libhfst/src/HfstPrintPCKimmo.h,
+	  libhfst/src/Makefile.am, tools/src/hfst-fst2txt.cc: Move dot and
+	  pckimmo related functions in their own files.
+
+2015-12-04 07:43  eaxelson
+
+	* libhfst/src/HfstTransducer.cc,
+	  libhfst/src/parsers/XfstCompiler.cc, python/libhfst.i: Throw an
+	  exception in HfstTransducer::eliminate_flag if flag feature does
+	  not occur in the transducer or the flag includes a value or
+	  operator.
+
+2015-12-03 11:07  moshagen
+
+	* python, python/test, tools/src, tools/src/hfst-tagger/src,
+	  tools/src/hfst-twolc/src: Ignore generated files.
+
+2015-12-03 08:27  eaxelson
+
+	* python/test/Makefile.am: Add missing file
+
+2015-12-02 14:08  eaxelson
+
+	* configure.ac, python/README, python/doc/libhfst.py,
+	  python/examples.py, python/foobar.hfst, python/libhfst.i,
+	  python/test, python/test.lexc, python/test/README,
+	  python/test/examples.py, python/test/foobar.hfst,
+	  python/test/test.lexc, python/test/test_fail.xfst,
+	  python/test/test_hfst.py, python/test/test_pass.xfst,
+	  python/test/testfile.att, python/test_fail.xfst,
+	  python/test_hfst.py, python/test_pass.xfst, python/testfile.att:
+	  Move python tests to their own directory.
+
+2015-12-02 08:29  eaxelson
+
+	* Makefile.am, new_python_api, old_python, old_python/README,
+	  python, python/doc/Doxyfile, python/doc/libhfst.py,
+	  python/libhfst.i, python/test_hfst.py, swig: Rename directory
+	  'swig' to 'old_python' and directory 'new_python_api' to
+	  'python'.
+
+2015-12-01 10:38  eaxelson
+
+	* tools/src/hfst-compose.cc: Add information about the possible
+	  values of option --xerox-composition to the help message.
+
+2015-11-27 11:08  eaxelson
+
+	* libhfst/src/HfstTransducer.cc,
+	  libhfst/src/implementations/HfstTransitionGraph.h,
+	  libhfst/src/parsers/XfstCompiler.cc, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py, tools/src/hfst-lookup.cc: Modify
+	  infinite_cutoff and time_cutoff arguments in lookup functions.
+	  
+	  Make argument 'infinite_cutoff' a pointer in function
+	  HfstTransitionGraph::lookup_fd, allowing it to de undefined.
+	  When calling lookup_fd from HfstTransducer::lookup, also pass the
+	  'time_cutoff' variable.
+	  Add 'time_cutoff' argument to lookup functions in the Python API.
+
+2015-11-26 11:48  sdrobac
+
+	* libhfst/src/parsers/LexcCompiler.cc,
+	  libhfst/src/parsers/lexc-utils.cc,
+	  libhfst/src/parsers/lexc-utils.h,
+	  tools/src/parsers/test/replace_test_flags_2.att,
+	  tools/src/parsers/test/replace_test_flags_2.xfst,
+	  tools/src/parsers/test/test.sh: Lexc, removed option -M +
+	  cosmetic changes to the alignment
+
+2015-11-25 14:00  eaxelson
+
+	* new_python_api/libhfst.i: Handle standard and console streams
+	  when libhfst is run from IDLE.
+
+2015-11-25 09:15  eaxelson
+
+	* libhfst/src/HfstTransducer.cc: Throw a
+	  FunctionNotImplementedException in HfstTransducer::lookup_fd
+	  instead of converting HfstTransducer automatically into
+	  HfstBasicTransducer.
+	  
+	  Lookup is often called many times, so it is better to convert the
+	  transducer once than every time lookup is called.
+
+2015-11-23 13:41  eaxelson
+
+	* new_python_api/libhfst.i: Update python interface.
+	  
+	  Add third argument to LexcCompiler constructor.
+	  Pass strings from C++ to Python as char pointers to prevent them
+	  from being interpreted as ascii strings.
+	  Add option output_to_console to compile_xfst_file.
+	  Add option align_strings to compile_lexc_file.
+
+2015-11-22 17:57  sdrobac
+
+	* libhfst/src/parsers/LexcCompiler.cc,
+	  libhfst/src/parsers/LexcCompiler.h,
+	  libhfst/src/parsers/lexc-utils.cc,
+	  libhfst/src/parsers/lexc-utils.h,
+	  tools/src/hfst-lexc-compiler.cc: Added option -A to lexc, it
+	  aligns same input and output transitions
+
+2015-11-20 16:02  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/xfst-parser.yy, new_python_api/libhfst.i: Fix
+	  a minor bug in python interface on windows.
+
+2015-11-18 09:10  eaxelson
+
+	* swig/libhfst.i: Fix LexcCompiler::printConnectedness const
+	  declaration.
+
+2015-11-17 10:53  sdrobac
+
+	* libhfst/src/HfstXeroxRules.cc, libhfst/src/HfstXeroxRules.h,
+	  libhfst/src/parsers/LexcCompiler.cc,
+	  tools/src/parsers/test/replace_test_flags_1.att,
+	  tools/src/parsers/test/replace_test_flags_1.xfst,
+	  tools/src/parsers/test/test.sh: Replace rules support flag
+	  diacritics (fixed lexc with -FM flags)
+
+2015-11-17 10:33  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  tools/src/parsers/hfst-xfst.cc: Use separate ostringstreams for
+	  standard output and standard error on Windows.
+
+2015-11-16 17:47  eaxelson
+
+	* libhfst/src/parsers/LexcCompiler.cc,
+	  libhfst/src/parsers/LexcCompiler.h,
+	  libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  libhfst/src/parsers/XreCompiler.cc,
+	  libhfst/src/parsers/XreCompiler.h,
+	  libhfst/src/parsers/lexc-parser.yy,
+	  libhfst/src/parsers/lexc-utils.cc,
+	  libhfst/src/parsers/xre_utils.cc, tools/src/hfst-lookup.cc,
+	  tools/src/hfst-optimized-lookup.cc, tools/src/hfst-pmatch.cc,
+	  tools/src/hfst-remove-epsilons.cc,
+	  tools/src/hfst-string-conversions.cc,
+	  tools/src/hfst-string-conversions.h,
+	  tools/src/parsers/hfst-xfst.cc: Improvements to error and output
+	  stream handling.
+
+2015-11-13 16:34  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  libhfst/src/parsers/xfst-lexer.ll,
+	  libhfst/src/parsers/xfst-parser.yy: Support printing to console
+	  on Windows.
+
+2015-11-12 17:08  eaxelson
+
+	* back-ends/foma/constructions.c,
+	  test/tools/lexc-compiler-functionality.sh: Update foma back-end
+	  composition algorithm to fix a bug noticed in lexc tests.
+
+2015-11-12 16:11  eaxelson
+
+	* libhfst/src/HfstInputStream.cc, libhfst/src/HfstOutputStream.cc,
+	  libhfst/src/HfstRules.cc,
+	  libhfst/src/implementations/ConvertTropicalWeightTransducer.cc,
+	  libhfst/src/implementations/SfstTransducer.cc: Replace system
+	  exit calls with HfstFatalExceptions.
+
+2015-11-12 15:55  eaxelson
+
+	* libhfst/src/HfstTransducer.cc, libhfst/src/HfstTransducer.h,
+	  libhfst/src/implementations/TropicalWeightTransducer.cc,
+	  libhfst/src/implementations/TropicalWeightTransducer.h: Check for
+	  epsilon cycles with negative weights.
+	  
+	  Check if transducers have epsilon cycles with negative weights in
+	  functions that perform weight pushing and issue a warning, if
+	  needed.
+	  Add functions to set and get warning stream for
+	  TropicalWeightTransducer and HfstTransducer (basically a wrapper
+	  around the previous).
+
+2015-11-12 14:31  eaxelson
+
+	* libhfst/src/implementations/HfstTransitionGraph.h: Optimize
+	  function 'has_negative_epsilon_cycles'.
+	  
+	  Check if there are epsilon transitions with negative weights
+	  before testing for
+	  epsilon cycles with negative weights.
+
+2015-11-12 12:42  eaxelson
+
+	* tools/src/parsers/test/Makefile.am,
+	  tools/src/parsers/test/flag_with_unknown.output,
+	  tools/src/parsers/test/flag_with_unknown.xfst,
+	  tools/src/parsers/test/test.sh: Add a test for checking that
+	  unknowns are not expanded into flag diacritics.
+	  
+	  There were some cases where a FOMA_TYPE transducer would have
+	  failed this test
+	  before HfstTransducer::harmonize_ was modified.
+
+2015-11-12 11:28  eaxelson
+
+	* test/tools/Makefile.am, test/tools/negative_epsilon_cycles.txt,
+	  test/tools/no_negative_epsilon_cycles.txt,
+	  test/tools/txt2fst-functionality.sh, tools/src/hfst-txt2fst.cc:
+	  Add option 'check-negative-epsilon-cycles' to hfst-txt2fst and
+	  tests for it.
+
+2015-11-12 00:55  eaxelson
+
+	* libhfst/src/implementations/HfstTransitionGraph.h: Add function
+	  HfstTransitionGraph::has_negative_epsilon_cycles.
+
+2015-11-11 15:12  eaxelson
+
+	* libhfst/src/HfstTransducer.cc, new_python_api/doc/libhfst.py,
+	  new_python_api/libhfst.i, new_python_api/test_hfst.py,
+	  test/tools/lexc-compiler-functionality.sh: Improve performance of
+	  transducer harmonization.
+	  
+	  Do not add flag diacritics to transducer alphabets twice, and
+	  when they are added,
+	  collect all flags and then add them instead of adding each flag
+	  separately.
+	  This removes the need to convert HfstTransducer to
+	  HfstBasicTransducer for each flag
+	  that gets added.
+	  
+	  This improvement also makes visible a bug in foma back-ends
+	  function 'eliminate_flags',
+	  so comment out one lexc compiler functionality test until the
+	  function is fixed.
+
+2015-11-10 13:12  hardwick
+
+	* tools/src/hfst-optimized-lookup.cc,
+	  tools/src/hfst-optimized-lookup.h: Time cutoff for the bundled
+	  standalone optimized-lookup tool too
+
+2015-11-08 13:51  eaxelson
+
+	* new_python_api/libhfst.i: Add parameter to control output in
+	  'compile_lexc_file'.
+
+2015-11-08 13:50  eaxelson
+
+	* libhfst/src/parsers/LexcCompiler.cc,
+	  libhfst/src/parsers/LexcCompiler.h: Add function unsigned int
+	  LexcCompiler::getVerbosity().
+
+2015-11-06 14:44  eaxelson
+
+	* new_python_api/libhfst.i, new_python_api/test_hfst.py: Allow user
+	  to control output in xre and xfst compilation.
+
+2015-11-05 13:22  eaxelson
+
+	* libhfst/src/parsers/LexcCompiler.cc,
+	  libhfst/src/parsers/LexcCompiler.h,
+	  libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/lexc-parser.yy,
+	  libhfst/src/parsers/lexc-utils.cc: Improve error handling in lexc
+	  compiler.
+	  
+	  Add functions 'set_error_stream' and 'get_error_stream'.
+	  Get rid of FILE pointers and replace them with ostreams when
+	  printing output.
+	  Propagate XfstCompiler's error stream and verbosity to its lexc
+	  compiler.
+
+2015-11-04 13:42  eaxelson
+
+	* libhfst/src/HfstTransducer.cc,
+	  libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  libhfst/src/parsers/XreCompiler.cc,
+	  libhfst/src/parsers/XreCompiler.h,
+	  libhfst/src/parsers/xfst-parser.yy,
+	  libhfst/src/parsers/xfst-utils.cc,
+	  libhfst/src/parsers/xfst-utils.h,
+	  libhfst/src/parsers/xre_utils.cc, tools/src/hfst-regexp2fst.cc:
+	  Improve error handling mechanism in xre and xfst parsers.
+	  
+	  Get rid of XreCompiler's get_error_message and add functions
+	  set_error_stream, get_error_stream, set_verbosity and
+	  get_verbosity.
+	  Use ostreams instead of FILE pointers when writing output in
+	  XfstCompiler. Also add functions set_error_stream,
+	  get_error_stream, set_output_stream and get_output_stream.
+
+2015-11-03 08:46  eaxelson
+
+	* libhfst/src/implementations/HfstTransitionGraph.h: Add a missing
+	  period to the end of symbol lines when printing in prolog format.
+
+2015-11-02 19:14  mpsilfve
+
+	* libhfst/src/HfstTransducer.h: Added warning about very slow
+	  lookup when using HfstTransducer::lookup_fd.
+
+2015-11-02 19:13  mpsilfve
+
+	* libhfst/src/HfstTransducer.h: Added warning about very slow
+	  lookup when using HfstTransducer::lookup_fd.
+
+2015-11-02 19:00  mpsilfve
+
+	* libhfst/src/implementations/HfstTransition.h,
+	  libhfst/src/implementations/HfstTransitionGraph.h,
+	  libhfst/src/implementations/HfstTropicalTransducerTransitionData.h:
+	  Added possibility to transform individual transition weights in
+	  HfstTransitionGraph.
+
+2015-11-02 13:29  hardwick
+
+	* libhfst/src/implementations/optimized-lookup/pmatch.cc,
+	  libhfst/src/implementations/optimized-lookup/pmatch.h,
+	  tools/src/hfst-proc2.cc: Add option to suppress multichar
+	  tokenization and default to on in proc2
+
+2015-11-02 11:16  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  libhfst/src/parsers/xfst-parser.yy: Replace part of
+	  XfstCompiler's FILE pointers with equivalent calls to ostream.
+	  
+	  The intention is to get rid of FILEs to make it easier to control
+	  if output is printed to a file or string.
+
+2015-10-30 15:12  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h: Tentatively move towards
+	  o(string)streams instead of FILE pointers when printing output.
+
+2015-10-30 11:43  hardwick
+
+	* libhfst/src/implementations/optimized-lookup/transducer.cc:
+	  Remove debug printing
+
+2015-10-30 11:14  hardwick
+
+	* libhfst/src/HfstTransducer.cc, libhfst/src/HfstTransducer.h,
+	  libhfst/src/implementations/optimized-lookup/transducer.cc,
+	  libhfst/src/implementations/optimized-lookup/transducer.h,
+	  tools/src/hfst-lookup.cc: Implement a time-based search cutoff
+	  for hfst-lookup in optimized-lookup mode only
+
+2015-10-30 10:14  eaxelson
+
+	* libhfst/src/parsers/xre_parse.yy,
+	  libhfst/src/parsers/xre_utils.cc,
+	  libhfst/src/parsers/xre_utils.h: Make 'define_function_args'
+	  return a bool instead of calling exit on error in xre parser.
+
+2015-10-30 09:36  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  libhfst/src/parsers/XreCompiler.cc,
+	  libhfst/src/parsers/XreCompiler.h,
+	  libhfst/src/parsers/xfst-parser.yy,
+	  libhfst/src/parsers/xre_parse.yy: Fix error handling in xre and
+	  xfst compilers.
+	  
+	  Add YYABORT after xreerror is called in xre parser.
+	  Update error_message instead of printing it to standard error
+	  stream in xre compiler.
+	  Add a fail flag to xfst compiler and check its value in xfst
+	  parser instead of calling exit in the xfst compiler.
+
+2015-10-28 13:41  moshagen
+
+	* libhfst/src/parsers: Ignore generated files.
+
+2015-10-28 13:36  eaxelson
+
+	* new_python_api/doc/libhfst.py: Rewrite regular expression
+	  examples to be more informative.
+
+2015-10-28 11:32  eaxelson
+
+	* libhfst/src/implementations/TropicalWeightTransducer.cc: Scale
+	  weights to be non-negative in function n_best.
+
+2015-10-27 09:22  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Update documentation.
+
+2015-10-26 14:13  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i: Small
+	  fixes to read_att_string.
+
+2015-10-26 13:16  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Update documentation about special
+	  symbols. Add a function for reading AT&T strings.
+
+2015-10-26 08:10  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i: Add
+	  function start_xfst() that starts an interactive XFST compiler.
+
+2015-10-23 14:37  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/examples.py: Update
+	  documentation between HFST and backend conversions and add the
+	  examples to tests.
+
+2015-10-23 10:58  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Fix issues related to level of
+	  verbosity when compiling xfst and regexps. Add missing
+	  documentation.
+
+2015-10-23 10:37  hardwick
+
+	* libhfst/src/parsers/pmatch_parse.yy,
+	  libhfst/src/parsers/pmatch_utils.cc,
+	  libhfst/src/parsers/pmatch_utils.h: Merging of modified or added
+	  functionality from the xre parser
+
+2015-10-23 10:37  hardwick
+
+	* libhfst/src/HfstFlagDiacritics.h: Remove obsolete comment
+
+2015-10-23 08:19  eaxelson
+
+	* libhfst/src/HfstXeroxRules.cc, libhfst/src/HfstXeroxRules.h,
+	  libhfst/src/HfstXeroxRulesTest.cc: Revert HfstXeroxRules files to
+	  version 4484.
+
+2015-10-22 12:44  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Rewrite 'compile_lexc_file'.
+
+2015-10-22 08:45  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  libhfst/src/parsers/xfst-parser.yy, new_python_api/libhfst.i,
+	  new_python_api/test_fail.xfst, new_python_api/test_hfst.py,
+	  new_python_api/test_pass.xfst, tools/src/parsers/hfst-xfst.cc:
+	  Improve handling of error and exit conditions in xfst.
+	  
+	  Do not call exit() directly from the xfst parser if 'quit' is
+	  requested or
+	  an unknown command is encountered, but leave it to the
+	  application to decide
+	  what should be done in those cases. For this purpose, add some
+	  functions to
+	  XfstCompiler:
+	  
+	  std::string get(const char * name) // Get the value of a
+	  variable.
+	  bool quit_requested() // Whether the script/user has requested
+	  'quit'
+	  int unknown_command(const char *) // For handling unknown
+	  commands
+	  
+	  Also rewrite the function compile_xfst_file(filename) in Python
+	  API and add
+	  some tests.
+
+2015-10-22 08:06  eaxelson
+
+	* libhfst/src/parsers/XfstCompiler.h: Add missing namespace:
+	  'string' -> 'std::string'.
+
+2015-10-21 09:16  jezral
+
+	* libhfst/src/implementations/optimized-lookup/transducer.cc,
+	  libhfst/src/implementations/optimized-lookup/transducer.h,
+	  tools/src/hfst-lookup.cc: Greatly reduce memory leaks when using
+	  hfst-ol format
+
+2015-10-20 14:03  eaxelson
+
+	* new_python_api/doc/Doxyfile, new_python_api/doc/libhfst.py,
+	  new_python_api/examples.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py, new_python_api/testfile.att: Update
+	  new python API.
+
+2015-10-20 13:57  eaxelson
+
+	* scripts/copy-for-windows.sh, scripts/make-hfst-lexc.bat,
+	  scripts/make-hfst-proc.bat, scripts/make-hfst-tool.bat,
+	  scripts/make-hfst-xfst.bat, scripts/make-htwolcpre1.bat,
+	  scripts/make-htwolcpre2.bat, scripts/make-htwolcpre3.bat,
+	  scripts/make-python-bindings.bat, scripts/test-hfst-tools.bat:
+	  Update windows scripts after moving XfstCompiler.
+
+2015-10-20 13:52  eaxelson
+
+	* libhfst/src/parsers/Makefile.am,
+	  libhfst/src/parsers/XfstCompiler.cc,
+	  libhfst/src/parsers/XfstCompiler.h,
+	  libhfst/src/parsers/xfst-lexer.ll,
+	  libhfst/src/parsers/xfst-parser.yy,
+	  libhfst/src/parsers/xfst-utils.cc,
+	  libhfst/src/parsers/xfst-utils.h,
+	  libhfst/src/parsers/xfst_help_message.cc,
+	  libhfst/src/parsers/xfst_help_message.h,
+	  scripts/generate-cc-files.sh, tools/src/parsers/Makefile.am,
+	  tools/src/parsers/XfstCompiler.cc,
+	  tools/src/parsers/XfstCompiler.h,
+	  tools/src/parsers/xfst-lexer.ll,
+	  tools/src/parsers/xfst-parser.yy,
+	  tools/src/parsers/xfst-utils.cc, tools/src/parsers/xfst-utils.h,
+	  tools/src/parsers/xfst_help_message.cc,
+	  tools/src/parsers/xfst_help_message.h: Move XfstCompiler from
+	  tools/src/parsers to libhfst/src/parsers.
+
+2015-10-20 13:50  eaxelson
+
+	* test/tools/Makefile.am: Add three missing files to dist.
+
+2015-10-20 12:56  jezral
+
+	* tools/src/hfst-lookup.cc: Add flushing to allow instrumentation
+	  of hfst-lookup
+
+2015-10-20 12:30  sdrobac
+
+	* libhfst/src/HfstXeroxRules.cc, libhfst/src/HfstXeroxRules.h,
+	  libhfst/src/HfstXeroxRulesTest.cc: Replace rules now should
+	  support Flag diacritics.
+
+2015-10-19 10:59  hardwick
+
+	* libhfst/src/parsers/pmatch_parse.yy: Fixed lenient composition
+	  (it used to be unimplemented).
+
+2015-10-19 10:56  eaxelson
+
+	* libhfst/src/HfstStrings2FstTokenizer.cc,
+	  libhfst/src/HfstStrings2FstTokenizer.h, libhfst/src/Makefile.am,
+	  tools/src/HfstStrings2FstTokenizer.cc,
+	  tools/src/HfstStrings2FstTokenizer.h, tools/src/Makefile.am,
+	  tools/src/parsers/Makefile.am, tools/src/parsers/XfstCompiler.cc:
+	  Move HfstStrings2FstTokenizer from tools to libhfst directory.
+
+2015-10-15 08:07  eaxelson
+
+	* libhfst/src/implementations/ConvertFomaTransducer.cc: Use the
+	  actual transition data object when copying transitions in
+	  conversion.
+
+2015-10-15 08:04  eaxelson
+
+	* libhfst/src/implementations/HfstTransitionGraph.h: Fix a warning
+	  about comparison of signed and unsigned value.
+
+2015-10-14 13:13  eaxelson
+
+	* libhfst/src/implementations/HfstTransitionGraph.h: Throw
+	  StateIndexOutOfBounds exception in get_final_weight, if state
+	  does not exist.
+
+2015-10-14 13:07  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/examples.py,
+	  new_python_api/libhfst.i: Add examples used in documentation to
+	  the tests.
+
+2015-10-14 08:25  eaxelson
+
+	* new_python_api/doc/Doxyfile, new_python_api/doc/libhfst.py,
+	  new_python_api/libhfst.i, new_python_api/test_hfst.py,
+	  new_python_api/testfile.att: Test examples and fix them, if
+	  needed.
+
+2015-10-12 12:56  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Add missing documentation and
+	  functions.
+
+2015-10-12 07:35  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Add a function that takes tokenized
+	  input and returns a transducer.
+
+2015-10-09 15:48  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Define new functions for creating
+	  transducers from string, string list and dictionary.
+
+2015-10-09 12:30  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py, new_python_api/testfile.att: Fix
+	  some issues in the new python interface.
+
+2015-10-06 13:16  eaxelson
+
+	* new_python_api/doc/Doxyfile, new_python_api/doc/libhfst.py,
+	  new_python_api/libhfst.i, new_python_api/test_hfst.py: Add more
+	  documentation and tests to the new python interface.
+
+2015-10-02 14:21  eaxelson
+
+	* libhfst/src/HfstTransducer.cc, libhfst/src/HfstTransducer.h,
+	  libhfst/src/implementations/HfstTransitionGraph.h: Add aliases
+	  for different substitution functions.
+
+2015-10-02 13:50  eaxelson
+
+	* new_python_api/libhfst.i, new_python_api/test_hfst.py: Modify
+	  substitution functions to be more pythonic.
+
+2015-10-01 12:34  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Add more stuff to the new python
+	  interface.
+
+2015-10-01 08:46  eaxelson
+
+	* tools/src/parsers/xfst_help_message.cc: Fix output of hfst-xfst's
+	  command 'help'.
+	  
+	  Add explanation for commands where it was missing.
+	  Do not list commands that are not implemented.
+
+2015-10-01 08:43  eaxelson
+
+	* tools/src/parsers/XfstCompiler.cc,
+	  tools/src/parsers/xfst-lexer.ll: Fix small bugs in hfst-xfst.
+	  
+	  Add some space to the output of 'print longest-string'.
+	  Add missing aliases for command 'quit'.
+
+2015-09-30 09:46  eaxelson
+
+	* libhfst/src/implementations/TropicalWeightTransducer.cc: Modify
+	  also determinization function so that negative weights are
+	  handled correctly.
+	  
+	  This is this same procedure that was done for minimization
+	  function in revision #4439.
+
+2015-09-28 09:32  eaxelson
+
+	* new_python_api/doc/libhfst.py: Added more documentation.
+
+2015-09-28 08:31  eaxelson
+
+	* new_python_api/doc/libhfst.py: Added more documentation.
+
+2015-09-25 12:47  unhammer
+
+	* test/tools/proc-cat-NUL.strings,
+	  test/tools/proc-functionality.sh,
+	  tools/src/hfst-proc/tokenizer.cc: fix NUL flush, bug #240
+	  
+	  (NUL should also be kept in output, before flushing, as in
+	  lt-tools
+
+2015-09-24 13:56  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i,
+	  new_python_api/test_hfst.py: Add function __iter__() to
+	  libhfst.HfstBasicTransducer.
+
+2015-09-24 11:54  eaxelson
+
+	* new_python_api/doc/libhfst.py, new_python_api/libhfst.i: Modified
+	  libhfst files.
+
+2015-09-24 08:43  eaxelson
+
+	* new_python_api, new_python_api/Makefile.am,
+	  new_python_api/README, new_python_api/doc,
+	  new_python_api/doc/Doxyfile, new_python_api/doc/libhfst.py,
+	  new_python_api/foobar.hfst, new_python_api/libhfst.i,
+	  new_python_api/setup.py, new_python_api/test.lexc,
+	  new_python_api/test_hfst.py, new_python_api/testfile.att: Create
+	  directory for new python API.
+	  
+	  Copy all relevant parts from the old python API (from directory
+	  named 'swig')
+	  and modify them as needed. This API will at some point replace
+	  the old one,
+	  or at least be the default one.
+
+2015-09-24 08:36  eaxelson
+
+	* Doxyfile: Update Doxygen HFST version number.
+
+2015-09-24 07:31  eaxelson
+
+	* swig/README, swig/doc/Doxyfile: Update README and Doxygen
+	  documentation.
+	  
+	  Advise users to use python3 instead of python2.
+	  Tell how the swig wrapper can be modified if HFST exceptions do
+	  not inherit from BaseException.
+	  Update the Doxygen HFST version number.
+
+2015-09-22 12:35  eaxelson
+
+	* tools/src/parsers/test/contains_with_weight.output,
+	  tools/src/parsers/test/contains_with_weight.xfst,
+	  tools/src/parsers/test/merge_weighted.att,
+	  tools/src/parsers/test/merge_weighted.xfst,
+	  tools/src/parsers/test/test.sh,
+	  tools/src/parsers/test/weighted_parallel_rules_12.output,
+	  tools/src/parsers/test/weighted_parallel_rules_12.xfst,
+	  tools/src/parsers/test/weighted_parallel_rules_13.output,
+	  tools/src/parsers/test/weighted_parallel_rules_13.xfst: Add some
+	  tests with negative weights for contain, merge and parallel rule
+	  operators.
+
+2015-09-22 11:42  eaxelson
+
+	* libhfst/src/implementations/TropicalWeightTransducer.cc,
+	  libhfst/src/implementations/TropicalWeightTransducer.h: Modify
+	  minimization of weighted transducers so that negative weights are
+	  handled correctly.
+	  
+	  After epsilon removal, all states and transitions of the
+	  transducer are iterated over to find the lowest weight.
+	  If the lowest weight is negative, its opposite is added to all
+	  weights in the transducer.
+	  Then the transducer is determinized and minimized normally.
+	  Finally, if the original lowest weight was negative, it is added
+	  to all weights in the transducer.
+	  
+	  This procedure effectively removes negative weights from the
+	  transducer before determinization and adds them again in the end.
+	  It is needed because OpenFst's determinization algorithm cannot
+	  handle negative weights correctly.
+	  
+	  Running 'make check' in directory fsmbook-examples takes
+	  approximately 3 minutes before and after the changes, so it seems
+	  that the slowdown should not be an issue.
+
+2015-09-16 10:30  eaxelson
+
+	* scripts/Makefile.am: Always include 'generate-cc-files.sh' script
+	  in dist package.
+
+2015-09-16 10:17  eaxelson
+
+	* libhfst/src/parsers/xre_lex.ll, libhfst/src/parsers/xre_parse.yy:
+	  Do not allow omitting the question mark on either or both sides
+	  of colon in regular expressions. Xerox has also removed this
+	  feature from their regexp syntax. Interpret expressions such as
+	  [foo : bar], [foo: bar] and [foo :bar] as [foo:bar]. Expressions
+	  of type [foo:], [:bar] and [:] will yield an error.
+
+2015-09-16 09:50  eaxelson
+
+	* test/tools/pmatch-functionality.sh: Test if pmatch-tests.sh.*
+	  files exist before removing them to avoid 'rm: cannot remove:'
+	  messages.
+
+2015-09-16 08:21  eaxelson
+
+	* configure.ac: Remove foma license warning. The current license of
+	  foma has no compatibility issues.
+
+2015-09-16 08:06  eaxelson
+
+	* libhfst/src/HfstTransducer.cc, libhfst/src/HfstTransducer.h,
+	  libhfst/src/implementations/HfstTransition.h,
+	  libhfst/src/implementations/HfstTransitionGraph.h,
+	  swig/libhfst.i, swig/setup.py: Make some changes for the python
+	  interface. Move HfstFile wrapper class to the swig interface
+	  file. Make HfstStates and HfstTransitions typedefs public. Add a
+	  destructor for HfstTransition. Update version number to 3.8.3.
+
+2015-09-15 07:13  hardwick
+
+	* tools/src/hfst-pmatch.cc, tools/src/hfst-proc2.cc: Handle a
+	  frequently encountered exception
+
+2015-09-03 07:19  eaxelson
+
+	* libhfst/src/HfstTransducer.cc, libhfst/src/HfstTransducer.h,
+	  libhfst/src/implementations/HfstTransitionGraph.h: Reverted
+	  changes done for class HfstFile in revision 4431.
+
+2015-09-02 10:20  eaxelson
+
+	* libhfst/src/HfstTransducer.cc, libhfst/src/HfstTransducer.h,
+	  libhfst/src/implementations/HfstTransitionGraph.h: Removed
+	  HfstFile wrapper class and functions using it. A better place for
+	  them is in the swig directory.
+
+2015-09-01 06:32  eaxelson
+
+	* libhfst/src/HfstExceptionDefs.cc,
+	  libhfst/src/HfstExceptionDefs.h: Added destructor for class
+	  HfstException. It needs to be defined for SWIG.
+
+2015-08-31 12:36  unhammer
+
+	* test/tools/Makefile.am, test/tools/cat_weight_ambig.txt,
+	  test/tools/cat_weight_ambig_W_out.strings,
+	  test/tools/cat_weight_ambig_out.strings,
+	  test/tools/proc-functionality.sh: tests for --weight-classes 1
+	  and ordering by weights in proc
+
+2015-08-31 12:06  unhammer
+
+	* test/tools/proc-caps-out1.strings,
+	  test/tools/proc-caps-out3.strings: make tests pass again (only
+	  analysis order changed here)
+
+2015-08-27 18:37  unhammer
+
+	* tools/src/hfst-proc/formatter.cc,
+	  tools/src/hfst-proc/formatter.h: use std::vector as ProcResult to
+	  get output sorted by weight-class
+
+2015-08-27 18:35  unhammer
+
+	* tools/src/hfst-proc/applicators.cc,
+	  tools/src/hfst-proc/formatter.cc,
+	  tools/src/hfst-proc/formatter.h,
+	  tools/src/hfst-proc/lookup-path.h: fix --weight-classes, bug #308
+	  
+	  old code did comparison without first casting (where possible) to
+	  weighted paths; added a compare fn that tries casting. Also,
+	  typedef
+	  the ProcResult
+
+2015-08-20 12:09  eaxelson
+
+	* scripts/generate-cc-files.sh: Now the script generate-cc-files.sh
+	  creates also lexer files.
+
+2015-08-20 10:04  jezral
+
+	* scripts/Makefile.am: Add $(EXEEXT) for Windows
+
+2015-08-20 09:56  jezral
+
+	* back-ends/foma/determinize.c, back-ends/foma/foma.h,
+	  back-ends/foma/mem.c, back-ends/foma/minimize.c: More Foma fixes
+	  for cross-building and clang
+
+2015-08-20 07:46  eaxelson
+
+	* back-ends/foma/determinize.c, back-ends/foma/minimize.c: Small
+	  modifications to foma code: struct and variable had the same
+	  name.
+
+2015-08-17 14:08  eaxelson
+
+	* README, back-ends/foma/CHANGELOG, back-ends/foma/COPYING,
+	  back-ends/foma/README, back-ends/foma/apply.c,
+	  back-ends/foma/coaccessible.c, back-ends/foma/constructions.c,
+	  back-ends/foma/define.c, back-ends/foma/determinize.c,
+	  back-ends/foma/dynarray.c, back-ends/foma/flags.c,
+	  back-ends/foma/foma.c, back-ends/foma/foma.h,
+	  back-ends/foma/fomalib.h, back-ends/foma/fomalibconf.h,
+	  back-ends/foma/iface.c, back-ends/foma/io.c,
+	  back-ends/foma/lex.cmatrix.c, back-ends/foma/lex.interface.c,
+	  back-ends/foma/lex.lexc.c, back-ends/foma/lex.yy.c,
+	  back-ends/foma/lexc.l, back-ends/foma/lexcread.c,
+	  back-ends/foma/mem.c, back-ends/foma/minimize.c,
+	  back-ends/foma/regex.c, back-ends/foma/regex.h,
+	  back-ends/foma/regex.l, back-ends/foma/regex.y,
+	  back-ends/foma/reverse.c, back-ends/foma/rewrite.c,
+	  back-ends/foma/sigma.c, back-ends/foma/spelling.c,
+	  back-ends/foma/stringhash.c, back-ends/foma/structures.c,
+	  back-ends/foma/topsort.c, back-ends/foma/trie.c,
+	  back-ends/foma/utf8.c: Updated to foma version 0.9.18alpha.
+
+2015-08-14 15:40  jezral
+
+	* hfst.m4, tools/src/hfst-proc/buffer.h: GNU address removal
+
+2015-08-10 13:04  eaxelson
+
+	* tools/src/hfst-compare.cc: Fixed some memory leaks in
+	  hfst-compare reported in bug #167.
+
+2015-08-07 09:37  eaxelson
+
+	* scripts/README, scripts/README_eight_tools_mac.txt,
+	  scripts/README_eight_tools_win.txt, scripts/README_xfst_mac.txt,
+	  scripts/README_xfst_win.txt: Adding the renamed files.
+
+2015-08-07 09:32  eaxelson
+
+	* scripts/README, scripts/README_eight_tools_win.txt,
+	  scripts/README_xfst_win.txt: Trying to rename README files...
+
+2015-08-07 09:24  eaxelson
+
+	* scripts/README_eight_tools.txt,
+	  scripts/README_eight_tools_win.txt, scripts/README_xfst.txt,
+	  scripts/README_xfst_win.txt, scripts/copy-for-windows.sh,
+	  scripts/package-static-binaries.sh, scripts/test-libhfst.bat,
+	  scripts/test-openfstwin.bat: Updated scripts.
+
+2015-08-04 08:13  eaxelson
+
+	* scripts/README: Now all files in this directory are listed in
+	  README
+
+2015-08-04 07:31  eaxelson
+
+	* scripts/README: Added a README file for the scripts directory.
+
+2015-06-25 09:16  hardwick
+
+	* tools/src/hfst-pmatch2fst.cc: Fix help message
+
+2015-06-25 09:14  hardwick
+
+	* libhfst/src/parsers/pmatch_parse.yy: Fix containment, implement
+	  some additional wanted operations
+
+2015-06-11 15:40  eaxelson
+
+	* ChangeLog, ChangeLog.old, NEWS, configure.ac,
+	  libhfst/src/Makefile.am: Ready for release 3.8.3.
+
 2015-06-11 10:24  eaxelson
 
 	* scripts/README_eight_tools.txt, scripts/copy-for-windows.sh:

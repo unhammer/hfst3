@@ -5,6 +5,30 @@
 This file contains all noteworthy changes in HFST development between releases.
 For full listing of changes see ChangeLog.
 
+Noteworthy changes in 3.9.0
+---------------------------
+
+* Implement a new Python API
+
+* Add option --time-cutoff to hfst-lookup
+
+* Remove option --minimizeFlags from hfst-lexc and minimize flags by default, add option --alignStrings
+
+* Add support for controlling input and output streams in xre, xfst and lexc compilers
+
+* Update foma back-end
+
+* Improve handling of negative weights, check for epsilon cycles with negative weights and issue a warning, if needed
+
+* Improvements and bug fixes to hfst-optimized-lookup, hfst-proc2, hfst-proc and hfst-pmatch
+
+* Reduce memory leaks when using hfst-ol format
+
+* Support flag diacritics in replace rules
+
+* Make command line tools perform automatic conversion when processing transducers whose types differ
+
+
 Noteworthy changes in 3.8.3
 ---------------------------
 
