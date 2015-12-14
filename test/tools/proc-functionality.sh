@@ -49,6 +49,13 @@ if ! diff test.strings $srcdir/proc-caps-out1.strings ; then
     echo uppercase 1 diffs
     exit 1
 fi
+# When bug #328 has been fixed, proc-caps-out1.strings can again be changed to:
+#^test/test+n$
+#^Test/Test+np/Test+n/Test+nlp$
+#^TEST/TEST+np/TEST+n/TEST+nlp$
+#^TeSt/Test+np/Test+n/Test+nlp$
+#^tesT/test+n$
+#^TEst/Test+np/Test+n/Test+nlp$
 if ! $TOOLDIR/hfst-proc/hfst-apertium-proc -g proc-caps.genhfstol < $srcdir/proc-caps-gen.strings | tr -d '\r' > test.strings ; then
     echo uppercase roundtrip fail:
     cat test.strings
@@ -76,6 +83,13 @@ if ! diff test.strings $srcdir/proc-caps-out4.strings ; then
     echo uppercase 3 diffs
     exit 1
 fi
+# When bug #328 has been fixed, proc-caps-out3.strings can again be changed to:
+#^test/test+n$
+#^Test/Test+np/Test+nlp$
+#^TEST/*TEST$
+#^TeSt/*TeSt$
+#^tesT/*tesT$
+#^TEst/*TEst$
 if ! $TOOLDIR/hfst-proc/hfst-apertium-proc --cg --raw proc-caps.hfstol < $srcdir/proc-caps-in.strings | tr -d '\r' > test.strings ; then
     echo raw cg fail:
     cat test.strings
