@@ -86,6 +86,35 @@ if ! diff test.strings $srcdir/proc-caps-out5.strings ; then
     exit 1
 fi
 
+# Xerox format tests:
+if ! $TOOLDIR/hfst-proc/hfst-apertium-proc --xerox cat_weight_ambig.hfstol < $srcdir/cat_cat.strings | tr -d '\r' > test.strings ; then
+    echo xeroc fail:
+    cat test.strings
+    exit 1
+fi
+if ! diff test.strings $srcdir/cat_weight_ambig_xerox.strings ; then
+    echo xerox cat_weight_ambig diffs
+    exit 1
+fi
+if ! $TOOLDIR/hfst-proc/hfst-apertium-proc -W --xerox cat_weight_ambig.hfstol < $srcdir/cat_cat.strings | tr -d '\r' > test.strings ; then
+    echo xeroc -W fail:
+    cat test.strings
+    exit 1
+fi
+if ! diff test.strings $srcdir/cat_weight_ambig_W_xerox.strings ; then
+    echo xerox cat_weight_ambig_W diffs
+    exit 1
+fi
+if ! $TOOLDIR/hfst-proc/hfst-apertium-proc -W --weight-classes 1 --xerox cat_weight_ambig.hfstol < $srcdir/cat_cat.strings | tr -d '\r' > test.strings ; then
+    echo xeroc -W --weight-classes 1 fail:
+    cat test.strings
+    exit 1
+fi
+if ! diff test.strings $srcdir/cat_weight_ambig_W1_xerox.strings ; then
+    echo xerox --weight-classes 1 cat_weight_ambig_W diffs
+    exit 1
+fi
+
 # weight-classes checks
 if ! $TOOLDIR/hfst-proc/hfst-apertium-proc --weight-classes 1 cat_weight_ambig.hfstol < $srcdir/cat.strings | tr -d '\r' > test.strings ; then
     echo cat_weight_ambig fail:
