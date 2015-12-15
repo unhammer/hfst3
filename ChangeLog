@@ -1,3 +1,76 @@
+2015-12-14 20:46  unhammer
+
+	* test/tools/cat_cat.strings,
+	  test/tools/cat_weight_ambig_W1_xerox.strings,
+	  test/tools/cat_weight_ambig_W_xerox.strings,
+	  test/tools/cat_weight_ambig_xerox.strings,
+	  test/tools/proc-functionality.sh,
+	  tools/src/hfst-proc/formatter.cc: fix for --xerox bug#328
+	  introduced by weight fix
+	  
+	  +tests
+
+2015-12-14 20:46  unhammer
+
+	* test/tools/proc-caps-out1.strings,
+	  test/tools/proc-caps-out3.strings,
+	  test/tools/proc-functionality.sh,
+	  tools/src/hfst-proc/formatter.cc,
+	  tools/src/hfst-proc/formatter.h: Revert -r4579 "Revert changes to
+	  hfst-proc made in revision 4427. This will (temporarily) fix bug
+	  #328."
+	  
+	  in preparation of real fix
+
+2015-12-14 14:47  eaxelson
+
+	* man/hfst-affix-guessify.1, man/hfst-apertium-proc.1,
+	  man/hfst-calculate.1, man/hfst-compare.1,
+	  man/hfst-compose-intersect.1, man/hfst-compose.1,
+	  man/hfst-concatenate.1, man/hfst-conjunct.1,
+	  man/hfst-determinize.1, man/hfst-disjunct.1,
+	  man/hfst-edit-metadata.1, man/hfst-expand-equivalences.1,
+	  man/hfst-format.1, man/hfst-fst2fst.1, man/hfst-fst2strings.1,
+	  man/hfst-fst2txt.1, man/hfst-grep.1, man/hfst-guess.1,
+	  man/hfst-guessify.1, man/hfst-head.1, man/hfst-info.1,
+	  man/hfst-invert.1, man/hfst-lexc-wrapper.1, man/hfst-lexc.1,
+	  man/hfst-lookup.1, man/hfst-minimize.1, man/hfst-multiply.1,
+	  man/hfst-name.1, man/hfst-optimized-lookup.1,
+	  man/hfst-pair-test.1, man/hfst-pmatch.1, man/hfst-pmatch2fst.1,
+	  man/hfst-proc2.1, man/hfst-project.1, man/hfst-prune-alphabet.1,
+	  man/hfst-push-weights.1, man/hfst-regexp2fst.1,
+	  man/hfst-remove-epsilons.1, man/hfst-repeat.1,
+	  man/hfst-reverse.1, man/hfst-reweight-tagger.1,
+	  man/hfst-reweight.1, man/hfst-shuffle.1, man/hfst-split.1,
+	  man/hfst-strings2fst.1, man/hfst-substitute.1,
+	  man/hfst-subtract.1, man/hfst-summarize.1, man/hfst-tag.1,
+	  man/hfst-tail.1, man/hfst-train-tagger.1, man/hfst-traverse.1,
+	  man/hfst-twolc.1, man/hfst-txt2fst.1, man/hfst-xfst.1: Remember
+	  to update the man pages, too.
+
+2015-12-14 13:30  eaxelson
+
+	* ChangeLog, ChangeLog.old, NEWS, configure.ac,
+	  libhfst/src/Makefile.am, python/setup.py: Ready for release
+	  3.9.0.
+
+2015-12-14 10:17  eaxelson
+
+	* test/tools/proc-caps-out1.strings,
+	  test/tools/proc-caps-out3.strings,
+	  test/tools/proc-functionality.sh,
+	  tools/src/hfst-proc/formatter.cc,
+	  tools/src/hfst-proc/formatter.h: Revert changes to hfst-proc made
+	  in revision 4427. This will (temporarily) fix bug #328.
+	  
+	  Change typedef ProcResults back to set<string> from
+	  vector<string>.
+	  This will remove the duplicates, but the results will again be
+	  listed in another order than they were inserted.
+	  vector<string> is probably be a better structure for storing the
+	  results, but it requires more changes in the code than just
+	  changing the typedef.
+
 2015-12-13 10:49  eaxelson
 
 	* python/libhfst.i: Change all pythoncode delimiters from '{' and
