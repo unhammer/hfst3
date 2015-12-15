@@ -39,7 +39,9 @@ do
     fi
 done
 # this file uses 'tooldir' instead of 'TOOLDIR'
-sed -i 's/$\tooldir\//$1/g' pmatch-tester.sh
+# sed -i 's/$\tooldir\//$1/g' pmatch-tester.sh
+
+
 
 # These tests are rewritten in directory check_installation
 rm empty-input.sh
@@ -58,6 +60,11 @@ rm lexc-compiler-flags-functionality.sh
 # These tests are not included in basic check
 cp ../test-hfst-xfst.sh .
 cp ../test-hfst-twolc.sh .
+
+# TODO: add pmatch tests
+rm pmatch-tests.sh
+rm pmatch-tester.sh
+rm pmatch-functionality.sh
 
 # The tagger tools are experimental so they are not tested
 

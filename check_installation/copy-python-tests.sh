@@ -6,10 +6,10 @@
 # of swig bindings instead of the ones in ../swig.
 #
 
-TESTDIR=./swig_tests/
+TESTDIR=./python_tests/
 
 # Copy hfst3/swig/test
-cd ../swig/test
+cd ../python/test
 files_to_copy=`svn list`
 cd ../../check_installation
 
@@ -20,7 +20,7 @@ mkdir $TESTDIR
 
 for file in $files_to_copy;
 do
-    cp ../swig/test/$file $TESTDIR
+    cp ../python/test/$file $TESTDIR
 done
 
 cd $TESTDIR
