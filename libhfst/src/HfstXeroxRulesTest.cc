@@ -1754,52 +1754,6 @@ void test2c( ImplementationType type )
     assert(tmp2.compare(result1));
 }
 
-// ? @-> a ... b;
-void test2d( ImplementationType type )
-{
-
-    HfstTransducer identityPair = HfstTransducer::identity_pair( type );
-    HfstTransducer identityStar(identityPair);
-    identityStar.repeat_star();
-
-    HfstTokenizer TOK;
-    TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
-
-    // Mapping
-
-    HfstTransducer empty(type);
-
-    HfstTransducerPair mappingPair(identityPair, empty);
-    HfstTransducerPairVector mappingPairVector;
-    mappingPairVector.push_back(mappingPair);
-
-
-
-    StringPair marks("a","b");
-
-
-    // Context
-    HfstTransducerPair Context(HfstTransducer("@_EPSILON_SYMBOL_@", TOK, type), HfstTransducer("@_EPSILON_SYMBOL_@", TOK, type));
-
-    HfstTransducerPairVector ContextVector;
-    ContextVector.push_back(Context);
-
-    HfstTransducer input1("bb", TOK, type);
-
-    HfstTransducer result1("@_EPSILON_SYMBOL_@b@_EPSILON_SYMBOL_@@_EPSILON_SYMBOL_@b@_EPSILON_SYMBOL_@", "abbabb",TOK, type);
-
-
-    HfstTransducer replaceTr(type);
-    HfstTransducer tmp2(type);
-
-    Rule ruleUp(mappingPairVector, ContextVector, REPL_UP);
-
-    replaceTr = mark_up_replace(ruleUp, marks, false);
-    tmp2 = input1;
-    tmp2.compose(replaceTr).minimize();
-    assert(tmp2.compare(result1));
-}
-
 
 // test multiple contexts
 // a -> b ||  x _ x ;
@@ -2397,55 +2351,55 @@ void test4c( ImplementationType type )
 
 }
 
-// mark up rules
-void test5( ImplementationType type )
-{
-    HfstTokenizer TOK;
-    TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
+// // mark up rules
+// void test5( ImplementationType type )
+// {
+    // HfstTokenizer TOK;
+    // TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
 
-    // Mapping
-    HfstTransducer lmtmp("b", TOK, type);
-    HfstTransducer leftMapping("a", TOK, type);
-    leftMapping.disjunct(lmtmp).minimize();
+    // // Mapping
+    // HfstTransducer lmtmp("b", TOK, type);
+    // HfstTransducer leftMapping("a", TOK, type);
+    // leftMapping.disjunct(lmtmp).minimize();
 
-    HfstTransducer empty(type);
+    // HfstTransducer empty(type);
 
-    HfstTransducerPair mappingPair(leftMapping, empty);
-    HfstTransducerPairVector mappingPairVector;
-    mappingPairVector.push_back(mappingPair);
-
-
-
-    StringPair marks("[","]");
+    // HfstTransducerPair mappingPair(leftMapping, empty);
+    // HfstTransducerPairVector mappingPairVector;
+    // mappingPairVector.push_back(mappingPair);
 
 
-    // Context
-    HfstTransducerPair Context(HfstTransducer("@_EPSILON_SYMBOL_@", TOK, type), HfstTransducer("@_EPSILON_SYMBOL_@", TOK, type));
 
-//    HfstTransducerPair Context(HfstTransducer("m", TOK, type), HfstTransducer("k", TOK, type));
-
-    HfstTransducerPairVector ContextVector;
-    ContextVector.push_back(Context);
-
-    HfstTransducer input1("mba", TOK, type);
-
-    HfstTransducer result1("m@_EPSILON_SYMBOL_@b@_EPSILON_SYMBOL_@@_EPSILON_SYMBOL_@a@_EPSILON_SYMBOL_@", "m[b][a]",TOK, type);
+    // StringPair marks("[","]");
 
 
-    HfstTransducer replaceTr(type);
-    HfstTransducer tmp2(type);
+    // // Context
+    // HfstTransducerPair Context(HfstTransducer("@_EPSILON_SYMBOL_@", TOK, type), HfstTransducer("@_EPSILON_SYMBOL_@", TOK, type));
 
-    Rule ruleUp(mappingPairVector, ContextVector, REPL_UP);
+// //    HfstTransducerPair Context(HfstTransducer("m", TOK, type), HfstTransducer("k", TOK, type));
+
+    // HfstTransducerPairVector ContextVector;
+    // ContextVector.push_back(Context);
+
+    // HfstTransducer input1("mba", TOK, type);
+
+    // HfstTransducer result1("m@_EPSILON_SYMBOL_@b@_EPSILON_SYMBOL_@@_EPSILON_SYMBOL_@a@_EPSILON_SYMBOL_@", "m[b][a]",TOK, type);
 
 
-    replaceTr = mark_up_replace(ruleUp, marks, false);
-    tmp2 = input1;
-    tmp2.compose(replaceTr).minimize();
-    //printf("test5: \n");
-    //tmp2.write_in_att_format(stdout, 1);
-    assert(tmp2.compare(result1));
+    // HfstTransducer replaceTr(type);
+    // HfstTransducer tmp2(type);
 
-}
+    // Rule ruleUp(mappingPairVector, ContextVector, REPL_UP);
+
+
+    // replaceTr = mark_up_replace(ruleUp, marks, false);
+    // tmp2 = input1;
+    // tmp2.compose(replaceTr).minimize();
+    // //printf("test5: \n");
+    // //tmp2.write_in_att_format(stdout, 1);
+    // assert(tmp2.compare(result1));
+
+// }
 
 
 // epenthesis rules

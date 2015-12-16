@@ -69,25 +69,6 @@ namespace hfst
         };
 
         /**
-         * \brief Mark up rule has two markers on the right side of the mapping.
-         * Mapping is only left side of the mapping.
-         */
-        class MarkUpRule : public Rule
-        {
-            StringPair marks;
-
-          public:
-            // for mark up replace
-
-        //    MarkUpRule ( const HfstTransducer&, StringPair ); // mapping
-        //    MarkUpRule ( const HfstTransducer&,  const HfstTransducerPairVector&, ReplaceType, StringPair); // mapping, context
-            MarkUpRule ( const HfstTransducerPairVector&, StringPair );
-            MarkUpRule ( const HfstTransducerPairVector&, const HfstTransducerPairVector&, ReplaceType, StringPair );
-            StringPair get_marks() const;
-        };
-
-
-         /**
          *  \brief  In the transducer \tr, change all flag diacritics to "non-special" multichar symbols
          *  It means that @ sign will be changed to $ sign
          *  ie. @P.FOO.BAR@ will be changed into $P.FOO.BAR$
@@ -236,11 +217,11 @@ namespace hfst
         //used by hfst-regexp parser
         HfstTransducerPair create_mapping_for_mark_up_replace( const HfstTransducerPair &mappingPair,
                                                           const HfstTransducerPair &marks );
-        HfstTransducerPairVector create_mapping_for_mark_up_replace( const HfstTransducerPairVector &mappingPairVector,
-                                                                                        const StringPair &marks );
+        // HfstTransducerPairVector create_mapping_for_mark_up_replace( const HfstTransducerPairVector &mappingPairVector,
+                                                                                        // const StringPair &marks );
 
-        HfstTransducerPairVector create_mapping_for_mark_up_replace( const HfstTransducerPairVector &mappingPairVector,
-                                                                                             const HfstTransducerPair &marks );
+        // HfstTransducerPairVector create_mapping_for_mark_up_replace( const HfstTransducerPairVector &mappingPairVector,
+                                                                                             // const HfstTransducerPair &marks );
         //---------------------------------
         //    REPLACE FUNCTIONS - INTERFACE
         //---------------------------------
@@ -270,19 +251,21 @@ namespace hfst
         HfstTransducer replace_rightmost_shortest_match( const std::vector<Rule> &ruleVector );
 
 
+        // the problem is that the mark-up rules can be mixed with ordinary rules
+        // ie a -> b ... c , a -> d ; 
+        // this is why each markup mapping should be accessed seperratly
+        // HfstTransducer mark_up_replace(    const Rule &rule,
+                                // const StringPair &marks,
+                                // bool optional);
 
-        HfstTransducer mark_up_replace(    const Rule &rule,
-                                const StringPair &marks,
-                                bool optional);
+        // HfstTransducer mark_up_replace(const Rule &rule,
+                                           // const HfstTransducerPair &marks,
+                                           // bool optional);
 
-        HfstTransducer mark_up_replace(const Rule &rule,
-                                           const HfstTransducerPair &marks,
-                                           bool optional);
 
-/*
-        HfstTransducer mark_up_replace(    const std::vector<MarkUpRule> &markUpRuleVector,
-                                bool optional);
-*/
+        // HfstTransducer mark_up_replace(    const std::vector<MarkUpRule> &markUpRuleVector,
+                                // bool optional);
+
         // replace up, left, right, down
         HfstTransducer replace_epenthesis(    const Rule &rule, bool optional);
         // replace up, left, right, down

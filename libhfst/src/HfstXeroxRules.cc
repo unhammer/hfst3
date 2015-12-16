@@ -180,29 +180,6 @@ namespace hfst
     }
 
 
-      ///////
-
-      MarkUpRule::MarkUpRule ( const HfstTransducerPairVector &a_mapping,
-                                       StringPair a_marks ):
-              Rule(a_mapping), marks(a_marks)
-      {
-          marks = a_marks;
-      }
-      MarkUpRule::MarkUpRule ( const HfstTransducerPairVector &a_mapping,
-                                       const HfstTransducerPairVector &a_contextVector,
-                                       ReplaceType a_replType,
-                                       StringPair a_marks  ):
-              Rule(a_mapping, a_contextVector, a_replType), marks(a_marks)
-      {
-          marks = a_marks;
-      }
-
-      StringPair MarkUpRule::get_marks() const
-      {
-          return marks;
-      }
-
-
       //////////////////////////////////////
       // In the transducer tr, change all flag diacritics to "non-special" multichar symbols
       // It means that @ sign will be changed to $ sign
@@ -610,7 +587,6 @@ namespace hfst
         String tmpMarker("@TMPM@");
         String leftMarker2("@LM2@");
         String rightMarker2("@RM2@");
-        String markupMarker("@MMM@");
         String newEpsilon("$Epsilon$");
 
         TOK.add_multichar_symbol(leftMarker);
@@ -618,7 +594,6 @@ namespace hfst
         TOK.add_multichar_symbol(leftMarker2);
         TOK.add_multichar_symbol(rightMarker2);
         TOK.add_multichar_symbol(tmpMarker);
-        TOK.add_multichar_symbol(markupMarker);
         TOK.add_multichar_symbol(newEpsilon);
         TOK.add_multichar_symbol( ".#.");
 
@@ -642,43 +617,18 @@ namespace hfst
         HfstTransducer mapping(type);
         for ( unsigned int i = 0; i < mappingPairVector.size(); i++ )
         {
-
             HfstTransducer oneMappingPair(mappingPairVector[i].first);
-
-            // if it is markup rule, substitute epsilon in left mapping with marker
-            if ( mappingPairVector[i].second.get_property("isMarkup") == "yes" )
+          
+            //markup rules are already cross product in mappingPairVector[i].first (second is empty)
+            //so the cross product should not be done for markup rules
+            if ( mappingPairVector[i].first.get_property("isMarkup") != "yes" )
             {
-                oneMappingPair.substitute(StringPair("@_EPSILON_SYMBOL_@", "@_EPSILON_SYMBOL_@"), StringPair(markupMarker, markupMarker) ).minimize();
+                oneMappingPair.cross_product(mappingPairVector[i].second);
             }
-
-            oneMappingPair.cross_product(mappingPairVector[i].second);
-
-
-          // printf("aftrer cross product \n");
-           //oneMappingPair.minimize().write_in_att_format(stdout, 1);
-
-
-
-            // if it is mark up rule
-            if ( mappingPairVector[i].second.get_property("isMarkup") == "yes" )
-            {
-                HfstTransducer identityPairTmp = HfstTransducer::identity_pair( type );
-                identityPairTmp.insert_to_alphabet(markupMarker);
-
-                // remove relations from the cross product
-                HfstTransducer tmpForIntersect(identityPairTmp);
-                HfstTransducer markupMarkToUnknown(markupMarker, "@_UNKNOWN_SYMBOL_@", TOK, type);
-                tmpForIntersect.disjunct(markupMarkToUnknown);
-                tmpForIntersect.repeat_star().minimize();
-                oneMappingPair.intersect(tmpForIntersect).minimize();
-
-                // replace temporary mark-up marker back to epsilons
-                HfstTransducer tmpForCompose("@_EPSILON_SYMBOL_@", markupMarker, TOK, type);
-                tmpForCompose.disjunct(identityPairTmp).repeat_star().minimize();
-                tmpForCompose.compose(oneMappingPair);
-                oneMappingPair = tmpForCompose;
-                oneMappingPair.remove_from_alphabet(markupMarker);
-            }
+           // printf("aftrer cross product \n");
+           // oneMappingPair.write_in_att_format(stdout, 1);
+          
+          
             // for removing .#. from the center
             HfstTransducer identityWithoutBoundary(identity);
             identityWithoutBoundary.insert_to_alphabet(".#.");
@@ -689,8 +639,8 @@ namespace hfst
             //removeHash.write_in_att_format(stdout, 1);
 
 
-            //printf("oneMappingPair \n");
-            //oneMappingPair.write_in_att_format(stdout, 1);
+            // printf("oneMappingPair kkkk\n");
+            // oneMappingPair.write_in_att_format(stdout, 1);
 
 
             if ( i == 0 )
@@ -2329,37 +2279,26 @@ namespace hfst
         //---------------------------------
 
         // used by hfst-regexp parser
+        // creates markup crossproduct and sets property of the first transducer in the mapping to "isMarkup" = "yes"
+        // the other transducer in the mapping is set to epsilon transducer
         HfstTransducerPair create_mapping_for_mark_up_replace( const HfstTransducerPair &mappingPair,
                                                           const HfstTransducerPair &marks )
         {
             HfstTokenizer TOK;
             String epsilon = "@_EPSILON_SYMBOL_@";
-        //    String epsilon = "$_$";
             TOK.add_multichar_symbol(epsilon);
-             TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
+            TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
 
             ImplementationType type = mappingPair.first.get_type();
 
             HfstTransducer leftMark(marks.first);
             HfstTransducer rightMark(marks.second);
 
-            // printf("leftMark: \n");
-            // leftMark.minimize().write_in_att_format(stdout, 1);
-            
-            // printf("rightMark: \n");
-            // rightMark.minimize().write_in_att_format(stdout, 1);
-            
-            
             HfstTransducer epsilonToLeftMark("@_EPSILON_SYMBOL_@", TOK, type);
             epsilonToLeftMark.cross_product(leftMark).minimize();
-            //printf("epsilonToLeftMark: \n");
-            //epsilonToLeftMark.write_in_att_format(stdout, 1);
 
             HfstTransducer epsilonToRightMark(epsilon, TOK, type);
             epsilonToRightMark.cross_product(rightMark).minimize();
-
-            // printf("epsilonToRightMark: \n");
-            // epsilonToRightMark.write_in_att_format(stdout, 1);
 
             //Go through left part of every mapping pair
             // and concatenate: epsilonToLeftMark.leftMapping.epsilonToRightMark
@@ -2369,172 +2308,13 @@ namespace hfst
                     concatenate(epsilonToRightMark).
                     minimize();
 
-            // printf("mappingCrossProduct: \n");
-            // mappingCrossProduct.minimize().write_in_att_format(stdout, 1);
-
-            HfstTransducer in(mappingCrossProduct);
-            in.input_project();
-            in.transform_weights(&zero_weight);
+            mappingCrossProduct.set_property("isMarkup", "yes");
             
-            // printf("in: \n");
-            // in.minimize().write_in_att_format(stdout, 1);
-
-            //printf("out: \n");
-
-            HfstTransducer out(mappingCrossProduct);
-            out.output_project();
-            
-            // printf("out: \n");
-            // out.minimize().write_in_att_format(stdout, 1);
-
-            out.set_property("isMarkup", "yes");
-            HfstTransducerPair retval(in, out);
+            HfstTransducer epsilonTr(epsilon, TOK, type);
+            HfstTransducerPair retval(mappingCrossProduct, epsilonTr);
 
             return retval;
         }
-
-
-        HfstTransducerPairVector create_mapping_for_mark_up_replace( const HfstTransducerPairVector &mappingPairVector,
-                                                          const StringPair &marks )
-        {
-            HfstTokenizer TOK;
-            TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
-
-            ImplementationType type = mappingPairVector[0].first.get_type();
-
-            HfstTransducer leftMark(marks.first, TOK, type);
-            HfstTransducer rightMark(marks.second, TOK, type);
-
-            HfstTransducer epsilonToLeftMark("@_EPSILON_SYMBOL_@", TOK, type);
-            epsilonToLeftMark.cross_product(leftMark).minimize();
-
-            //printf("epsilonToLeftMark: \n");
-            //epsilonToLeftMark.write_in_att_format(stdout, 1);
-
-
-            HfstTransducer epsilonToRightMark("@_EPSILON_SYMBOL_@", TOK, type);
-            epsilonToRightMark.cross_product(rightMark).minimize();
-
-            //printf("epsilonToRightMark: \n");
-            //epsilonToRightMark.write_in_att_format(stdout, 1);
-
-            //Go through left part of every mapping pair
-            // and concatenate: epsilonToLeftMark.leftMapping.epsilonToRightMark
-            //then put it into right part of the new transducerPairVector
-            HfstTransducerPairVector retval;
-            //HfstTransducer mapping(type);
-            for ( unsigned int i = 0; i < mappingPairVector.size(); i++ )
-            {
-
-                //printf("mapping left: \n");
-                //mappingPairVector[i].first.write_in_att_format(stdout, 1);
-
-                HfstTransducer mappingCrossProduct(epsilonToLeftMark);
-                mappingCrossProduct.concatenate(mappingPairVector[i].first).
-                        minimize().
-                        concatenate(epsilonToRightMark).
-                        minimize();
-
-                //printf("mappingCrossProduct: \n");
-                //mappingCrossProduct.write_in_att_format(stdout, 1);
-
-
-
-                HfstTransducer in(mappingCrossProduct);
-                in.input_project();
-                in.transform_weights(&zero_weight);
-                //printf("in: \n");
-                //in.write_in_att_format(stdout, 1);
-
-                //printf("out: \n");
-
-                HfstTransducer out(mappingCrossProduct);
-                out.output_project();
-                //printf("out: \n");
-                //out.write_in_att_format(stdout, 1);
-
-                out.set_property("isMarkup", "yes");
-                retval.push_back(HfstTransducerPair(in, out));
-            }
-            return retval;
-        }
-        HfstTransducerPairVector create_mapping_for_mark_up_replace( const HfstTransducerPairVector &mappingPairVector,
-                                                              const HfstTransducerPair &marks )
-        {
-            HfstTokenizer TOK;
-            TOK.add_multichar_symbol("@_EPSILON_SYMBOL_@");
-
-            ImplementationType type = mappingPairVector[0].first.get_type();
-
-            HfstTransducer leftMark(marks.first);
-            HfstTransducer rightMark(marks.second);
-
-            HfstTransducer epsilonToLeftMark("@_EPSILON_SYMBOL_@", TOK, type);
-            epsilonToLeftMark.cross_product(leftMark).minimize();
-
-            //printf("epsilonToLeftMark: \n");
-            //epsilonToLeftMark.write_in_att_format(stdout, 1);
-
-
-            HfstTransducer epsilonToRightMark("@_EPSILON_SYMBOL_@", TOK, type);
-            epsilonToRightMark.cross_product(rightMark).minimize();
-
-            //printf("epsilonToRightMark: \n");
-            //epsilonToRightMark.write_in_att_format(stdout, 1);
-
-
-            //Go through left part of every mapping pair
-            // and concatenate: epsilonToLeftMark.leftMapping.epsilonToRightMark
-            //then put it into right part of the new transducerPairVector
-            HfstTransducerPairVector retval;
-            //HfstTransducer mapping(type);
-            for ( unsigned int i = 0; i < mappingPairVector.size(); i++ )
-            {
-
-                //printf("mapping left: \n");
-                //mappingPairVector[i].first.write_in_att_format(stdout, 1);
-
-                HfstTransducer mappingCrossProduct(epsilonToLeftMark);
-                mappingCrossProduct.concatenate(mappingPairVector[i].first).
-                        minimize().
-                        concatenate(epsilonToRightMark).
-                        minimize();
-
-                //printf("mappingCrossProduct: \n");
-                //mappingCrossProduct.write_in_att_format(stdout, 1);
-
-
-
-                HfstTransducer in(mappingCrossProduct);
-                in.input_project();
-                in.transform_weights(&zero_weight);
-                //printf("in: \n");
-                //in.write_in_att_format(stdout, 1);
-
-                //printf("out: \n");
-
-                HfstTransducer out(mappingCrossProduct);
-                out.output_project();
-                //printf("out: \n");
-                //out.write_in_att_format(stdout, 1);
-
-                out.set_property("isMarkup", "yes");
-                retval.push_back(HfstTransducerPair(in, out));
-            }
-            return retval;
-        }
-
-
-
-
-
-        
-        
-      
-
-
-
-
 
 
 
@@ -2994,39 +2774,8 @@ namespace hfst
         return retval;
     }
 
-
-
-      HfstTransducer mark_up_replace( const Rule &rule,
-                              const StringPair &marks,
-                              bool optional)
-      {
-
-        HfstTransducerPairVector new_mapping = create_mapping_for_mark_up_replace(rule.get_mapping(), marks);
-        Rule newRule(new_mapping, rule.get_context(), rule.get_replType());
-
-        HfstTransducer retval(replace(newRule, optional));
-
-        //printf("after replace: \n");
-        //retval.write_in_att_format(stdout, 1);
-        return retval;
-      }
-
-      HfstTransducer mark_up_replace( const Rule &rule,
-                                   const HfstTransducerPair &marks,
-                                   bool optional)
-      {
-          HfstTransducerPairVector new_mapping = create_mapping_for_mark_up_replace(rule.get_mapping(), marks);
-
-          Rule newRule(new_mapping, rule.get_context(), rule.get_replType());
-          //printf("epsilonToRightMark: \n");
-          //epsilonToRightMark.write_in_att_format(stdout, 1);
-
-          HfstTransducer retval(replace(newRule, optional));
-
-          return retval;
-      }
-
-
+    
+    
       // replace up, left, right, down
       HfstTransducer replace_epenthesis(    const Rule &rule, bool optional)
       {
@@ -3296,7 +3045,7 @@ int main(int argc, char * argv[])
             test2c( types[i] );
 
             // ? @-> a ... b;
-            test2d( types[i] );
+       //     test2d( types[i] );
 
             // testing unconditional replace with and without contexts
 
@@ -3313,8 +3062,9 @@ int main(int argc, char * argv[])
             test4b( types[i] );
             test4c( types[i] );
 
-            // mark up rule
-            test5( types[i] );
+            // mark up rule - doesn't have api interface anymore
+            // a | b -> %[...%] ;
+        //    test5( types[i] );
 
             // epenthesis rules
             test6a( types[i] );
