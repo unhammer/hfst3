@@ -171,5 +171,12 @@ EXTRA_DIST=test.sh \
 	xerox_composition.xfst xerox_composition.output \
 	compile_replace_1.xfst compile_replace_1.output \
 	compile_replace_2.xfst compile_replace_2.output \
-	compile_replace_3.xfst compile_replace_3.output
+	compile_replace_3.xfst compile_replace_3.output \
+	replace_markup_1.att replace_markup_1.xfst \
+	replace_markup_2.att replace_markup_2.xfst \
+	replace_markup_3.att replace_markup_3.xfst \
+	replace_markup_4.att replace_markup_4.xfst \
+	replace_markup_5.att replace_markup_5.xfst \
+	replace_markup_6.att replace_markup_6.xfst \
+	replace_markup_7.att replace_markup_7.xfst
 check_DATA=test.sh
