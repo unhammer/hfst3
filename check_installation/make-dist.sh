@@ -31,7 +31,7 @@ if [ -d "$DISTDIR" ]; then
 fi
 mkdir $DISTDIR
 
-for dir in tool_tests python_tests morphology_tests;
+for dir in tool_tests python_tests morphology_tests ospell_tests;
 do
     if [ ! -d $dir ]; then
 	echo "ERROR: directory 'tool_tests' does not exist."
@@ -46,6 +46,8 @@ cp ./check-python.sh $DISTDIR/
 cp --parents ./python_tests/* $DISTDIR/
 cp ./check-morphologies.sh $DISTDIR/
 cp --parents ./morphology_tests/* $DISTDIR/
+cp ./check-ospell.sh $DISTDIR
+cp --parents ./ospell_tests/* $DISTDIR/
 
 echo "  Creating the package..." 
 tar -cvf $DISTDIR.tar $DISTDIR

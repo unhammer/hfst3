@@ -5,6 +5,7 @@ or more of the tests below:
   ./check-tools.sh             # Command line tools
   ./check-python.sh            # Python bindings
   ./check-morphologies.sh      # Morphology scripts
+  ./check-ospell.sh            # hfst-ospell tool
 
 The tool check-tools.sh accepts the option '--prefix PREFIX' which tells
 where the HFST tools to be tested are found. 
@@ -23,4 +24,7 @@ files 'test_hfst.py' and 'examples.py' in directory 'python_tests'
 
   import sys
   sys.path.insert(1, '/path/to/hfst-top-dir/python/')
+
+The tool check-ospell.sh accepts the option '--prefix PREFIX' which tells
+where hfst-ospell tool is found.
 
