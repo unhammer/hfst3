@@ -1,7 +1,6 @@
 All	
 All	All[ADJ]+ADJ
 All	All[ADV]+ADV
-All	All[DET]
 
 human	
 human	hum[N]+AN[N/N]+N
@@ -17,89 +16,66 @@ beings	bey[N]+ING[N/N]+N+PL
 are	
 are	A+re[N]+N
 are	are[N]+N
-are	be[V]+V+PRES
 
 born	
 born	bear+V+PPART
-born	bear[V]+V+PPART
 born	born[ADJ]+ADJ
 born	born[N]+N
-born	born[V]+V+PAST
 
 free	
 free	free[ADJ]+ADJ
 free	free[ADV]+ADV
 free	free[N]+N
-free	free[V]+V
 free	free[V]+V+INF
 
 and	
 and	A+nd[N]+N
-and	and[ADV]+ADV
-and	and[CNJ]+COORD
 
 equal	
 equal	equal[ADJ]+ADJ
 equal	equal[N]+N
-equal	equal[V]+V
 equal	equal[V]+V+INF
 
 in	
 in	in[ADJ]+ADJ
 in	in[ADV]+ADV
 in	in[N]+N
-in	in[PRP]
-in	in[V]+V+3sg+PRES
 
 dignity	
 dignity	dignity[N]+N
 
 and	
 and	A+nd[N]+N
-and	and[ADV]+ADV
-and	and[CNJ]+COORD
 
 rights	
 rights	right[N]+N+PL
 rights	right[V]+V+3sg+PRES
 
-.	
-.	.[PUN]
-
-They	
-They	They[PN]+PERS
+They	+?
 
 are	
 are	A+re[N]+N
 are	are[N]+N
-are	be[V]+V+PRES
 
 endowed	
 endowed	endow[V]+V+PAST
 endowed	endow[V]+V+PPART
 endowed	endowed[ADJ]+ADJ
 
-with	
-with	with[CNJ]+COORD
-with	with[PRP]
+with	+?
 
 reason	
 reason	reason[N]+N
-reason	reason[V]+V
 reason	reason[V]+V+INF
 
 and	
 and	A+nd[N]+N
-and	and[ADV]+ADV
-and	and[CNJ]+COORD
 
 conscience	
 conscience	conscience[N]+N
 
 and	
 and	A+nd[N]+N
-and	and[ADV]+ADV
-and	and[CNJ]+COORD
 
 should	
 should	should[V]+V+INF
@@ -107,53 +83,32 @@ should	should[V]+V+INF
 act	
 act	A+ct[N]+N
 act	act[N]+N
-act	act[V]+V
 act	act[V]+V+INF
 
-towards	
-towards	towards[PRP]
+towards	+?
 
 one	
-one	one[ADJ]
 one	one[ADJ]+ADJ
 one	one[N]+N
-one	one[PN]
-one	one[PN]+INDEF
-one	one[V]+V+INF
 
 another	
 another	another[ADJ]+ADJ
-another	another[DET]
 
 in	
 in	in[ADJ]+ADJ
 in	in[ADV]+ADV
 in	in[N]+N
-in	in[PRP]
-in	in[V]+V+3sg+PRES
 
 a	
-a	a[ADV]+ADV
-a	a[ART]
 a	a[N]+N
-a	a[PART]+INF
-a	a[PN]+PERS
-a	a[PRP]
 
 spirit	
 spirit	spirit[N]+N
-spirit	spirit[V]+V
 spirit	spirit[V]+V+INF
 
-of	
-of	have[V]+V+INF
-of	of[ADV]+ADV
-of	of[PRP]
+of	+?
 
 brotherhood	
 brotherhood	brother[N]+HOOD[N/N]+N
 brotherhood	brotherhood[N]+N
-
-.	
-.	.[PUN]
 
