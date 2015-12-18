@@ -1345,7 +1345,7 @@ ccc : ddd
      *
      * For more information, read: www.fsmbook.com
      *  */
-    HFSTDLL HfstTransducer &priority_union(const HfstTransducer &another, bool harmonize=true, bool encode_epsilons=true);
+    HFSTDLL HfstTransducer &priority_union(const HfstTransducer &another);
 
 
     /**  \brief Make lenient composition of this transducer with \a.

@@ -4332,7 +4332,7 @@ HfstTransducer &HfstTransducer::lenient_composition( const HfstTransducer &anoth
 
     HfstTransducer retval(*this);
     // true is a dummy variable, false means do not encode epsilons
-    retval.compose(another).minimize().priority_union(*this, true, false).minimize();
+    retval.compose(another).minimize().priority_union(*this).minimize();
 
     *this = retval;
     return *this;
@@ -4571,8 +4571,9 @@ HfstTransducer &HfstTransducer::shuffle(const HfstTransducer &another, bool)
 // ---------------------- Shuffle functions end --------------------
 
 
-
-HfstTransducer &HfstTransducer::priority_union (const HfstTransducer &another, bool, bool encode_epsilons)
+// Q .P. R = Q | [~[Q .u] .o. R ]
+// .u is input project
+HfstTransducer &HfstTransducer::priority_union (const HfstTransducer &another)
 {
 #if HAVE_XFSM
   if (this->type == XFSM_TYPE)
@@ -4585,38 +4586,21 @@ HfstTransducer &HfstTransducer::priority_union (const HfstTransducer &another, b
     }
     HfstTransducer t1(*this);
     HfstTransducer t2(another);
-    HfstTransducer retval(another);
 
-    // Invert t2, compose it with t1, invert back.
-    HfstTransducer tmp(t2);
-    tmp.invert().compose(t1).invert().minimize();
-    //  Compose t1 with the result to get the pairs which need to be filtered from t2.
-    HfstTransducer filter(t1);
+    HfstTransducer t1upper(t1);
+    t1upper.input_project().minimize();
+    
+    HfstTransducer complement = HfstTransducer::identity_pair( this->type );
+    complement.repeat_star().minimize();
+    complement.subtract(t1upper).prune_alphabet(false);
 
-    // handle epsilons
-    if (encode_epsilons)
-      {
-        filter.substitute("@_EPSILON_SYMBOL_@", "@EPS@");
-        tmp.substitute("@_EPSILON_SYMBOL_@", "@EPS@");
-      }
+    complement.compose(t2).minimize();
 
-    filter.compose(tmp).minimize();
-
-    if (encode_epsilons)
-      {
-        filter.substitute("@EPS@", "@_EPSILON_SYMBOL_@");
-      }
-
-    // Subtract filter from t2
-    retval.subtract(filter).minimize();
-
-    // Disjunct t1 with filtered t2
-    retval.disjunct(t1).minimize();
-
+    HfstTransducer retval(t1);
+    retval.disjunct(complement).minimize();
+    
     *this = retval;
-
     return *this;
-
 }
 
 HfstTransducer &HfstTransducer::compose_intersect
@@ -6198,10 +6182,13 @@ void priority_union_test ( ImplementationType type )
     // emptyString .P. transducer
     testTr = trEmptyString;
     assert ( testTr.priority_union( tr1 ).compare( result1 ) );
+    
+    
+    
     // normal transducer .P. normal transducer
     testTr = tr1;
 
-    // TODO the result is wrong, change it!
+    // TODO the result is wrong, change it! (wrong because of the wights shifting)
     //assert ( testTr.priority_union( tr2 ).compare( result2 ) );
 
     // normal transducer .P. normal transducer without priority string
@@ -6218,7 +6205,7 @@ void priority_union_test ( ImplementationType type )
         << std::endl;
     }
 
-    //TODO - results are worng, change them!
+    //TODO - results are worng, change them! (wrong because of the wights shifting)
     /*
     //assert ( testTr.priority_union( trIdentity ).compare( result4 ) ); // FAIL
     // identity .p. normal transducer
@@ -6413,7 +6400,7 @@ int main(int argc, char * argv[])
         HfstTransducer &substitute(const StringPair &symbol_pair,
                        HfstTransducer &transducer);
     
-        // priority_union unit tests
+        // priority_union unit tests (also tested in hfst-xfst tests)
         priority_union_test( types[i] );
 
         // lenient_composition unit tests
