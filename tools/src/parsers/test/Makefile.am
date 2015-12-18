@@ -178,5 +178,9 @@ EXTRA_DIST=test.sh \
 	replace_markup_4.att replace_markup_4.xfst \
 	replace_markup_5.att replace_markup_5.xfst \
 	replace_markup_6.att replace_markup_6.xfst \
-	replace_markup_7.att replace_markup_7.xfst
+	replace_markup_7.att replace_markup_7.xfst \
+	priority_union_1.att priority_union_1.att \
+	priority_union_2.att priority_union_2.att \
+	priority_union_3.att priority_union_3.att \
+	priority_union_4.att priority_union_4.att
 check_DATA=test.sh
