@@ -539,7 +539,7 @@ HfstTransducer & compose(const HfstTransducer&, bool harmonize=true) throw(Trans
 
 /* More binary operations */
 HfstTransducer & compose_intersect(const hfst::HfstTransducerVector &v, bool invert=false, bool harmonize=true);
-HfstTransducer & priority_union(const HfstTransducer &another, bool harmonize=true, bool encode_epsilons=true);
+HfstTransducer & priority_union(const HfstTransducer &another);
 HfstTransducer & lenient_composition(const HfstTransducer &another, bool harmonize=true);
 HfstTransducer & cross_product(const HfstTransducer &another, bool harmonize=true) throw(TransducersAreNotAutomataException);
 HfstTransducer & shuffle(const HfstTransducer &another, bool harmonize=true);
