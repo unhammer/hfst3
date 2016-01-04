@@ -545,7 +545,6 @@ process_stream(HfstInputStream& instream)
 
   hfst::ImplementationType output_type = hfst::UNSPECIFIED_TYPE;
 
-  HfstTransducer* to_transducer = NULL;
   if (to_transducer_filename != NULL)
     {
       try {
