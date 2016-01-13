@@ -60,6 +60,8 @@ bool echoInputsFlag = false;
 bool beFast = false;
 int maxAnalyses = INT_MAX;
 bool preserveDiacriticRepresentationsFlag = false;
+bool limit_reached = false;
+unsigned long call_counter = 0;
 double time_cutoff = 0.0;
 clock_t start_clock;
 
