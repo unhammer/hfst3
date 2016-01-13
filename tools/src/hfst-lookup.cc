@@ -1116,7 +1116,7 @@ HfstOneLevelPaths*
 lookup_simple(const HfstOneLevelPath& s, HfstTransducer& t, bool* infinity)
 {
   HfstOneLevelPaths* results = 0;
-  if (t.is_lookup_infinitely_ambiguous(s.second))
+  if (time_cutoff == 0.0 && t.is_lookup_infinitely_ambiguous(s.second))
     {
       if (!silent && infinite_cutoff > 0) {
     warning(0, 0, "Got infinite results, number of cycles limited to " SIZE_T_SPECIFIER "",
