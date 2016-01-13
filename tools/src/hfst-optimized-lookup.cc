@@ -468,7 +468,7 @@ void runTransducer (genericTransducer T)
   char * old_str = str;
 
   if (time_cutoff > 0.0) {
-      max_clock = clock() + CLOCKS_PER_SEC*time_cutoff;
+      start_clock = clock();
   }
         
   while(true)
@@ -520,7 +520,6 @@ void runTransducer (genericTransducer T)
           input_string[i] = k;
           ++i;
         }
-
       str = old_str;
       if (failed)
         { // tokenization failed
@@ -997,12 +996,12 @@ void Transducer::get_analyses(SymbolNumber * input_symbol,
                               SymbolNumber * original_output_string,
                               TransitionTableIndex i)
 {
-  if (time_cutoff > 0.0) {
-    // quit if we've overspent our time
-    if (clock() > max_clock) {
-      return;
+    if (time_cutoff > 0.0) {
+        // quit if we've overspent our time
+        if ((((double) clock() - start_clock) / CLOCKS_PER_SEC) > time_cutoff) {
+            return;
+        }
     }
-  }
 #if OL_FULL_DEBUG
   std::cout << "get_analyses " << i << std::endl;
 #endif
@@ -1871,6 +1870,12 @@ void TransducerW::get_analyses(SymbolNumber * input_symbol,
 #if OL_FULL_DEBUG
   std::cerr << "get analyses " << i << " " << current_weight << std::endl;
 #endif
+  if (time_cutoff > 0.0) {
+      // quit if we've overspent our time
+      if ((((double) clock() - start_clock) / CLOCKS_PER_SEC) > time_cutoff) {
+          return;
+      }
+  }
   if (i >= TRANSITION_TARGET_TABLE_START )
     {
       i -= TRANSITION_TARGET_TABLE_START;

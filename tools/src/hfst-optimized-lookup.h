@@ -61,7 +61,7 @@ bool beFast = false;
 int maxAnalyses = INT_MAX;
 bool preserveDiacriticRepresentationsFlag = false;
 double time_cutoff = 0.0;
-clock_t max_clock;
+clock_t start_clock;
 
 #define MAX_IO_STRING 5000
 
