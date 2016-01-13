@@ -542,6 +542,8 @@ void runTransducer (genericTransducer T)
 
       if (time_cutoff > 0.0) {
           start_clock = clock();
+          call_counter = 0;
+          limit_reached = false;
       }
       
       T.analyze(input_string);
@@ -997,8 +999,13 @@ void Transducer::get_analyses(SymbolNumber * input_symbol,
                               TransitionTableIndex i)
 {
     if (time_cutoff > 0.0) {
-        // quit if we've overspent our time
-        if ((((double) clock() - start_clock) / CLOCKS_PER_SEC) > time_cutoff) {
+        // Check to see if time has been overspent. For speed, only check every
+        // million calls and set a flag.
+        ++call_counter;
+        if (limit_reached ||
+            (call_counter % 1000000 == 0 &&
+             ((((double) clock() - start_clock) / CLOCKS_PER_SEC) > time_cutoff))) {
+            limit_reached = true;
             return;
         }
     }
@@ -1871,8 +1878,13 @@ void TransducerW::get_analyses(SymbolNumber * input_symbol,
   std::cerr << "get analyses " << i << " " << current_weight << std::endl;
 #endif
   if (time_cutoff > 0.0) {
-      // quit if we've overspent our time
-      if ((((double) clock() - start_clock) / CLOCKS_PER_SEC) > time_cutoff) {
+      // Check to see if time has been overspent. For speed, only check every
+      // million calls and set a flag.
+      ++call_counter;
+      if (limit_reached ||
+          (call_counter % 1000000 == 0 &&
+           ((((double) clock() - start_clock) / CLOCKS_PER_SEC) > time_cutoff))) {
+          limit_reached = true;
           return;
       }
   }
