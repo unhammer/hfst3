@@ -554,6 +554,8 @@ std::string PmatchContainer::match(std::string & input,
     max_time = time_cutoff;
     if (max_time > 0.0) {
         start_clock = clock();
+        call_counter = 0;
+        limit_reached = false;
     }
     locate_mode = false;
     process(input);
@@ -566,6 +568,8 @@ LocationVectorVector PmatchContainer::locate(std::string & input,
     max_time = time_cutoff;
     if (max_time > 0.0) {
         start_clock = clock();
+        call_counter = 0;
+        limit_reached = false;
     }
     locate_mode = true;
     process(input);
@@ -1332,11 +1336,13 @@ void PmatchTransducer::get_analyses(unsigned int input_pos,
 {
     if (container->max_time > 0.0) {
         // Have we spent too much time?
-        if (rtn_stack.top().candidate_found) {
-            // if we have at least something, stop doing more work
-            if ((((double)(clock() - container->start_clock)) / CLOCKS_PER_SEC) > container->max_time) {
-                return;
-            }
+        if (container->limit_reached ||
+            (container->call_counter % 1000000 == 0 &&
+             (rtn_stack.top().candidate_found &&
+              // if we have at least something, stop doing more work
+              (((double)(clock() - container->start_clock)) / CLOCKS_PER_SEC) > container->max_time))) {
+            container->limit_reached = true;
+            return;
         }
     }
     if (!container->try_recurse()) {

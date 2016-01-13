@@ -165,6 +165,10 @@ namespace hfst_ol {
         double max_time;
         // When we started work
         clock_t start_clock;
+        // A counter to avoid checking the clock too often
+        unsigned long call_counter;
+        // A flag to set for when time has been overstepped
+        bool limit_reached;
 
     public:
 
