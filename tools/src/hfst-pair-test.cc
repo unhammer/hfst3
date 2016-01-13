@@ -131,17 +131,17 @@ print_usage()
     fprintf(message_out,
         "In Xerox mode, the input should be a twolc file. Tests consist of\n"
         "two lines: an input form and an output form. The test cases are\n"
-        "specialized comments prefixed with either '!€' or '!$' depeding on\n"
+        "specialized comments prefixed with either '!!€' or '!!$' depeding on\n"
         "whether the pair should succeed or fail. An example of a positive\n"
         "test:\n\n"
 
-        "!€ earlYer\n"
-        "!€ earlier\n\n"
+        "!!€ earlYer\n"
+        "!!€ earlier\n\n"
 
         "An example of a negative test:\n\n"
 
-        "!$ earlYer\n"
-        "!$ earlyer\n");
+        "!!$ earlYer\n"
+        "!!$ earlyer\n");
     fprintf(message_out, "\n");
     fprintf(message_out,
         "In silent mode (-s), the program won't print anything. Only the\n"
@@ -467,10 +467,10 @@ std::string strip_space(const std::string &line)
 }
 
 bool is_positive_test_line(const std::string &line)
-{ return strip_space(line).substr(0,sizeof("!€") - 1) == "!€"; }
+{ return strip_space(line).substr(0,sizeof("!!€") - 1) == "!!€"; }
 
 bool is_negative_test_line(const std::string &line)
-{ return strip_space(line).substr(0,sizeof("!$") - 1) == "!$"; }
+{ return strip_space(line).substr(0,sizeof("!!$") - 1) == "!!$"; }
 
 int
 process_stream(HfstInputStream& inputstream, FILE* outstream)
@@ -583,8 +583,8 @@ process_stream(HfstInputStream& inputstream, FILE* outstream)
         /*
           Read test cases from a twolc source file.
 
-          Positive test cases are prefixed by "!€" and negative test
-          cases by "!$".
+          Positive test cases are prefixed by "!!€" and negative test
+          cases by "!!$".
 
           Each test case spans two lines: the input and output cases.
          */
@@ -613,8 +613,8 @@ process_stream(HfstInputStream& inputstream, FILE* outstream)
 
             if (is_positive_test_line(line))
               {
-                // "!€ xyz" -> "xyz"
-                std::string test_case = strip_space(line).substr(sizeof("!€") - 1);
+                // "!!€ xyz" -> "xyz"
+                std::string test_case = strip_space(line).substr(sizeof("!!€") - 1);
                 test_case = strip_space(test_case);
 
                 positive_test_cases.push_back(test_case);
@@ -623,8 +623,8 @@ process_stream(HfstInputStream& inputstream, FILE* outstream)
               }
             else if (is_negative_test_line(line))
               {
-                // "!$ xyz" -> "xyz"
-                std::string test_case = strip_space(line).substr(sizeof("!$") - 1);
+                // "!!$ xyz" -> "xyz"
+                std::string test_case = strip_space(line).substr(sizeof("!!$") - 1);
                 test_case = strip_space(test_case);
                 
                 negative_test_cases.push_back(test_case);
