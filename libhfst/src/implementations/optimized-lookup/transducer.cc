@@ -332,7 +332,7 @@ HfstOneLevelPaths * Transducer::lookup_fd(const char * s, ssize_t limit,
     max_time = 0.0;
     if (time_cutoff > 0.0) {
         max_time = time_cutoff;
-        max_clock = clock() + CLOCKS_PER_SEC*max_time;
+        start_clock = clock();
     }
     HfstOneLevelPaths * results = new HfstOneLevelPaths;
     lookup_paths = results;
@@ -482,7 +482,7 @@ void Transducer::get_analyses(unsigned int input_pos,
     }
     if (max_time > 0.0) {
         // quit if we've overspent our time
-        if (clock() > max_clock) {
+        if ((((double) clock() - start_clock) / CLOCKS_PER_SEC) > max_time) {
             return;
         }
     }

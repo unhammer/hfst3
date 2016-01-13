@@ -857,7 +857,7 @@ protected:
     ssize_t max_lookups;
     unsigned int recursion_depth_left;
     double max_time;
-    clock_t max_clock;
+    clock_t start_clock;
 
     void try_epsilon_transitions(unsigned int input_tape_pos,
                                  unsigned int output_tape_pos,
