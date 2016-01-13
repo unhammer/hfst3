@@ -467,10 +467,6 @@ void runTransducer (genericTransducer T)
   *str = 0;
   char * old_str = str;
 
-  if (time_cutoff > 0.0) {
-      start_clock = clock();
-  }
-        
   while(true)
     {
 #ifdef WINDOWS
@@ -544,6 +540,10 @@ void runTransducer (genericTransducer T)
 
       input_string[i] = NO_SYMBOL_NUMBER;
 
+      if (time_cutoff > 0.0) {
+          start_clock = clock();
+      }
+      
       T.analyze(input_string);
       T.printAnalyses(std::string(str));
     }
