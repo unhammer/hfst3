@@ -266,6 +266,7 @@ namespace hfst_ol {
             unsigned int tape_entry;
             DoubleTape best_result;
             Weight best_weight;
+            bool candidate_found;
         };
 
         std::stack<LocalVariables> local_stack;

@@ -1031,6 +1031,7 @@ void PmatchTransducer::match(unsigned int & input_tape_pos,
     rtn_stack.top().tape_entry = tape_pos;
     rtn_stack.top().candidate_tape_pos = tape_pos;
     rtn_stack.top().best_weight = 0.0;
+    rtn_stack.top().candidate_found = false;
     local_stack.top().context = none;
     local_stack.top().tape_step = 1;
     local_stack.top().context_placeholder = 0;
@@ -1057,6 +1058,7 @@ void PmatchTransducer::rtn_call(unsigned int & input_tape_pos,
     rtn_stack.top().tape_entry = tape_pos;
     rtn_stack.top().candidate_tape_pos = tape_pos;
     rtn_stack.top().best_weight = 0.0;
+    rtn_stack.top().candidate_found = false;
     local_stack.push(local_stack.top());
     local_stack.top().flag_state = alphabet.get_fd_table();
     local_stack.top().tape_step = 1;
@@ -1083,7 +1085,7 @@ void PmatchTransducer::note_analysis(unsigned int input_pos,
         // with left contexts and should be dealt with a bit more nicely
         return;
     }
-
+    rtn_stack.top().candidate_found = true;
     if (locations != NULL) {
         grab_location(input_pos, tape_pos);
         return;
@@ -1201,7 +1203,6 @@ void PmatchTransducer::check_context(unsigned int input_pos,
                                      unsigned int tape_pos,
                                      TransitionTableIndex i)
 {
-//    std::cerr << local_stack.size() << std::endl;
     local_stack.top().context_placeholder = input_pos;
     if (local_stack.top().context == LC ||
         local_stack.top().context == NLC) {
@@ -1224,7 +1225,6 @@ void PmatchTransducer::check_context(unsigned int input_pos,
     if (schedule_passthrough) {
         local_stack.top().pending_passthrough = true;
     }
-//    std::cerr << local_stack.size() << std::endl;
 }
 
 void PmatchTransducer::take_rtn(SymbolNumber input,
@@ -1332,8 +1332,11 @@ void PmatchTransducer::get_analyses(unsigned int input_pos,
 {
     if (container->max_time > 0.0) {
         // Have we spent too much time?
-        if ((((double)(clock() - container->start_clock)) / CLOCKS_PER_SEC) > container->max_time) {
-            return;
+        if (rtn_stack.top().candidate_found) {
+            // if we have at least something, stop doing more work
+            if ((((double)(clock() - container->start_clock)) / CLOCKS_PER_SEC) > container->max_time) {
+                return;
+            }
         }
     }
     if (!container->try_recurse()) {
