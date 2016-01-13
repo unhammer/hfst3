@@ -1335,6 +1335,7 @@ void PmatchTransducer::get_analyses(unsigned int input_pos,
                                     TransitionTableIndex i)
 {
     if (container->max_time > 0.0) {
+        ++call_counter;
         // Have we spent too much time?
         if (container->limit_reached ||
             (container->call_counter % 1000000 == 0 &&
