@@ -56,10 +56,11 @@ using std::pair;
 #include "inc/globals-common.h"
 #include "inc/globals-unary.h"
 
-bool blankline_separated = true;
-bool extract_tags = false;
-bool locate_mode = false;
-bool profile = false;
+static bool blankline_separated = true;
+static bool extract_tags = false;
+static bool locate_mode = false;
+static double time_cutoff = 0.0;
+static bool profile = false;
 std::string pmatch_filename;
 
 void
@@ -74,6 +75,7 @@ print_usage()
             "  -n  --newline          Newline as input separator (default is blank line)\n"
             "  -x  --extract-tags     Only print tagged parts in output\n"
             "  -l  --locate           Only print locations of matches\n"
+            "  -t, --time-cutoff=S    Limit search after having used S seconds per input\n"
             "  -p  --profile          Produce profiling data\n");
     fprintf(message_out, 
             "Use standard streams for input and output.\n"
@@ -96,12 +98,12 @@ void match_and_print(hfst_ol::PmatchContainer & container,
     }
     if (!locate_mode) {
 #ifndef _MSC_VER
-      outstream << container.match(input_text);
+        outstream << container.match(input_text, time_cutoff);
 #else
-      hfst::hfst_fprintf_console(stdout, "%s", container.match(input_text).c_str());
+        hfst::hfst_fprintf(stdout, "%s", container.match(input_text, time_cutoff).c_str());
 #endif
     } else {
-        hfst_ol::LocationVectorVector locations = container.locate(input_text);
+        hfst_ol::LocationVectorVector locations = container.locate(input_text, time_cutoff);
         for(hfst_ol::LocationVectorVector::const_iterator it = locations.begin();
             it != locations.end(); ++it) {
             if (it->at(0).output.compare("@_NONMATCHING_@") != 0) {
@@ -173,11 +175,12 @@ int parse_options(int argc, char** argv)
                 {"newline", no_argument, 0, 'n'},
                 {"extract-tags", no_argument, 0, 'x'},
                 {"locate", no_argument, 0, 'l'},
+                {"time-cutoff", required_argument, 0, 't'},
                 {"profile", no_argument, 0, 'p'},
                 {0,0,0,0}
             };
         int option_index = 0;
-        char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT "nxlp",
+        char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT "nxlt:p",
                              long_options, &option_index);
         if (-1 == c)
         {
@@ -196,6 +199,14 @@ int parse_options(int argc, char** argv)
             break;
         case 'l':
             locate_mode = true;
+            break;
+        case 't':
+            time_cutoff = atof(optarg);
+            if (time_cutoff < 0.0)
+            {
+                std::cerr << "Invalid argument for --time-cutoff\n";
+                return EXIT_FAILURE;
+            }
             break;
         case 'p':
             profile = true;

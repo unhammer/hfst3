@@ -5,6 +5,7 @@
 #include <stack>
 #include <sstream>
 #include <algorithm>
+#include <ctime>
 #include "transducer.h"
 
 namespace hfst_ol {
@@ -160,6 +161,10 @@ namespace hfst_ol {
         bool profile_mode;
         bool single_codepoint_tokenization;
         unsigned int recursion_depth_left;
+        // An optional time limit for operations
+        double max_time;
+        // When we started work
+        clock_t start_clock;
 
     public:
 
@@ -173,8 +178,10 @@ namespace hfst_ol {
         bool has_unsatisfied_rtns(void) const;
         std::string get_unsatisfied_rtn_name(void) const;
         void process(std::string & input);
-        std::string match(std::string & input);
-        LocationVectorVector locate(std::string & input);
+        std::string match(std::string & input,
+                          double time_cutoff = 0.0);
+        LocationVectorVector locate(std::string & input,
+                                    double time_cutoff = 0.0);
         std::string get_profiling_info(void);
         bool has_queued_input(unsigned int input_pos);
         bool not_possible_first_symbol(SymbolNumber sym)

@@ -548,15 +548,25 @@ void PmatchContainer::process(std::string & input_str)
     }
 }
 
-std::string PmatchContainer::match(std::string & input)
+std::string PmatchContainer::match(std::string & input,
+                                   double time_cutoff)
 {
+    max_time = time_cutoff;
+    if (max_time > 0.0) {
+        start_clock = clock();
+    }
     locate_mode = false;
     process(input);
     return stringify_output();
 }
 
-LocationVectorVector PmatchContainer::locate(std::string & input)
+LocationVectorVector PmatchContainer::locate(std::string & input,
+                                             double time_cutoff)
 {
+    max_time = time_cutoff;
+    if (max_time > 0.0) {
+        start_clock = clock();
+    }
     locate_mode = true;
     process(input);
     return locations;
@@ -1320,6 +1330,12 @@ void PmatchTransducer::get_analyses(unsigned int input_pos,
                                     unsigned int tape_pos,
                                     TransitionTableIndex i)
 {
+    if (container->max_time > 0.0) {
+        // Have we spent too much time?
+        if ((((double)(clock() - container->start_clock)) / CLOCKS_PER_SEC) > container->max_time) {
+            return;
+        }
+    }
     if (!container->try_recurse()) {
         if (container->verbose) {
             std::cerr << "pmatch: out of stack space, truncating result\n";

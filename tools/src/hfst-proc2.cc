@@ -49,10 +49,11 @@ using std::pair;
 #include "inc/globals-common.h"
 #include "inc/globals-unary.h"
 
-bool blankline_separated = true;
-bool print_all = false;
-bool print_weights = false;
-bool tokenize_multichar = false;
+static bool blankline_separated = true;
+static bool print_all = false;
+static bool print_weights = false;
+static bool tokenize_multichar = false;
+static double time_cutoff = 0.0;
 std::string tokenizer_filename;
 enum OutputFormat {
     tokenize,
@@ -79,8 +80,9 @@ print_usage()
             "  -a  --print-all        Print nonmatching text\n"
             "  -w  --print-weight     Print weights\n"
             "  --tokenize-multichar   Tokenize multicharacter symbols\n"
-            "                         (by default only one utf-8 character is tokenized at a time"
-            "                         regardless of what is present in the alphabet)"
+            "                         (by default only one utf-8 character is tokenized at a time\n"
+            "                         regardless of what is present in the alphabet)\n"
+            "  -t, --time-cutoff=S    Limit search after having used S seconds per input\n"
             "  --segment              Segmenting / tokenization mode (default)\n"
             "  --xerox                Xerox output\n"
             "  --cg                   cg output\n"
@@ -220,7 +222,7 @@ void match_and_print(hfst_ol::PmatchContainer & container,
         // Remove final newline
         input_text.erase(input_text.size() -1, 1);
     }
-    LocationVectorVector locations = container.locate(input_text);
+    LocationVectorVector locations = container.locate(input_text, time_cutoff);
     if (locations.size() == 0 && print_all) {
         print_no_output(input_text, outstream);
     }
@@ -282,14 +284,15 @@ int parse_options(int argc, char** argv)
                 {"print-all", no_argument, 0, 'a'},
                 {"print-weights", no_argument, 0, 'w'},
                 {"tokenize-multichar", no_argument, 0, 'm'},
-                {"segment", no_argument, 0, 't'},
+                {"time-cutoff", required_argument, 0, 't'},
+                {"segment", no_argument, 0, 'z'},
                 {"xerox", no_argument, 0, 'x'},
                 {"cg", no_argument, 0, 'c'},
                 {"finnpos", no_argument, 0, 'f'},
                 {0,0,0,0}
             };
         int option_index = 0;
-        char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT "nawtxcf",
+        char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT "nawt:zxcf",
                              long_options, &option_index);
         if (-1 == c)
         {
@@ -313,6 +316,14 @@ int parse_options(int argc, char** argv)
             tokenize_multichar = true;
             break;
         case 't':
+            time_cutoff = atof(optarg);
+            if (time_cutoff < 0.0)
+            {
+                std::cerr << "Invalid argument for --time-cutoff\n";
+                return EXIT_FAILURE;
+            }
+            break;
+        case 'z':
             output_format = tokenize;
             break;
         case 'x':
