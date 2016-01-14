@@ -95,7 +95,7 @@ print_usage()
             "  -u, --upper-bound=UVAL     match weights less than UVAL\n"
             "  -I, --input-symbol=ISYM    match arcs with input symbol ISYM\n"
             "  -O, --output-symbol=OSYM   match arcs with output symbol OSYM\n"
-            "  -S, --symbol=SYM           match arcs havins symbol SYM\n"
+            "  -S, --symbol=SYM           match arcs with input or output symbol SYM or both\n"
             "  -e, --end-states-only      match end states only, no arcs\n"
             "  -A, --arcs-only            match arcs only, no end states\n"
             "  -T, --tsv-file=TFILE       read reweighting rules from TFILE\n"
@@ -107,7 +107,7 @@ print_usage()
             "If LVAL or UVAL are omitted, they default to minimum and maximum "
             "values of the weight structure.\n"
             "If ISYM, OSYM or SYM are omitted, they default to a value that "
-            "matches all arcs.\n\n"
+            "matches all arcs.\nOnly one ISYM, OSYM and SYM can be given.\n\n"
             "Float values are parsed with strtod(3) and integers strtoul(3).\n"
             "The functions allowed for FNAME are <cmath> float functions with "
             "parameter count of 1 and a matching return value:\n"
@@ -320,10 +320,16 @@ reweight(float w, const char* i, const char* o)
         {
           return w;
         }
-      else if ((symbol != 0) && ((strcmp(i, symbol) != 0) && 
+      if ((symbol != 0) && ((strcmp(i, symbol) != 0) && 
                             (strcmp(o, symbol) != 0) ) )
         {
           // symbol doesn't match, don't apply
+          return w;
+        }
+      if ((input_symbol != 0) && (output_symbol != 0) &&
+          (strcmp(i, input_symbol) != 0) && (strcmp(o, output_symbol) != 0))
+        {
+          // input doesn't match, don't apply
           return w;
         }
       else if ((input_symbol != 0) && (strcmp(i, input_symbol) != 0))
