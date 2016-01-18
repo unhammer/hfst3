@@ -37,7 +37,13 @@ using std::set_difference;
 #include "HfstTransducer.h"
 #include "XreCompiler.h"
 #include "lexc-utils.h"
-#include "lexc-parser.hh"
+
+#ifdef YACC_USE_PARSER_H_EXTENSION
+  #include "lexc-parser.h"
+#else
+  #include "lexc-parser.hh"
+#endif
+
 #include "xre_utils.h"
 #include "HfstSymbolDefs.h"
 //#include "../../../tools/src/HfstStrings2FstTokenizer.h"

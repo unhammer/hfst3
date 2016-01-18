@@ -36,17 +36,24 @@ XFST_BUILT=xfst-parser.cc xfst-lexer.cc
 
 BUILT_SOURCES=$(XRE_BUILT) $(PMATCH_BUILT) $(LEXC_BUILT) $(XFST_BUILT)
 
+if YACC_USE_PARSER_H_EXTENSION
+  HEADER=h
+else
+  HEADER=hh
+endif
+
 CLEANFILES=$(XRE_BUILT) $(PMATCH_BUILT) $(LEXC_BUILT) $(XFST_BUILT) \
-             xre_parse.hh pmatch_parse.hh lexc-parser.hh xfst-parser.hh
+	xre_parse.$(HEADER) pmatch_parse.$(HEADER) lexc-parser.$(HEADER) xfst-parser.$(HEADER)
 
 AM_YFLAGS=-d
 AM_LFLAGS=--outfile=$(LEX_OUTPUT_ROOT).c
 
-CLEANFILES+=xre_parse.hh  pmatch_parse.hh  lexc-parser.hh xfst-parser.hh
-xre_lex.ll: xre_parse.hh
-pmatch_lex.ll: pmatch_parse.hh
-lexc-lexer.ll: lexc-parser.hh
-xfst-lexer.ll: xfst-parser.hh
+#CLEANFILES+=xre_parse.hh  pmatch_parse.hh  lexc-parser.hh xfst-parser.hh
+
+xre_lex.ll: xre_parse.$(HEADER)
+pmatch_lex.ll: pmatch_parse.$(HEADER)
+lexc-lexer.ll: lexc-parser.$(HEADER)
+xfst-lexer.ll: xfst-parser.$(HEADER)
 
 libhfstparsers_la_SOURCES=$(SFST_SRCS) $(XRE_SRCS) $(PMATCH_SRCS) $(LEXC_SRCS) $(XFST_SRCS)
 
@@ -82,4 +89,5 @@ LexcCompiler_LDADD=../libhfst.la
 
 TESTS=$(LIBHFST_PARSER_TSTS)
 
-EXTRA_DIST=xre_parse.hh pmatch_parse.hh lexc-parser.hh xfst-parser.hh $(BUILT_SOURCES)
+EXTRA_DIST=xre_parse.$(HEADER) pmatch_parse.$(HEADER) lexc-parser.$(HEADER) xfst-parser.$(HEADER) $(BUILT_SOURCES)
+

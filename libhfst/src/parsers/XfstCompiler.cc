@@ -44,7 +44,12 @@ using std::stack;
 
 #include "XfstCompiler.h"
 #include "xfst-utils.h"
-#include "xfst-parser.hh"
+
+#ifdef YACC_USE_PARSER_H_EXTENSION
+  #include "xfst-parser.h"
+#else
+  #include "xfst-parser.hh"
+#endif
 
 #include "HfstStrings2FstTokenizer.h"
 #include "HfstPrintDot.h"

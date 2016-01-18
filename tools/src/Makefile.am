@@ -183,9 +183,15 @@ if WANT_SUBSTITUTE
 MAYBE_SUBSTITUTE=hfst-substitute$(EXEEXT)
 endif
 
+if YACC_USE_PARSER_H_EXTENSION
+  HEADER=h
+else
+  HEADER=hh
+endif
+
 noinst_HEADERS= \
 	calculate_functions.h hfst-commandline.h hfst-program-options.h \
-	hfst-compiler.hh HfstCompiler.h HfstBasic.h HfstAlphabet.h HfstUtf8.h \
+	HfstCompiler.h HfstBasic.h HfstAlphabet.h HfstUtf8.h \
 	inc/check-params-binary.h inc/check-params-common.h \
 	inc/check-params-unary.h  inc/getopt-cases-binary.h \
 	inc/getopt-cases-common.h inc/getopt-cases-error.h  \
@@ -194,7 +200,7 @@ noinst_HEADERS= \
 	hfst-file-to-mem.h \
 	hfst-string-conversions.h \
 	hfst-tool-metadata.h hfst-optimized-lookup.h \
-	guessify_fst.h generate_model_forms.h
+	guessify_fst.h generate_model_forms.h hfst-compiler.$(HEADER)
 # parsers/XreCompiler.h parsers/xre_utils.h
 
 # sort alphabetically
@@ -234,7 +240,7 @@ HFST_COMMON_SRC=hfst-program-options.cc hfst-commandline.cc \
 				hfst-tool-metadata.cc
 # sort alphabetically
 hfst_affix_guessify_SOURCES=hfst-affix-guessify.cc $(HFST_COMMON_SRC)
-hfst_calculate_SOURCES=hfst-scanner.ll hfst-compiler.yy HfstCompiler.cc HfstBasic.cc HfstAlphabet.cc HfstUtf8.cc $(HFST_COMMON_SRC)
+hfst_calculate_SOURCES=hfst-compiler.yy hfst-scanner.ll HfstCompiler.cc HfstBasic.cc HfstAlphabet.cc HfstUtf8.cc $(HFST_COMMON_SRC)
 hfst_compare_SOURCES=hfst-compare.cc $(HFST_COMMON_SRC)
 hfst_compose_intersect_SOURCES=hfst-compose-intersect.cc $(HFST_COMMON_SRC)
 hfst_compose_SOURCES=hfst-compose.cc $(HFST_COMMON_SRC)
@@ -324,7 +330,7 @@ uninstall-local:
 
 BUILT_SOURCES=$(hfst_lexc_BUILT) 
 
-CLEANFILES=hfst-compiler.hh hfst-compiler.cc $(hfst_lexc_BUILT) 
+CLEANFILES=$(hfst_compiler_header_file) hfst-compiler.cc $(hfst_lexc_BUILT) 
 
 
 hfst_calculate_CXXFLAGS= -Wall -Wno-error -Wno-sign-compare -Wno-deprecated
@@ -334,8 +340,8 @@ AM_YFLAGS=-d
 AM_LFLAGS=--outfile=$(LEX_OUTPUT_ROOT).c 
 
 # make make realise headers automatically follow from flexing
-hfst-scanner.hh: hfst-scanner.cc
-CLEANFILES+=hfst-scanner.hh hfst-compiler.hh
-BUILT_SOURCES+=hfst-scanner.hh
+hfst-scanner.$(HEADER): hfst-scanner.cc
+CLEANFILES+=hfst-scanner.$(HEADER) hfst-compiler.$(HEADER)
+BUILT_SOURCES+=hfst-scanner.$(HEADER)
 
 #EXTRA_DIST=hfst-scanner.cc hfst-compiler.cc hfst-compiler.hh
