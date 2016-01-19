@@ -1,4 +1,5 @@
-%option 8Bit batch yylineno nounput noyywrap header-file="hfst-scanner.h"
+%option 8Bit batch yylineno nounput noyywrap 
+/*header-file="hfst-scanner.h"*/
 
 /* the "incl" state is used to pick up the name of an include file */
 %x incl

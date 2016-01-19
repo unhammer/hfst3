@@ -339,9 +339,7 @@ hfst_calculate_CXXFLAGS= -Wall -Wno-error -Wno-sign-compare -Wno-deprecated
 AM_YFLAGS=-d
 AM_LFLAGS=--outfile=$(LEX_OUTPUT_ROOT).c 
 
-# make make realise headers automatically follow from flexing
-hfst-scanner.$(HEADER): hfst-scanner.cc
-CLEANFILES+=hfst-scanner.$(HEADER) hfst-compiler.$(HEADER)
-BUILT_SOURCES+=hfst-scanner.$(HEADER)
+hfst-scanner.ll: hfst-compiler.$(HEADER)
 
-#EXTRA_DIST=hfst-scanner.cc hfst-compiler.cc hfst-compiler.hh
+CLEANFILES+=hfst-compiler.$(HEADER)
+EXTRA_DIST=hfst-scanner.cc hfst-compiler.cc hfst-compiler.$(HEADER)
