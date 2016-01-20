@@ -513,10 +513,6 @@ AM_CONDITIONAL([GENERATE_LEXC_WRAPPER], [test "x$enable_lexc_wrapper" != "xno" -
 AS_IF([test "x$enable_foma_wrapper" != "xno" -a "x$with_foma" != "xno" -a "x$zlib_exists" != "xno"], [generate_foma_wrapper=yes], [generate_foma_wrapper=no])
 AS_IF([test "x$enable_lexc_wrapper" != "xno" -a "x$with_foma" != "xno" -a "x$zlib_exists" != "xno"], [generate_lexc_wrapper=yes], [generate_lexc_wrapper=no])
 
-# Check if we have to warn the user for missing foma and lexc wrappers because zlib is not available 
-# AS_IF([test "x$enable_foma_wrapper" != "xno" -a "x$with_foma" != "xno" -a "x$zlib_exists" == "xno"], [warn_about_missing_zlib_foma=yes], [warn_about_missing_zlib_foma=no])
-# AS_IF([test "x$enable_lexc_wrapper" != "xno" -a "x$with_foma" != "xno" -a "x$zlib_exists" == "xno"], [warn_about_missing_zlib_lexc=yes], [warn_about_missing_zlib_lexc=no])
-
 # If foma wrapper is not wanted or possible to generate, set these conditionals/variables to 'no'
 AM_COND_IF([GENERATE_FOMA_WRAPPER], [], [AM_CONDITIONAL([WANT_FOMA_WRAPPER], [false])])
 AM_COND_IF([GENERATE_FOMA_WRAPPER], [], [enable_foma_wrapper=no])
@@ -551,9 +547,6 @@ AM_CONDITIONAL([WANT_FSMBOOK_TESTS], [test x$enable_fsmbook_tests != xno])
 AS_IF([test "x$enable_fsmbook_tests" != "xno" -a "x$enable_xfst" == "xno"],
       [AC_MSG_FAILURE([fsmbook tests are not supported if hfst-xfst is disabled; enable hfst-xfst (with --enable-xfst) when using --enable-fsmbook-tests])])
 
-#AS_IF([test "x$enable_mingw" != "xno" -a "x$enable_tagger" != "xno"],
-#      [AC_MSG_FAILURE([hfst-train-tagger and hfst-tag are not supported in MinGW environment; disable tagger tools (with --disable-tagger) when using --enable-mingw])])
-
 # Checks for programs
 AC_PROG_CC
 AC_PROG_CXX
@@ -581,18 +574,14 @@ fi
 AM_CONDITIONAL([YACC_USE_PARSER_H_EXTENSION], [test x$yacc_use_parser_h_extension = xtrue])
 
 AC_PROG_LEX
-#AC_PATH_PROG([FOMACLI], [foma], [false])
+
 AC_PATH_PROG([GETOPT], [getopts], [false])
-#AM_CONDITIONAL([CAN_FOMAWRAP], [test x$FOMACLI != xfalse])
-#AM_CONDITIONAL([CAN_FOMAWRAP], [true])
+
 AM_PATH_PYTHON([2.4],[],[false])
 # if flex 3.X ever comes out, this breaks :)
 LEX_VERSION=`$LEX --version`
 AS_IF([test -z "`echo "$LEX_VERSION" | grep 'flex 2\.[[5-9]]\.[[3-9][4-9]]'`"],
       [AC_MSG_WARN([Building hfst successfully requires flex newer than 2.5.33 on some platforms. Unless you are building with pre-flex-generated sources, building will probably fail.])])
-
-# if automake is >= 1.12
-#AM_CONDITIONAL([HH_EXTENSION_USED], [test "`automake --version | head -1 | grep ' 1\.1[2-9]'`" = ""])
 
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -600,26 +589,16 @@ AC_PROG_MAKE_SET
 AC_PATH_PROG([DOXYGEN], [doxygen], [no])
 AM_CONDITIONAL([CAN_DOXYGEN], [test x$DOXYGEN != xno])
 
-#AC_MSG_CHECKING([for bison])
-#YACC_VERSION=$($YACC --version | grep 'bison' | cut -d' ' -f4 | cut -d'.' -f1-2)
-#YACC_VERSION=$(echo "$YACC_VERSION*100" | bc | cut -d'.' -f1)
-#AC_PATH_PROGS_FEATURE_CHECK(BISON, [bison], [[test $YACC_VERSION -gt 260 && ac_cv_path_BISON=$ac_path_BISON ac_path_BISON_found=: ]], [AC_MSG_ERROR([Hfst requires bison version 2.6 or newer.])])
-#AC_MSG_RESULT([$ac_cv_path_BISON])
-
 # Checks for libraries
 
-#AC_CHECK_LIB([xml2], [main])
 AC_LANG_PUSH([C++])
 AS_IF([test "x$with_openfst" != "xno" -a "x$enable_mingw" == "xno"], 
       [AC_CHECK_LIB([dl], [main])])
-#      [AC_CHECK_LIB([fst], [main], [],
-#                 [AC_MSG_FAILURE([openfst test failed (--without-openfst to disable)])])])
+
 AS_IF([test "x$with_openfst" != "xno"], 
       [AC_CHECK_LIB([pthread], [main])]
       [AC_CHECK_LIB([m], [main])])
-#AS_IF([test "x$with_sfst" != "xno" -a "x$enable_windows" == "xno"],
-#      [AC_CHECK_LIB([sfst], [main])]
-#      [AC_CHECK_LIB([sfst1], [main])])
+
 AS_IF([test "x$ac_cv_lib_sfst_main" == xno -a "x$ac_cv_lib_sfst1_main" == xno],
       [AC_MSG_FAILURE([sfst tests failed (--without-sfst to disable)])])
 AC_LANG_POP
@@ -640,12 +619,6 @@ if test x$ac_cv_lib_ncurses_tgetent != xyes ; then
    fi
 fi
 
-#AS_IF([test "x$with_foma" != "xno" -a "x$enable_windows" == "xno"],
-#      [AC_CHECK_LIB([z], [main], [], [AC_MSG_FAILURE([foma test failed because zlib.h was not found (--without-foma to disable)])])])
-#AS_IF([test "x$enable_hfst_xfst" != "xno" -a "x$enable_windows" == "xno"],
-#      [AC_CHECK_LIB([z], [main], [], [AC_MSG_FAILURE([foma test failed because zlib.h was not found (--enable-hfst-xfst=no to disable)])])])
-#      [AC_CHECK_LIB([foma], [main], [],
-#                    [AC_MSG_FAILURE([foma test failed (--without-foma to disable)])])])
 AC_LANG_POP
 
 AS_IF([test "x$with_unicode_handler" = "xglib"],
@@ -665,7 +638,7 @@ AS_IF([test "x$with_readline" = "xyes"],
 
 # Checks for header files
 AC_CHECK_HEADERS([limits.h stdlib.h string.h error.h glob.h locale.h langinfo.h])
-#AC_CHECK_HEADERS([libxml/tree.h libxml/mem.h])
+
 AC_LANG_PUSH([C++])
 
 # Always use c++11 (flag 'c++0x' is understood also by older compilers)
@@ -689,17 +662,13 @@ AS_IF([test "x$ac_cv_header_unordered_set" = "xno"],
 
 AC_CHECK_HEADERS([ext/slist])
 
-#AS_IF([test "x$with_sfst" != "xno" -a "x$enable_windows" == "xno"],
-#      [AC_CHECK_HEADERS([sfst/fst.h sfst1/fst.h])])
 AS_IF([test "x$with_sfst" != "xno"],
       [AC_CHECK_HEADERS([backward/hash_set ext/hash_set hash_set])]
       [AC_CHECK_HEADERS([backward/hash_map ext/hash_map hash_map])])
-#AS_IF([test "x$with_openfst" != "xno" -a "x$enable_windows" == "xno"],
-#      [AC_CHECK_HEADERS([fst/fstlib.h])])
+
 AC_LANG_POP
 AC_LANG_PUSH([C])
-#AS_IF([test "x$with_foma" != "xno" -a "x$enable_windows" == "xno"],
-#      [AC_CHECK_HEADERS([fomalib.h])])
+
 AC_LANG_POP
 AC_LANG_PUSH([C])
 AS_IF([test "x$with_readline" = "xyes"],
@@ -830,15 +799,9 @@ EOF
 dnl stick important warnings to bottom
 dnl important licensing information
 dnl according to GNU GPLv2 strict (not plus) is incompatible with Apache
-# No more relevant with the new version of foma
-#AS_IF([test "x$with_foma" != "xno" -a "x$with_openfst" != "xno"],
-#      [AC_MSG_WARN([foma licensing exception is limited to HFST team’s redistribution; if you consider GPLv2 strict and Apache licence conflicting you may not _redistribute_ your binaries])])
 dnl hope end users never disable ofst 
 AS_IF([test "x$with_openfst" == "xno"],
       [AC_MSG_WARN([Disabling openfst backend will severely cripple libhfst])])
-dnl without foma, foma-based scripts cannot work
-#AS_IF([test "x$FOMACLI" = "xfalse"],
-#      [AC_MSG_WARN([using hfst-xfst is disabled because foma binary was not found])])
 dnl HFST's case mapping in corpus tools is mainly MES-2 set with other characters
 dnl added as we go
 AS_IF([test "x$with_unicode_handler" = "xhfst"],
@@ -849,14 +812,10 @@ AS_IF([test "x$enable_lexc" == "xno"],
 AS_IF([test "x$enable_twolc" == "xno"],
       [AC_MSG_WARN([hfst-twolc is not enabled; you will not be able to compile xerox twolc grammars; enable using --enable-twolc])])
 
- # -a "x$enable_mingw" == "xno"],
 AS_IF([test "x$enable_tagger" == "xno"],
       [AC_MSG_WARN([hfst-train-tagger and hfst-tag are not enabled; you will not be able to train and use taggers; enable using --enable-tagger])])
 AS_IF([test "x$enable_calculate" == "xno"],
       [AC_MSG_WARN([hfst-calculate is not enabled; you will not be able to compile SFST-PL scripts; enable using --enable-calculate])])
 AS_IF([test "x$enable_xfst" == "xno"],
       [AC_MSG_WARN([hfst-xfst is not enabled; you will not be able to compile XFST scripts; enable using --enable-xfst])])
-#AS_IF([test "x$warn_about_missing_zlib" != "xno"],
-#      [AC_MSG_WARN([hfst-foma was disabled because zlib was not found; you will not be able to compile XFST scripts with foma wrapper])])
-#AS_IF([test "x$generate_foma_wrapper" == "xno" -a "x$warn_about_missing_zlib" == "xno"], 
-#      [AC_MSG_WARN([hfst-foma is not enabled; you will not be able to compile XFST scripts with foma wrapper; enable using --with-foma (--enable-foma-wrapper)])])
+AC_MSG_WARN([Python bindings for HFST are not under autotools; see python/README for instructions about how to build and install them])
