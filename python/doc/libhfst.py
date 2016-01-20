@@ -4,7 +4,7 @@
 ## @mainpage
 #
 # <p><b> <font color="red"> THIS PAGE IS FOR TESTING PURPOSES </font> </b>
-# We are moving from Sourceforge to <a href="http://www.github.com/hfst">Github</a> during autumn 2015.</p>
+# We are moving from Sourceforge to <a href="http://www.github.com/hfst">Github</a> in January 2016.</p> 
 #
 # HFST - The Helsinki Finite-State Transducer technology is intended for creating and manipulating weighted or unweighted synchronic transducers implementing regular relations.
 # UTF-8 is chosen as the character encoding used in HFST software. Currently, HFST has been implemented using the
@@ -1599,6 +1599,12 @@ class HfstTransducer:
     # @param max_number Maximum number of results returned, defaults to -1, i.e. infinity.
     # @param time_cutoff How long the function can search for results before returning, expressed in seconds. Defaults to 0.0, i.e. infinitely.
     # @param output Possible values are 'tuple', 'text' and 'raw', 'tuple' being the default.
+    #
+    # @note This function is implemented only for optimized lookup format (libhfst.HFST_OL_TYPE or libhfst.HFST_OLW_TYPE). 
+    #       Either convert to optimized lookup format or to HfstBasicTransducer if you wish to perform lookup.
+    #       Conversion to OL might take a while but it lookup is fast.
+    #       Conversion to HfstBasicTransducer is quick but lookup is slower.
+    #
     def lookup(self, input, **kvargs):
         pass
 
@@ -1609,7 +1615,7 @@ class HfstTransducer:
     # @param max_cycles Indicates how many times a cycle will be followed, with negative numbers indicating unlimited (default -1 i.e. unlimited).
     # @param max_number The total number of resulting strings is capped at this value, with 0 or negative indicating unlimited (default -1 i.e. unlimited).
     # @param obey_flags Whether flag diacritics are validated (default True).
-    # @param output Output format. Values recognized: 'text' (as a string, separated by newlines), 'raw' (libhfst.HfstTwoLevelPaths), 'dict' (a dictionary that maps input strings into tuples of an output string and a weight, the default). 
+    # @param output Output format. Values recognized: 'text' (as a string, separated by newlines), 'raw' (a dictionary that maps each input string into a list of tuples of an output string and a weight), 'dict' (a dictionary that maps each input string into a tuple of tuples of an output string and a weight, the default). 
     # @param random Whether result strings are fetched randomly (default False).
     # @return The extracted strings. \a output controls how they are represented.
     #
@@ -1758,23 +1764,23 @@ class HfstTransducer:
     def has_flag_diacritics(self):
         pass
 
-## Detokenize \a tokenized_paths.
+# Detokenize \a tokenized_paths.
 #
 # Concatenate all transition symbols on input and output levels for each path in \a tokenized_paths.
 # 
 # @param tokenized_paths An HfstOneLevelPaths pointer or an HfstTwoLevelPaths.
 # @return A tuple of HfstPaths.
-def detokenize_paths(tokenized_paths):
-    pass
+# def detokenize_paths(tokenized_paths):
+#    pass
 
-## Detokenize and remove all flag diacritics from \a tokenized_paths.
+# Detokenize and remove all flag diacritics from \a tokenized_paths.
 #
 # Concatenate all transition symbols except flag diacritics on input and output levels for each path in \a tokenized_paths.
 # 
 # @param tokenized_paths An HfstOneLevelPaths pointer or an HfstTwoLevelPaths.
 # @return A tuple of HfstPaths.
-def detokenize_and_purge_paths(tokenized_paths):
-    pass
+# def detokenize_and_purge_paths(tokenized_paths):
+#    pass
 
 ##  A stream for reading HFST binary transducers. 
 #
@@ -2447,7 +2453,7 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # 
 # \section using_hfst Using HFST in your own code
 # 
-# After <a href="InstallHfst.html">installing</a> HFST on your computer, start python and execute <code>import libhfst</code>.
+# After <a href="InstallHfst.html">installing</a> HFST on your computer, start python3 and execute <code>import libhfst</code>.
 # 
 # For example, the following simple program 
 #
@@ -2481,6 +2487,8 @@ def deep_restriction_and_coercion(contexts, mapping, alphabet):
 # 
 #    - HfstTokenizer: A class used in creating transducers from UTF-8 strings.
 #  
+# There are also functions in module libhfst that are not part of any class. For example #libhfst.fst
+#
 # <BR>
 # 
 # \section hfst_examples Examples of HFST functionalities
