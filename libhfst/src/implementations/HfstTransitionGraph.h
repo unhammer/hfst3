@@ -21,7 +21,7 @@
  #include "ConvertTransducerFormat.h"
  #include "HfstTransition.h"
  #include "HfstTropicalTransducerTransitionData.h"
- #include "HfstFastTransitionData.h"
+//#include "HfstFastTransitionData.h"
 
  #include "../hfstdll.h"
 
@@ -4524,8 +4524,8 @@
       HfstBasicTransducer;
     
     /** @brief A specialization for faster conversion. */
-    typedef HfstTransitionGraph <HfstFastTransitionData> 
-      HfstFastTransducer;
+    //typedef HfstTransitionGraph <HfstFastTransitionData> 
+    //  HfstFastTransducer;
 
    }
    
