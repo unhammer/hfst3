@@ -157,8 +157,8 @@ lexc-parser pmatch_parse xre_parse xfst-parser;
 do
     cp libhfst/src/parsers/$file.cc \
         $1/libhfst/src/parsers/$file.cpp
-    cp libhfst/src/parsers/$file.hh \
-        $1/libhfst/src/parsers/$file.hh
+    cp libhfst/src/parsers/$file.h \
+        $1/libhfst/src/parsers/$file.h
 done
 sed -i 's/#include <unistd.h>/#include <io.h>/' $1/libhfst/src/parsers/xfst-lexer.cpp
 sed -i 's/hxfstwrap( )/hxfstwrap(void)/' $1/libhfst/src/parsers/xfst-lexer.cpp
@@ -278,7 +278,7 @@ TWOLC_DIR=tools/src/hfst-twolc/src
 
 for file in \
 HfstTwolcDefs.h common_globals.h grammar_defs.h hfst-twolc.bat \
-htwolcpre1.hh htwolcpre2.hh htwolcpre3.hh;
+htwolcpre1.h htwolcpre2.h htwolcpre3.h;
 do
     cp $TWOLC_DIR/$file $1/$TWOLC_DIR/
 done
