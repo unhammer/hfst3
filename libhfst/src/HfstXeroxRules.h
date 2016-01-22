@@ -10,6 +10,8 @@
 //       You should have received a copy of the GNU General Public License
 //       along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#ifndef GUARD_hfst_xerox_rules_h
+#define GUARD_hfst_xerox_rules_h
 
 //#include "HfstDataTypes.h"
 //#include "HfstSymbolDefs.h"
@@ -28,16 +30,16 @@ namespace hfst
 
         // this enum is used in xre_parse.yy for the regex2pfst tool
         // it is not in the xre_parse.yy file because we couldn't make it work there
-        enum ReplaceArrow {    E_REPLACE_RIGHT,
-                            E_OPTIONAL_REPLACE_RIGHT,
-                            E_REPLACE_LEFT,
-                            E_OPTIONAL_REPLACE_LEFT,
-                            E_REPLACE_RIGHT_MARKUP,
-                            E_RTL_LONGEST_MATCH,
-                            E_RTL_SHORTEST_MATCH,
-                            E_LTR_LONGEST_MATCH,
-                            E_LTR_SHORTEST_MATCH
-                        };
+    enum ReplaceArrow {    E_REPLACE_RIGHT,
+                           E_OPTIONAL_REPLACE_RIGHT,
+                           E_REPLACE_LEFT,
+                           E_OPTIONAL_REPLACE_LEFT,
+                           E_REPLACE_RIGHT_MARKUP,
+                           E_RTL_LONGEST_MATCH,
+                           E_RTL_SHORTEST_MATCH,
+                           E_LTR_LONGEST_MATCH,
+                           E_LTR_SHORTEST_MATCH
+    };
         /**
          * \brief A rule that contains mapping and context and replace type (if any).
          * If rule is A -> B || L _ R , than mapping is cross product of transducers A and B,
@@ -300,3 +302,6 @@ namespace hfst
         HfstTransducer after( const HfstTransducer &left, const HfstTransducer &right);
     }
 }
+
+// define guard
+#endif

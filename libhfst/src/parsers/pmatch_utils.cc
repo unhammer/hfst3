@@ -25,7 +25,6 @@ extern int pmatchnerrs;
 int
 pmatcherror(const char *msg)
 {
-#ifndef NDEBUG
     fprintf(stderr, "*** pmatch parsing failed: %s\n", msg);
     if (strlen(hfst::pmatch::data) < 60)
     {
@@ -40,9 +39,7 @@ pmatcherror(const char *msg)
         fprintf(stderr, "***    parsing %s [line %d, near %s]...\n", 
                 buf, pmatchlineno, pmatchtext);
     }
-#endif
     exit(0);
-
 }
 
 void pmatchwarning(const char *msg)
@@ -58,19 +55,20 @@ namespace pmatch
 {
 
 char* data;
-std::map<std::string, hfst::HfstTransducer*> definitions;
-std::map<std::string, hfst::HfstTransducer*> def_insed_transducers;
-std::set<std::string> inserted_transducers;
+std::map<std::string, hfst::pmatch::PmatchObject*> definitions;
+std::vector<std::map<std::string, PmatchObject*> > call_stack;
+std::map<std::string, PmatchObject*> def_insed_expressions;
+std::set<std::string> inserted_names;
 std::set<std::string> unsatisfied_insertions;
 std::set<std::string> used_definitions;
 std::map<std::string, PmatchFunction> functions;
-std::vector<std::string> tmp_collected_funargs;
 char* startptr;
 hfst::ImplementationType format;
 size_t len;
 bool verbose;
 bool flatten;
 clock_t timer;
+clock_t tmp_timer;
 int minimization_guard_count;
 bool need_delimiters;
 
@@ -97,7 +95,7 @@ void zero_minimization_guard(void)
     minimization_guard_count = 0;
 }
 
-HfstTransducer * get_minimization_guard(void)
+PmatchTransducerContainer * make_minimization_guard(void)
 {
     std::stringstream guard;
     if(minimization_guard_count == 0) {
@@ -106,7 +104,38 @@ HfstTransducer * get_minimization_guard(void)
         guard << "@PMATCH_GUARD_" << minimization_guard_count << "@";
     }
     ++minimization_guard_count;
-    return new HfstTransducer(hfst::internal_epsilon, guard.str(), format);
+    return epsilon_to_symbol_container(guard.str());
+}
+
+bool symbol_in_global_context(std::string & sym)
+{
+    return definitions.count(sym) != 0;
+}
+
+bool symbol_in_local_context(std::string & sym)
+{
+    if (call_stack.size() == 0) {
+        return false;
+    }
+    return call_stack[call_stack.size() - 1].count(sym) != 0;
+}
+
+PmatchObject * symbol_from_global_context(std::string & sym)
+{
+    if (symbol_in_global_context(sym)) {
+        return definitions[sym];
+    } else {
+        return (PmatchObject *) NULL;
+    }
+}
+
+PmatchObject * symbol_from_local_context(std::string & sym)
+{
+    if (symbol_in_local_context(sym)) {
+        return call_stack[call_stack.size() - 1][sym];
+    } else {
+        return (PmatchObject *) NULL;
+    }
 }
 
 int*
@@ -214,34 +243,25 @@ strip_newline(char *s)
   return s;
 }
 
-char *
-get_Ins_transition(const char *s)
+std::string get_Ins_transition(const char *s)
 {
-    char* rv = static_cast<char*>(malloc(sizeof(char)*(strlen(s) + 4 + 1)));
-    rv = strcpy(rv, "@I.");
-    rv = strcat(rv, s);
-    rv = strcat(rv, "@");
-    return rv;
+    std::stringstream tmp;
+    tmp << "@I." << s << "@";
+    return tmp.str();
 }
 
-char *
-get_RC_transition(const char *s)
+std::string get_RC_transition(const char *s)
 {
-    char* rv = static_cast<char*>(malloc(sizeof(char)*(strlen(s) + 5 + 1)));
-    rv = strcpy(rv, "@RC.");
-    rv = strcat(rv, s);
-    rv = strcat(rv, "@");
-    return rv;
+    std::stringstream tmp;
+    tmp << "@RC." << s << "@";
+    return tmp.str();
 }
 
-char *
-get_LC_transition(const char *s)
+std::string get_LC_transition(const char *s)
 {
-    char* rv = static_cast<char*>(malloc(sizeof(char)*(strlen(s) + 5 + 1)));
-    rv = strcpy(rv, "@LC.");
-    rv = strcat(rv, s);
-    rv = strcat(rv, "@");
-    return rv;
+    std::stringstream tmp;
+    tmp << "@LC." << s << "@";
+    return tmp.str();
 }
 
 HfstTransducer * add_pmatch_delimiters(HfstTransducer * regex)
@@ -257,30 +277,11 @@ HfstTransducer * add_pmatch_delimiters(HfstTransducer * regex)
     return delimited_regex;
 }
 
-void add_end_tag(HfstTransducer * regex, std::string tag)
-{
-    HfstTransducer * end_tag = make_end_tag(tag);
-    regex->concatenate(*end_tag);
-    delete end_tag;
-}
+PmatchTransducerContainer * make_end_tag(std::string tag)
+{ return epsilon_to_symbol_container("@PMATCH_ENDTAG_" + tag + "@"); }
 
-HfstTransducer * make_end_tag(std::string tag)
-{
-    HfstTransducer * end_tag = new HfstTransducer(
-        hfst::internal_epsilon,
-        "@PMATCH_ENDTAG_" + tag + "@",
-        format);
-    return end_tag;
-}
-
-HfstTransducer * make_counter(std::string name)
-{
-    HfstTransducer * counter = new HfstTransducer(
-        hfst::internal_epsilon,
-        "@PMATCH_COUNTER_" + name + "@",
-        format);
-    return counter;
-}
+PmatchTransducerContainer * make_counter(std::string name)
+{ return epsilon_to_symbol_container("@PMATCH_COUNTER_" + name + "@"); }
 
 HfstTransducer * make_list(HfstTransducer * t)
 {
@@ -314,6 +315,31 @@ HfstTransducer * make_sigma(HfstTransducer * t)
     }
     return retval;
 }
+
+PmatchTransducerContainer * epsilon_to_symbol_container(std::string s)
+{
+    HfstTransducer * tmp = new HfstTransducer(hfst::internal_epsilon, s, format);
+    return new PmatchTransducerContainer(tmp);
+}
+
+PmatchTransducerContainer * make_rc_entry(void)
+{ return epsilon_to_symbol_container(RC_ENTRY_SYMBOL); }
+PmatchTransducerContainer * make_lc_entry(void)
+{ return epsilon_to_symbol_container(LC_ENTRY_SYMBOL); }
+PmatchTransducerContainer * make_nrc_entry(void)
+{ return epsilon_to_symbol_container(NRC_ENTRY_SYMBOL); }
+PmatchTransducerContainer * make_nlc_entry(void)
+{ return epsilon_to_symbol_container(NLC_ENTRY_SYMBOL); }
+PmatchTransducerContainer * make_rc_exit(void)
+{ return epsilon_to_symbol_container(RC_EXIT_SYMBOL); }
+PmatchTransducerContainer * make_lc_exit(void)
+{ return epsilon_to_symbol_container(LC_EXIT_SYMBOL); }
+PmatchTransducerContainer * make_nrc_exit(void)
+{ return epsilon_to_symbol_container(NRC_EXIT_SYMBOL); }
+PmatchTransducerContainer * make_nlc_exit(void)
+{ return epsilon_to_symbol_container(NLC_EXIT_SYMBOL); }
+PmatchTransducerContainer * make_passthrough(void)
+{ return epsilon_to_symbol_container(PASSTHROUGH_SYMBOL); }
 
 char * get_delimited(const char *s, char delim_left, char delim_right)
 {
@@ -565,7 +591,7 @@ std::string codepoint_to_utf8(unsigned int codepoint)
     }
 }
 
-HfstTransducer * parse_range(const char * s)
+PmatchTransducerContainer * parse_range(const char * s)
 {
     char * quoted = get_delimited(s, '"');
     char * orig_quoted = quoted;
@@ -630,7 +656,7 @@ HfstTransducer * parse_range(const char * s)
         }
     }
     free(orig_quoted);
-    return retval;
+    return new PmatchTransducerContainer(retval);
 }
 
 double
@@ -653,12 +679,11 @@ get_weight(const char *s)
 void init_globals(void)
 {
     definitions.clear();
-    def_insed_transducers.clear();
-    inserted_transducers.clear();
+    def_insed_expressions.clear();
+    inserted_names.clear();
     unsatisfied_insertions.clear();
     used_definitions.clear();
     functions.clear();
-    tmp_collected_funargs.clear();
     zero_minimization_guard();
     need_delimiters = false;
 }
@@ -674,7 +699,10 @@ compile(const string& pmatch, map<string,HfstTransducer*>& defs,
     len = strlen(data);
     verbose = be_verbose;
     flatten = do_flatten;
-//    definitions = defs;
+    for (map<string, HfstTransducer*>::iterator it = defs.begin();
+         it != defs.end(); ++it) {
+        definitions[it->first] = new PmatchTransducerContainer(it->second);
+    }
     format = impl;
     if (hfst::pmatch::verbose) {
         timer = clock();
@@ -685,25 +713,25 @@ compile(const string& pmatch, map<string,HfstTransducer*>& defs,
     data = 0;
     len = 0;
     std::map<std::string, hfst::HfstTransducer*> retval;
-    for (std::set<std::string>::const_iterator it =
-             unsatisfied_insertions.begin();
-         it != unsatisfied_insertions.end(); ++it) {
-        if (definitions.count(*it) == 0) {
-            std::cerr << "Inserted transducer "
-                      << *it << " was never defined!\n";
-            return retval;
-        }
-    }
-    if (hfst::pmatch::verbose) {
-        std::map<std::string, hfst::HfstTransducer *>::iterator defs_itr;
-        for (defs_itr = definitions.begin(); defs_itr != definitions.end();
-             ++defs_itr) {
-            if (used_definitions.count(defs_itr->first) == 0 &&
-                defs_itr->first.compare("TOP") != 0) {
-                std::cerr << "Warning: " << defs_itr->first << " defined but never used\n";
-            }
-        }
-    }
+     for (std::set<std::string>::const_iterator it =
+              unsatisfied_insertions.begin();
+          it != unsatisfied_insertions.end(); ++it) {
+         if (definitions.count(*it) == 0) {
+             std::cerr << "Inserted transducer "
+                       << *it << " was never defined!\n";
+             return retval;
+         }
+     }
+     if (hfst::pmatch::verbose) {
+         std::map<std::string, PmatchObject*>::iterator defs_itr;
+         for (defs_itr = definitions.begin(); defs_itr != definitions.end();
+              ++defs_itr) {
+             if (used_definitions.count(defs_itr->first) == 0 &&
+                 defs_itr->first.compare("TOP") != 0) {
+                 std::cerr << "Warning: " << defs_itr->first << " defined but never used\n";
+             }
+         }
+     }
 
     if (pmatchnerrs != 0) {
         return retval;
@@ -711,44 +739,41 @@ compile(const string& pmatch, map<string,HfstTransducer*>& defs,
     // Our helper for harmonizing all the networks' alphabets with
     // each other
     if (hfst::pmatch::verbose) {
-        std::cerr << "\nHarmonizing... ";
+        std::cerr << "\nCompiling and harmonizing...\n";
+        timer = clock();
     }
 
-    if (inserted_transducers.size() > 0) {
-
+    if (inserted_names.size() > 0) {
         HfstTransducer dummy(format);
         // We keep TOP and any inserted transducers
-        std::map<std::string, hfst::HfstTransducer *>::iterator defs_itr;
-        for (defs_itr = definitions.begin(); defs_itr != definitions.end();
-             ++defs_itr) {
-            if (defs_itr->first.compare("TOP") == 0 ||
-                inserted_transducers.count(defs_itr->first) != 0) {
-                dummy.harmonize(*defs_itr->second);
+        std::map<std::string, PmatchObject *>::iterator defs_it;
+        for (defs_it = definitions.begin(); defs_it != definitions.end();
+             ++defs_it) {
+            if (defs_it->first.compare("TOP") == 0 ||
+                inserted_names.count(defs_it->first) != 0) {
+                HfstTransducer * tmp = defs_it->second->evaluate();
+                dummy.harmonize(*tmp);
+                retval[defs_it->first] = tmp;
             }
         }
         
         // Now that dummy is harmonized with everything, we harmonize everything
-        // with dummy and insert them into the result
-        for(defs_itr = definitions.begin(); defs_itr != definitions.end();
-            ++defs_itr) {
-            if (defs_itr->first.compare("TOP") == 0 ||
-                inserted_transducers.count(defs_itr->first) != 0) {
-                dummy.harmonize(*defs_itr->second);
-                retval.insert(std::pair<std::string, hfst::HfstTransducer*>(
-                                  defs_itr->first,
-                                  defs_itr->second));
-            } else {
-                delete defs_itr->second;
-            }
+        // with dummy and minimize the results
+        std::map<std::string, HfstTransducer *>::iterator tr_it;
+        for(tr_it = retval.begin(); tr_it != retval.end(); ++tr_it) {
+            tr_it->second->harmonize(dummy);
+            tr_it->second->minimize();
         }
     } else {
-        retval.insert(std::pair<std::string, hfst::HfstTransducer*>("TOP", definitions["TOP"]));
+        hfst::HfstTransducer * tmp = definitions["TOP"]->evaluate();
+        tmp->minimize();
+        retval.insert(std::pair<std::string, hfst::HfstTransducer*>("TOP", tmp));
     }
     if (hfst::pmatch::verbose) {
         double duration = (clock() - hfst::pmatch::timer) /
             (double) CLOCKS_PER_SEC;
         hfst::pmatch::timer = clock();
-        std::cerr << "harmonized in " << duration << " seconds\n";
+        std::cerr << "compiled and harmonized in " << duration << " seconds\n";
     }
     return retval;
 }
@@ -1009,121 +1034,518 @@ HfstTransducer * PmatchUtilityTransducers::toupper(HfstTransducer & t)
     return retval;
 }
 
-HfstTransducer * PmatchFunction::evaluate(
-    std::map<std::string,
-             HfstTransducer *> & funargs)
+PmatchObject::PmatchObject(void)
 {
-    return root->evaluate(funargs);
+    name = "";
+    weight = 0.0;
+    line_defined = pmatchlineno;
+    cache = (HfstTransducer*) (NULL);
 }
 
-HfstTransducer * PmatchAstNode::evaluate(
-    std::map<std::string,
-             HfstTransducer *> & funargs)
+HfstTransducer * PmatchObject::evaluate(std::vector<PmatchObject *> args)
 {
-    if (type == AstTransducer) {
-        return new HfstTransducer(*transducer);
-    } else if (type == AstUnaryOp) {
-        HfstTransducer * retval = left_child->evaluate(funargs);
-        if (op == AstAddDelimiters) {
-            return add_pmatch_delimiters(retval);
-        } else if (op == AstOptionalize) {
-            retval->optionalize();
-            return retval;
-        } else if (op == AstRepeatStar) {
-            retval->repeat_star();
-            return retval;
-        } else if (op == AstRepeatPlus) {
-            retval->repeat_plus();
-            return retval;
-        } else if (op == AstReverse) {
-            retval->reverse();
-            return retval;
-        } else if (op == AstInvert) {
-            retval->invert();
-            return retval;
-        } else if (op == AstInputProject) {
-            retval->input_project();
-            return retval;
-        } else if (op == AstOutputProject) {
-            retval->output_project();
-            return retval;
-        } else if (op == AstRepeatN) {
-            retval->repeat_n(numeric_args[0]);
-            return retval;
-        } else if (op == AstRepeatNPlus) {
-            retval->repeat_n_plus(numeric_args[0]);
-            return retval;
-        } else if (op == AstRepeatNMinus) {
-            retval->repeat_n_minus(numeric_args[0]);
-            return retval;
-        } else if (op == AstRepeatNToK) {
-            retval->repeat_n_to_k(numeric_args[0], numeric_args[1]);
-            return retval;
-        } else if (op == AstOptCap) {
-            HfstTransducer * tmp = get_utils()->optcap(*retval);
-            delete retval;
-            return tmp;
-        } else if (op == AstToLower) {
-            HfstTransducer * tmp = get_utils()->tolower(*retval);
-            delete retval;
-            return tmp;
-        } else if (op == AstToUpper) {
-            HfstTransducer * tmp = get_utils()->toupper(*retval);
-            delete retval;
-            return tmp;
+    if (args.size() == 0) {
+        if (cache == NULL) {
+            cache = evaluate();
         }
-    } else if (type == AstBinaryOp) {
-        HfstTransducer * retval = left_child->evaluate(funargs);
-        if (op == AstConcatenate) {
-            retval->concatenate(*right_child->evaluate(funargs));
-            return retval;
-        } else if (op == AstCompose) {
-            retval->compose(*right_child->evaluate(funargs));
-            return retval;
-        } else if (op == AstCrossProduct) {
-            retval->cross_product(*right_child->evaluate(funargs));
-            return retval;
-        } else if (op == AstLenientCompose) {
-            retval->lenient_composition(*right_child->evaluate(funargs));
-            return retval;
-        } else if (op == AstDisjunct) {
-            retval->disjunct(*right_child->evaluate(funargs));
-            return retval;
-        } else if (op == AstIntersect) {
-            retval->intersect(*right_child->evaluate(funargs));
-            return retval;
-        } else if (op == AstSubtract) {
-            retval->subtract(*right_child->evaluate(funargs));
-            return retval;
-        }
-
-    } else if (type == AstSymbol) {
-        if (funargs.count(symbol) == 1) {
-            return new HfstTransducer(*funargs[symbol]);
-        } else if (definitions.count(symbol) == 1) {
-            if (!flatten && def_insed_transducers.count(symbol) == 1) {
-                inserted_transducers.insert(symbol);
-                if (verbose) {
-                    used_definitions.insert(symbol);
-                }
-                return new HfstTransducer(*def_insed_transducers[symbol]);
-            } else {
-                if (verbose) {
-                    std::cerr << "including " <<
-                        definitions[symbol]->get_name() << " with ";
-                    print_size_info(hfst::pmatch::definitions[symbol]);
-                    used_definitions.insert(symbol);
-                }
-                return new HfstTransducer(*hfst::pmatch::definitions[symbol]);
-            }
-        } else {
-            std::string errstring = "Symbol " + std::string(symbol) + " not found";
-            pmatcherror(errstring.c_str());
-            return new HfstTransducer(); // For some compilers and linters
-        }        
+        return new HfstTransducer(*cache);
+    } else {
+        std::stringstream errstring;
+        errstring << "Object " << name << " on line " << pmatchlineno << " has no argument handling";
+        throw std::invalid_argument(errstring.str());
     }
-    return new HfstTransducer(); // For some compilers and linters
 }
 
+HfstTransducer * PmatchSymbol::evaluate(PmatchEvalType eval_type)
+{
+    start_timing();
+    HfstTransducer * retval;
+    if (symbol_in_local_context(sym)) {
+        retval = symbol_from_local_context(sym)->evaluate();
+    } else if (symbol_in_global_context(sym)) {
+        if (flatten && def_insed_expressions.count(sym) == 1) {
+            retval = def_insed_expressions[sym]->evaluate();
+        } else {
+            retval = symbol_from_global_context(sym)->evaluate();
+        }
+        used_definitions.insert(sym);
+    } else {
+        if (verbose) {
+            std::cerr << "Warning: interpreting undefined symbol \"" << sym
+                      << "\" as label on line " << line_defined << "\n";
+        }
+        retval = new HfstTransducer(sym, format);
+    }
+    retval->set_final_weights(weight, true);
+    report_time();
+    return retval;
+}
+
+HfstTransducer * PmatchString::evaluate(PmatchEvalType eval_type) {
+    if (cache == NULL) {
+        start_timing();
+        if(multichar) {
+            HfstTokenizer tok;
+            cache = new HfstTransducer(string, tok, format);
+        } else {
+            cache = new HfstTransducer(string, format);
+        }
+        cache->set_final_weights(weight, true);
+        report_time();
+    }
+    return new HfstTransducer(*cache);
+}
+
+HfstTransducer * PmatchFunction::evaluate(std::vector<PmatchObject *> funargs)
+{
+    if (verbose) {
+        tmp_timer = clock();
+    }
+    if (funargs.size() != args.size()) {
+        std::stringstream errstring;
+        errstring << "Function " << name << " expected " << args.size() << " args, got " << funargs.size() << std::endl;
+        throw std::invalid_argument(errstring.str());
+    }
+    std::map<std::string, PmatchObject *> local_env;
+    for (int i = 0; i < args.size(); ++i) {
+        local_env[args[i]] = funargs[i];
+    }
+    call_stack.push_back(local_env);
+    HfstTransducer * retval = root->evaluate();
+    retval->set_final_weights(weight, true);
+    call_stack.pop_back();
+    if (verbose) {
+        double duration = (clock() - tmp_timer) /
+            (double) CLOCKS_PER_SEC;
+        std::cerr << "Call to " << name << " evaluated in " << duration << " seconds\n";
+    }
+    return retval;
+}
+
+HfstTransducer * PmatchFunction::evaluate(PmatchEvalType eval_type)
+{
+    std::vector<PmatchObject *> funargs;
+    return evaluate(funargs);
+}
+
+HfstTransducer * PmatchNumericOperation::evaluate(PmatchEvalType eval_type)
+{
+    if (cache == NULL) {
+        start_timing();
+        cache = root->evaluate();
+        if (op == RepeatN) {
+            cache->repeat_n(values[0]);
+        } else if (op == RepeatNPlus) {
+            cache->repeat_n_plus(values[0]);
+        } else if (op == RepeatNMinus) {
+            cache->repeat_n_minus(values[0]);
+        } else if (op == RepeatNToK) {
+            cache->repeat_n_to_k(values[0], values[1]);
+        }
+        cache->set_final_weights(weight, true);
+        report_time();
+    }
+    return new HfstTransducer(*cache);
+}
+
+HfstTransducer * PmatchUnaryOperation::evaluate(PmatchEvalType eval_type)
+{
+    if (cache == NULL) {
+        start_timing();
+        cache = root->evaluate();
+        if (op == AddDelimiters) {
+            cache = add_pmatch_delimiters(cache);
+        } else if (op == Optionalize) {
+            cache->optionalize();
+        } else if (op == RepeatStar) {
+            cache->repeat_star();
+        } else if (op == RepeatPlus) {
+            cache->repeat_plus();
+        } else if (op == Reverse) {
+            cache->reverse();
+        } else if (op == Invert) {
+            cache->invert();
+        } else if (op == InputProject) {
+            cache->input_project();
+        } else if (op == OutputProject) {
+            cache->output_project();
+        } else if (op == Complement) {
+            // Defined here only for automata, so can project to input
+            HfstTransducer * complement =
+                new HfstTransducer(hfst::internal_identity, hfst::pmatch::format);
+            complement->repeat_star();
+            complement->subtract(*cache);
+            delete cache;
+            cache = complement;
+        } else if (op == Containment) {
+            HfstTransducer* left = new HfstTransducer(hfst::internal_identity,
+                                                      hfst::pmatch::format);
+            HfstTransducer* right = new HfstTransducer(hfst::internal_identity,
+                                                       hfst::pmatch::format);
+            right->repeat_star();
+            left->repeat_star();
+            cache->repeat_star();
+            left->concatenate(*cache);
+            left->concatenate(*right);
+            delete cache; delete right;
+            cache = left;
+        } else if (op == ContainmentOnce) {
+            HfstTransducer* left = new HfstTransducer(hfst::internal_identity,
+                                                      hfst::pmatch::format);
+            HfstTransducer* right = new HfstTransducer(hfst::internal_identity,
+                                                       hfst::pmatch::format);
+            left->subtract(*cache);
+            right->subtract(*cache);
+            right->repeat_star();
+            left->repeat_star();
+            left->concatenate(*cache);
+            left->concatenate(*right);
+            delete cache; delete right;
+            cache = left;
+        } else if (op == ContainmentOptional) {
+            HfstTransducer* left = new HfstTransducer(hfst::internal_identity,
+                                                      hfst::pmatch::format);
+            HfstTransducer* right = new HfstTransducer(hfst::internal_identity,
+                                                       hfst::pmatch::format);
+            left->subtract(*cache);
+            right->subtract(*cache);
+            right->repeat_star();
+            left->repeat_star();
+            cache->optionalize();
+            left->concatenate(*cache);
+            left->concatenate(*right);
+            delete cache; delete right;
+            cache = left;
+        } else if (op == TermComplement) {
+            HfstTransducer* any = new HfstTransducer(hfst::internal_identity,
+                                                     hfst::pmatch::format);
+            any->subtract(*cache);
+            delete cache;
+            cache = any;
+        } else if (op == OptCap) {
+            HfstTransducer * tmp = get_utils()->optcap(*cache);
+            delete cache;
+            cache = tmp;
+        } else if (op == ToLower) {
+            HfstTransducer * tmp = get_utils()->tolower(*cache);
+            delete cache;
+            cache = tmp;
+        } else if (op == ToUpper) {
+            HfstTransducer * tmp = get_utils()->toupper(*cache);
+            delete cache;
+            cache = tmp;
+        } else if (op == MakeSigma) {
+            HfstTransducer * tmp = make_sigma(cache);
+            delete cache;
+            cache = tmp;
+        } else if (op == MakeList) {
+            if (!flatten) {
+                HfstTransducer * tmp = make_list(cache);
+                delete cache;
+                cache = tmp;
+            }
+        }
+        cache->set_final_weights(weight, true);
+        report_time();
+    }
+    return new HfstTransducer(*cache);
+}
+
+HfstTransducer * PmatchBinaryOperation::evaluate(PmatchEvalType eval_type)
+{
+    if (cache == NULL) {
+        start_timing();
+        HfstTransducer * lhs = left->evaluate();
+        HfstTransducer * rhs = right->evaluate();
+        if (op == Concatenate) {
+            lhs->concatenate(*rhs);
+        } else if (op == Compose) {
+            lhs->compose(*rhs);
+        } else if (op == CrossProduct) {
+            lhs->cross_product(*rhs);
+        } else if (op == LenientCompose) {
+            lhs->lenient_composition(*rhs);
+        } else if (op == Disjunct) {
+            lhs->disjunct(*rhs);
+        } else if (op == Intersect) {
+            lhs->intersect(*rhs);
+        } else if (op == Subtract) {
+            lhs->subtract(*rhs);
+        } else if (op == UpperSubtract) {
+            pmatcherror("Upper subtraction not implemented.");
+            return lhs;
+        } else if (op == LowerSubtract) {
+            pmatcherror("Lower subtraction not implemented.");
+            return lhs;
+        } else if (op == UpperPriorityUnion) {
+            lhs->priority_union(*rhs);
+        } else if (op == LowerPriorityUnion) {
+            lhs->invert();
+            rhs->invert();
+            lhs->priority_union(*rhs);
+            lhs->invert();
+        } else if (op == Shuffle) {
+            try {
+                lhs->shuffle(*rhs);
+            } catch (const TransducersAreNotAutomataException & e) {
+                pmatchwarning("tried to shuffle with non-automaton transducers,\n"
+                              "    shuffling with their input projection instead.");
+                lhs->input_project();
+                rhs->input_project();
+                lhs->shuffle(*rhs);
+            }
+        } else if (op == Before) {
+            HfstTransducer * tmp = new HfstTransducer(hfst::xeroxRules::before(*lhs, *rhs));
+            delete lhs;
+            lhs = tmp;
+        } else if (op == After) {
+            HfstTransducer * tmp = new HfstTransducer(hfst::xeroxRules::after(*lhs, *rhs));
+            delete lhs;
+            lhs = tmp;
+        } else if (op == InsertFreely) {
+            lhs->insert_freely(*rhs, false);
+        } else if (op == IgnoreInternally) {
+            HfstTransducer * right_part = new HfstTransducer(*lhs);
+            HfstTransducer * middle_part = new HfstTransducer(*lhs);
+            middle_part->disjunct(*rhs);
+            middle_part->repeat_star();
+            lhs->concatenate(*middle_part);
+            lhs->concatenate(*right_part);
+            delete middle_part;
+            delete right_part;
+        } else if (op == Merge) {
+            HfstTransducer * tmp;
+            try {
+                tmp = hfst::xre::merge_first_to_second(lhs, rhs);
+            }
+            catch (const TransducersAreNotAutomataException & e) {
+                pmatcherror("Error: transducers must be automata in merge operation.");
+            }
+            delete lhs; lhs = tmp;
+        }
+        delete rhs;
+        lhs->set_final_weights(weight, true);
+        report_time();
+        cache = lhs;
+    }
+    return new HfstTransducer(*cache);
+}
+
+StringPair PmatchBinaryOperation::as_string_pair(void)
+{
+    if (op == CrossProduct) {
+        std::string left_string = left->as_string();
+        std::string right_string = right->as_string();
+        return StringPair(left_string, right_string);
+    }
+    return StringPair("", "");
+}
+
+HfstTransducer * PmatchTernaryOperation::evaluate(PmatchEvalType eval_type)
+{
+    if (cache == NULL) {
+        start_timing();
+        if (op == Substitute) {
+            cache = left->evaluate();
+            StringPair middle_pair = middle->as_string_pair();
+            StringPair right_pair = right->as_string_pair();
+            if (right_pair.first != "" || right_pair.second != "") {
+                cache->substitute(middle_pair, right_pair);
+            } else {
+                HfstTransducer * tmp = right->evaluate();
+                cache->substitute(middle_pair, *tmp);
+                delete tmp;
+            }
+        }
+        cache->set_final_weights(weight, true);
+        report_time();
+    }
+    return new HfstTransducer(*cache);
+}
+
+HfstTransducer * PmatchAcceptor::evaluate(PmatchEvalType eval_type)
+{
+    start_timing();
+    HfstTransducer * retval;
+    switch(set) {
+    case Alpha:
+        retval = new HfstTransducer(* get_utils()->latin1_alpha_acceptor);
+        break;
+    case UppercaseAlpha:
+        retval = new HfstTransducer(* get_utils()->latin1_uppercase_acceptor);
+        break;
+    case LowercaseAlpha:
+        retval = new HfstTransducer(* get_utils()->latin1_lowercase_acceptor);
+        break;
+    case Numeral:
+        retval = new HfstTransducer(* get_utils()->latin1_numeral_acceptor);
+        break;
+    case Punctuation:
+        retval = new HfstTransducer(* get_utils()->latin1_punct_acceptor);
+        break;
+    case Whitespace:
+        retval = new HfstTransducer(* get_utils()->latin1_whitespace_acceptor);
+    }
+    retval->set_final_weights(weight, true);
+    report_time();
+    return retval;
+}
+
+HfstTransducer * PmatchParallelRulesContainer::evaluate(PmatchEvalType eval_type)
+{
+    if (cache == NULL) {
+        start_timing();
+        switch (arrow) {
+        case hfst::xeroxRules::E_REPLACE_RIGHT:
+            cache = new HfstTransducer(replace(make_mappings(), false));
+            break;
+        case hfst::xeroxRules::E_OPTIONAL_REPLACE_RIGHT:
+            cache = new HfstTransducer(replace(make_mappings(), true));
+            break;
+        case hfst::xeroxRules::E_REPLACE_LEFT:
+            cache = new HfstTransducer(replace_left(make_mappings(), false));
+            break;
+        case hfst::xeroxRules::E_OPTIONAL_REPLACE_LEFT:
+            cache = new HfstTransducer(replace_left(make_mappings(), true));
+            break;
+        case hfst::xeroxRules::E_RTL_LONGEST_MATCH:
+            cache = new HfstTransducer(replace_rightmost_longest_match(make_mappings()));
+            break;
+        case hfst::xeroxRules::E_RTL_SHORTEST_MATCH:
+            cache = new HfstTransducer(replace_rightmost_shortest_match(make_mappings()));
+            break;
+        case hfst::xeroxRules::E_LTR_LONGEST_MATCH:
+            cache = new HfstTransducer(replace_leftmost_longest_match(make_mappings()));
+            break;
+        case hfst::xeroxRules::E_LTR_SHORTEST_MATCH:
+            cache = new HfstTransducer(replace_leftmost_shortest_match(make_mappings()));
+            break;
+        case hfst::xeroxRules::E_REPLACE_RIGHT_MARKUP:
+        default:
+            pmatcherror("Unrecognized arrow type");
+            return (HfstTransducer *) NULL;
+        }
+        cache->set_final_weights(weight, true);
+        report_time();
+    }
+    return new HfstTransducer(*cache);
+}
+
+std::vector<hfst::xeroxRules::Rule> PmatchParallelRulesContainer::make_mappings(void)
+{
+    std::vector<hfst::xeroxRules::Rule> retval;
+    for(std::vector<PmatchReplaceRuleContainer *>::iterator it = rules.begin();
+        it != rules.end(); ++it) {
+        retval.push_back((*it)->make_mapping());
+    }
+    
+    return retval;
+}
+
+HfstTransducer * PmatchReplaceRuleContainer::evaluate(PmatchEvalType eval_type)
+{
+    if (cache == NULL) {
+        start_timing();
+        switch (arrow) {
+        case hfst::xeroxRules::E_REPLACE_RIGHT:
+            cache = new HfstTransducer(replace(make_mapping(), false));
+            break;
+        case hfst::xeroxRules::E_OPTIONAL_REPLACE_RIGHT:
+            cache = new HfstTransducer(replace(make_mapping(), true));
+            break;
+        case hfst::xeroxRules::E_REPLACE_LEFT:
+            cache = new HfstTransducer(replace_left(make_mapping(), false));
+            break;
+        case hfst::xeroxRules::E_OPTIONAL_REPLACE_LEFT:
+            cache = new HfstTransducer(replace_left(make_mapping(), true));
+            break;
+        case hfst::xeroxRules::E_RTL_LONGEST_MATCH:
+            cache = new HfstTransducer(replace_rightmost_longest_match(make_mapping()));
+            break;
+        case hfst::xeroxRules::E_RTL_SHORTEST_MATCH:
+            cache = new HfstTransducer(replace_rightmost_shortest_match(make_mapping()));
+            break;
+        case hfst::xeroxRules::E_LTR_LONGEST_MATCH:
+            cache = new HfstTransducer(replace_leftmost_longest_match(make_mapping()));
+            break;
+        case hfst::xeroxRules::E_LTR_SHORTEST_MATCH:
+            cache = new HfstTransducer(replace_leftmost_shortest_match(make_mapping()));
+            break;
+        case hfst::xeroxRules::E_REPLACE_RIGHT_MARKUP:
+        default:
+            pmatcherror("Unrecognized arrow");
+            return (HfstTransducer *) NULL;
+        }
+        cache->set_final_weights(weight, true);
+        report_time();
+    }
+    return new HfstTransducer(*cache);
+}
+
+hfst::xeroxRules::Rule PmatchReplaceRuleContainer::make_mapping(void)
+{
+    HfstTransducerPairVector pair_vector;
+    for(MappingPairVector::iterator it = mapping.begin();
+        it != mapping.end(); ++it) {
+        HfstTransducer * l = it->first->evaluate();
+        HfstTransducer * r = it->second->evaluate();
+        pair_vector.push_back(HfstTransducerPair(HfstTransducer(*l),
+                                                 HfstTransducer(*r)));
+        delete l; delete r;
+    }
+    if (context.size() == 0) {
+        return hfst::xeroxRules::Rule(pair_vector);
+    }
+    HfstTransducerPairVector context_vector;
+    for (MappingPairVector::iterator it = context.begin();
+         it != context.end(); ++it) {
+        HfstTransducer * l = it->first->evaluate();
+        HfstTransducer * r = it->second->evaluate();
+        context_vector.push_back(HfstTransducerPair(HfstTransducer(*l),
+                                                    HfstTransducer(*r)));
+        delete l; delete r;
+    }
+    return hfst::xeroxRules::Rule(pair_vector, context_vector, type);
+}
+
+HfstTransducer * PmatchQuestionMark::evaluate(PmatchEvalType eval_type)
+{
+    start_timing();
+    HfstTransducer * retval;
+    if (eval_type == Transducer) {
+        retval = new HfstTransducer(hfst::internal_identity, format);
+    } else {
+        retval = new HfstTransducer(hfst::internal_unknown, format);
+    }
+    retval->set_final_weights(weight, true);
+    report_time();
+    return retval;
+}
+
+HfstTransducer * PmatchRestrictionContainer::evaluate(PmatchEvalType eval_type)
+{
+    if (cache == NULL) {
+        start_timing();
+        HfstTransducerPairVector pair_vector;
+        for (MappingPairVector::iterator it = contexts->begin();
+             it != contexts->end(); ++it) {
+            HfstTransducer * lside = it->first->evaluate();
+            HfstTransducer * rside = it->second->evaluate();
+            pair_vector.push_back(HfstTransducerPair(HfstTransducer(*lside),
+                                                     HfstTransducer(*rside)));
+            delete lside; delete rside;
+        }
+        HfstTransducer * l = left->evaluate();
+        cache = new HfstTransducer(hfst::xeroxRules::restriction(*l, pair_vector));
+        delete l;
+        cache->set_final_weights(weight, true);
+        report_time();
+    }
+    return new HfstTransducer(*cache);
+}
+
+HfstTransducer * PmatchMarkupContainer::evaluate(PmatchEvalType eval_type) { pmatcherror("Should never happen\n"); }
+HfstTransducer * PmatchMappingPairsContainer::evaluate(PmatchEvalType eval_type) { pmatcherror("Should never happen\n"); }
+HfstTransducer * PmatchContextsContainer::evaluate(PmatchEvalType eval_type) { pmatcherror("Should never happen\n"); }
 
 } }

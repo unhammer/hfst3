@@ -28,7 +28,7 @@ PmatchCompiler::define(const std::string& name, const std::string& pmatch)
 {
   compile(pmatch);
   if (definitions.count(name) != 0) {
-      definitions_[name] = definitions[name];
+      definitions_[name] = definitions[name]->evaluate();
   }
 }
 

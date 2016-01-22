@@ -13,32 +13,37 @@
 #include <time.h>
 #include <iomanip>
 #include "HfstTransducer.h"
+#include "HfstXeroxRules.h"
+#include "xre_utils.h"
 
 void pmatchwarning(const char *msg);
 
 namespace hfst { namespace pmatch {
 
-class PmatchFunction;
+struct PmatchFunction;
+struct PmatchObject;
+struct PmatchTransducerContainer;
+
+typedef std::pair<std::string, std::string> StringPair;
 
 extern char* data;
 extern char* startptr;
 extern size_t len;
-extern std::map<std::string, HfstTransducer *> definitions;
-extern std::map<std::string, HfstTransducer *> def_insed_transducers;
-extern std::set<std::string> inserted_transducers;
+extern std::map<std::string, PmatchObject*> definitions;
+extern std::vector<std::map<std::string, PmatchObject*> > call_stack;
+extern std::map<std::string, PmatchObject*> def_insed_expressions;
+extern std::set<std::string> inserted_names;
 extern std::set<std::string> unsatisfied_insertions;
 extern std::set<std::string> used_definitions;
-extern std::map<std::string, PmatchFunction> functions;
-extern std::vector<std::string> tmp_collected_funargs;
 extern ImplementationType format;
 extern bool verbose;
 extern bool flatten;
 extern clock_t timer;
+extern clock_t tmp_timer;
 extern int minimization_guard_count;
 extern bool need_delimiters;
 
 struct PmatchUtilityTransducers;
-//extern PmatchUtilityTransducers* utils;
 const std::string RC_ENTRY_SYMBOL = "@PMATCH_RC_ENTRY@";
 const std::string RC_EXIT_SYMBOL = "@PMATCH_RC_EXIT@";
 const std::string LC_ENTRY_SYMBOL = "@PMATCH_LC_ENTRY@";
@@ -56,7 +61,10 @@ void add_to_pmatch_symbols(StringSet symbols);
 void warn(std::string warning);
 PmatchUtilityTransducers* get_utils();
 void zero_minimization_guard(void);
-HfstTransducer * get_minimization_guard(void);
+bool symbol_in_global_context(std::string & sym);
+bool symbol_in_local_context(std::string & sym);
+PmatchObject * symbol_from_global_context(std::string & sym);
+PmatchObject * symbol_from_local_context(std::string & sym);
 
 /**
  * @brief input handling function for flex that parses strings.
@@ -81,9 +89,9 @@ char* strip_newline(char *s);
 /**
  * @brief get a transition name for use in Ins, RC and LC statements
  */
-char* get_Ins_transition(const char *s);
-char* get_RC_transition(const char *s);
-char* get_LC_transition(const char *s);
+std::string get_Ins_transition(const char *s);
+std::string get_RC_transition(const char *s);
+std::string get_LC_transition(const char *s);
 
 /**
  * @brief add special beginning and ending arcs for pmatch compatibility
@@ -91,13 +99,23 @@ char* get_LC_transition(const char *s);
 HfstTransducer * add_pmatch_delimiters(HfstTransducer * regex);
 
 /**
- * @brief concatenate with an appropriate end tag transducer
+ * @brief utility functions for making special arcs
  */
-void add_end_tag(HfstTransducer * regex, std::string tag);
-HfstTransducer * make_end_tag(std::string tag);
-HfstTransducer * make_counter(std::string name);
+PmatchTransducerContainer * epsilon_to_symbol_container(std::string s);
+PmatchTransducerContainer * make_end_tag(std::string tag);
+PmatchTransducerContainer * make_counter(std::string name);
 HfstTransducer * make_list(HfstTransducer * t);
 HfstTransducer * make_sigma(HfstTransducer * t);
+PmatchTransducerContainer * make_minimization_guard(void);
+PmatchTransducerContainer * make_passthrough(void);
+PmatchTransducerContainer * make_rc_entry(void);
+PmatchTransducerContainer * make_lc_entry(void);
+PmatchTransducerContainer * make_nrc_entry(void);
+PmatchTransducerContainer * make_nlc_entry(void);
+PmatchTransducerContainer * make_rc_exit(void);
+PmatchTransducerContainer * make_lc_exit(void);
+PmatchTransducerContainer * make_nrc_exit(void);
+PmatchTransducerContainer * make_nlc_exit(void);
 
 /**
  * @brief find first segment from strign @a s delimited by char delim.
@@ -112,7 +130,7 @@ char* parse_quoted(const char *s);
 
 unsigned int next_utf8_to_codepoint(unsigned char **c);
 std::string codepoint_to_utf8(unsigned int codepoint);
-HfstTransducer * parse_range(const char *s);
+PmatchTransducerContainer * parse_range(const char *s);
 
 int* get_n_to_k(const char* s);
 
@@ -297,121 +315,324 @@ struct PmatchUtilityTransducers
     HfstTransducer * toupper(HfstTransducer & t);
 };
 
-enum PmatchAstOperation {
-    AstAddDelimiters,
-    AstConcatenate,
-    AstCompose,
-    AstCrossProduct,
-    AstLenientCompose,
-    AstOptionalize,
-    AstDisjunct,
-    AstIntersect,
-    AstSubtract,
-    AstRepeatStar,
-    AstRepeatPlus,
-    AstReverse,
-    AstInvert,
-    AstInputProject,
-    AstOutputProject,
-    AstRepeatN,
-    AstRepeatNPlus,
-    AstRepeatNMinus,
-    AstRepeatNToK,
-    AstOptCap,
-    AstToLower,
-    AstToUpper,
-    None
+struct PmatchObject;
+
+enum PmatchEvalType {
+    InputSide,
+    OutputSide,
+    Transducer
 };
 
-enum PmatchAstType { AstTransducer, AstSymbol, AstBinaryOp, AstUnaryOp };
+struct PmatchObject {
+    std::string name; // optional, given if the object appears as a definition
+    double weight;
+    int line_defined;
+    HfstTransducer * cache;
+    PmatchObject(void);
+    void start_timing(void)
+        {
+            if (verbose && name != "") {
+                tmp_timer = clock();
+            }
+        }
+    void report_time(void)
+        {
+            if (verbose && name != "") {
+                double duration = (clock() - tmp_timer) /
+                    (double) CLOCKS_PER_SEC;
+                std::cerr << name << " compiled in " << duration << " seconds\n";
+            }
+        }
+    virtual HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer) = 0;
+    virtual HfstTransducer * evaluate(std::vector<PmatchObject *> args);
+    virtual std::string as_string(void) { return ""; }
+    virtual StringPair as_string_pair(void)
+        { return StringPair("", ""); }
+};
 
-struct PmatchAstNode {
+struct PmatchSymbol: public PmatchObject {
+    // This handles argumentless function calls and definition invocations,
+    // which are the same thing under the hood.
+    std::string sym;
+    PmatchSymbol(std::string str): sym(str) { }
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
 
+struct PmatchString: public PmatchObject {
+    std::string string;
+    bool multichar;
+    PmatchString(std::string str, bool is_multichar = false):
+        string(str), multichar(is_multichar) {}
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+    std::string as_string(void) { return string; }
+    StringPair as_string_pair(void)
+        { return StringPair(string, string); }
+};
 
-    PmatchAstNode * left_child;
-    PmatchAstNode * right_child;
-    HfstTransducer * transducer;
-    PmatchAstOperation op;
-    std::string symbol;
-    PmatchAstType type;
-    std::vector<int> numeric_args;
+struct PmatchQuestionMark: public PmatchObject {
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+    std::string as_string(void) { return hfst::internal_unknown; }
+    StringPair as_string_pair(void)
+        { return StringPair(
+                hfst::internal_identity, hfst::internal_identity); }
+    
+};
 
-    PmatchAstNode(PmatchAstNode * l,
-                  PmatchAstNode * r,
-                  PmatchAstOperation o):
-        left_child(l), right_child(r), op(o), type(AstBinaryOp),
-        transducer(NULL) { }
-    
-    PmatchAstNode(HfstTransducer * l,
-                  HfstTransducer * r,
-                  PmatchAstOperation o):
-        left_child(new PmatchAstNode(l)),
-        right_child(new PmatchAstNode(r)),
-        op(o), type(AstBinaryOp),
-        transducer(NULL) { }
-    
-    PmatchAstNode(HfstTransducer * l,
-                  PmatchAstNode * r,
-                  PmatchAstOperation o):
-    left_child(new PmatchAstNode(l)),
-        right_child(r),
-        op(o), type(AstBinaryOp),
-        transducer(NULL) { }
-    
-    PmatchAstNode(PmatchAstNode * l,
-                  HfstTransducer * r,
-              PmatchAstOperation o):
-    left_child(l),
-    right_child(new PmatchAstNode(r)),
-        op(o), type(AstBinaryOp),
-        transducer(NULL) { }
-    
-    PmatchAstNode(PmatchAstNode * l,
-                  PmatchAstOperation o):
-    left_child(l), right_child(NULL), op(o), type(AstUnaryOp),
-        transducer(NULL) {}
+enum PmatchUnaryOp {
+    AddDelimiters,
+    Optionalize,
+    RepeatStar,
+    RepeatPlus,
+    Reverse,
+    Invert,
+    InputProject,
+    OutputProject,
+    Complement,
+    Containment,
+    ContainmentOnce,
+    ContainmentOptional,
+    TermComplement,
+    OptCap,
+    ToLower,
+    ToUpper,
+    MakeSigma,
+    MakeList
+};
 
-    PmatchAstNode(HfstTransducer * l,
-                  PmatchAstOperation o):
-        left_child(new PmatchAstNode(l)), right_child(NULL), op(o), type(AstUnaryOp),
-        transducer(NULL) {}
+enum PmatchBinaryOp {
+    Concatenate,
+    Compose,
+    CrossProduct,
+    LenientCompose,
+    Disjunct,
+    Intersect,
+    Subtract,
+    UpperSubtract,
+    LowerSubtract,
+    UpperPriorityUnion,
+    LowerPriorityUnion,
+    Shuffle,
+    Before,
+    After,
+    InsertFreely,
+    IgnoreInternally,
+    Merge
+};
 
-PmatchAstNode(std::string sym): symbol(sym), type(AstSymbol) {}
-    
-    PmatchAstNode(const HfstTransducer * t): transducer(new HfstTransducer(*t)),
-    left_child(NULL), right_child(NULL), op(None), type(AstTransducer) {}
-    
-    PmatchAstNode(HfstTransducer & t): transducer(new HfstTransducer(t)),
-    left_child(NULL), right_child(NULL), op(None), type(AstTransducer) {}
-    
-    ~PmatchAstNode(void) {
-        delete left_child;
-        delete right_child;
-        delete transducer;
+enum PmatchTernaryOp {
+    Substitute
+};
+
+enum PmatchNumericOp {
+    RepeatN,
+    RepeatNPlus,
+    RepeatNMinus,
+    RepeatNToK
+};
+
+enum PmatchPredefined {
+    Alpha,
+    UppercaseAlpha,
+    LowercaseAlpha,
+    Numeral,
+    Punctuation,
+    Whitespace
+};
+
+struct PmatchNumericOperation: public PmatchObject{
+    PmatchNumericOp op;
+    PmatchObject * root;
+    std::vector<int> values;
+    PmatchNumericOperation(PmatchNumericOp _op, PmatchObject * _root):
+        op(_op), root(_root) {}
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchUnaryOperation: public PmatchObject{
+    PmatchUnaryOp op;
+    PmatchObject * root;
+    PmatchUnaryOperation(PmatchUnaryOp _op, PmatchObject * _root):
+        op(_op), root(_root) {}
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchBinaryOperation: public PmatchObject{
+    PmatchBinaryOp op;
+    PmatchObject * left;
+    PmatchObject * right;
+    PmatchBinaryOperation(PmatchBinaryOp _op, PmatchObject * _left, PmatchObject * _right):
+        op(_op), left(_left), right(_right) {}
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+    StringPair as_string_pair(void);
+};
+
+struct PmatchTernaryOperation: public PmatchObject{
+    PmatchTernaryOp op;
+    PmatchObject * left;
+    PmatchObject * middle;
+    PmatchObject * right;
+    PmatchTernaryOperation(PmatchTernaryOp _op, PmatchObject * _left, PmatchObject * _middle, PmatchObject * _right):
+        op(_op), left(_left), middle(_middle), right(_right) {}
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchTransducerContainer: public PmatchObject{
+    HfstTransducer * t;
+    PmatchTransducerContainer(HfstTransducer * target):
+        t(target) {}
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer) {
+        if (t->get_type() != format) {
+            t->convert(format);
+        }
+        HfstTransducer * retval = new HfstTransducer(*t);
+        retval->set_final_weights(weight, true);
+        return retval;
     }
-
-    HfstTransducer * evaluate(std::map<std::string,
-                              HfstTransducer *> & funargs);
-
-    HfstTransducer * compile(void);
-
-    void push_numeric_arg(int arg)
-        { numeric_args.push_back(arg); }
-
 };
 
-struct PmatchFunction {
+struct PmatchFunction: public PmatchObject {
     std::vector<std::string> args;
-    PmatchAstNode * root;
+    PmatchObject * root;
     
     PmatchFunction(std::vector<std::string> argument_vector,
-                   PmatchAstNode * function_root):
+                   PmatchObject * function_root):
     args(argument_vector), root(function_root) { }
 
-    PmatchFunction(void) {}
+    HfstTransducer * evaluate(std::vector<PmatchObject *> funargs);
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
 
-    HfstTransducer * evaluate(std::map<std::string,
-                              HfstTransducer *> & funargs);
+struct PmatchFuncall: public PmatchObject {
+    std::vector<PmatchObject * >* args;
+    PmatchFunction * fun;
+    PmatchFuncall(std::vector<PmatchObject *>* argument_vector,
+                  PmatchFunction * function): args(argument_vector),
+                                              fun(function) { }
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer)
+        {
+            return fun->evaluate(*args);
+        }
+                                                   
+};
+
+using hfst::xeroxRules::ReplaceArrow;
+using hfst::xeroxRules::ReplaceType;
+typedef std::pair<PmatchObject *, PmatchObject *> PmatchObjectPair;
+typedef std::vector<PmatchObjectPair> MappingPairVector;
+
+struct PmatchRestrictionContainer: public PmatchObject
+{
+    PmatchObject * left;
+    MappingPairVector * contexts;
+    PmatchRestrictionContainer(PmatchObject * l, MappingPairVector * c):
+        left(l), contexts(c) { }
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchMarkupContainer: public PmatchObject
+{
+    PmatchObject * left;
+    PmatchObject * right;
+    PmatchMarkupContainer(PmatchObject * l, PmatchObject * r):
+        left(l), right(r) {}
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchMappingPairsContainer: public PmatchObject
+{
+    ReplaceArrow arrow;
+    MappingPairVector mapping_pairs;
+    PmatchMarkupContainer * markup_marks;
+    PmatchMappingPairsContainer(ReplaceArrow a, MappingPairVector pairs):
+        arrow(a), mapping_pairs(pairs) {}
+    PmatchMappingPairsContainer(ReplaceArrow a,
+                                PmatchObject * left, PmatchObject * right):
+        arrow(a) { mapping_pairs.push_back(PmatchObjectPair(left, right)); }
+    void push_back(PmatchMappingPairsContainer * one_pair)
+        {
+            for(MappingPairVector::iterator it = one_pair->mapping_pairs.begin();
+                it != one_pair->mapping_pairs.end(); ++it) {
+                mapping_pairs.push_back(PmatchObjectPair(
+                                            it->first, it->second));
+            }
+        }
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchContextsContainer: public PmatchObject
+{
+    ReplaceType type;
+    MappingPairVector context_pairs;
+    PmatchContextsContainer(ReplaceType t, MappingPairVector pairs):
+        type(t), context_pairs(pairs) {}
+    PmatchContextsContainer(ReplaceType t, PmatchContextsContainer * context):
+        type(t), context_pairs(context->context_pairs)
+        { /* check for type compatibility */ }
+    PmatchContextsContainer(PmatchContextsContainer * context):
+        type(context->type), context_pairs(context->context_pairs) {}
+    PmatchContextsContainer(PmatchObject * left, PmatchObject * right)
+        { context_pairs.push_back(PmatchObjectPair(left, right)); }
+    void push_back(PmatchContextsContainer * one_context)
+        {
+            for(MappingPairVector::iterator it = one_context->context_pairs.begin();
+                it != one_context->context_pairs.end(); ++it) {
+                context_pairs.push_back(PmatchObjectPair(
+                                            it->first, it->second));
+            }
+        }
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchReplaceRuleContainer: public PmatchObject
+{
+    ReplaceArrow arrow;
+    ReplaceType type;
+    MappingPairVector mapping;
+    MappingPairVector context;
+    PmatchReplaceRuleContainer(
+        ReplaceArrow a,
+        ReplaceType t,
+        MappingPairVector m,
+        MappingPairVector c):
+        arrow(a), type(t), mapping(m), context(c) {}
+    PmatchReplaceRuleContainer(PmatchMappingPairsContainer * pairs):
+        arrow(pairs->arrow), mapping(pairs->mapping_pairs) {}
+    PmatchReplaceRuleContainer(PmatchMappingPairsContainer * pairs,
+                               PmatchContextsContainer * contexts):
+        arrow(pairs->arrow), mapping(pairs->mapping_pairs),
+        context(contexts->context_pairs), type(contexts->type) {}
+    hfst::xeroxRules::Rule make_mapping(void);
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchParallelRulesContainer: public PmatchObject
+{
+    ReplaceArrow arrow;
+    std::vector<PmatchReplaceRuleContainer *> rules;
+    PmatchParallelRulesContainer(PmatchReplaceRuleContainer * rule):
+        arrow(rule->arrow), rules(1, rule) {}
+    std::vector<hfst::xeroxRules::Rule> make_mappings(void);
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
+};
+
+struct PmatchEpsilonArc: public PmatchObject
+{
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer)
+        { return new HfstTransducer(hfst::internal_epsilon, format); }
+    std::string as_string(void) { return hfst::internal_epsilon; }
+};
+
+struct PmatchEmpty: public PmatchObject
+{
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer)
+        { return new HfstTransducer(format); }
+};
+
+struct PmatchAcceptor: public PmatchObject
+{
+    PmatchPredefined set;
+    PmatchAcceptor(PmatchPredefined s): set(s) {}
+    HfstTransducer * evaluate(PmatchEvalType eval_type = Transducer);
 };
 
 } } // namespaces
