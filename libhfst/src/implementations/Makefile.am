@@ -96,7 +96,6 @@ implinclude_HEADERS = \
 		XfsmTransducer.h \
 		HfstOlTransducer.h HfstTransitionGraph.h HfstTransition.h \
 		HfstTropicalTransducerTransitionData.h \
-		HfstFastTransitionData.h \
 		compose_intersect/ComposeIntersectRulePair.h \
 		compose_intersect/ComposeIntersectLexicon.h \
 		compose_intersect/ComposeIntersectRule.h \
