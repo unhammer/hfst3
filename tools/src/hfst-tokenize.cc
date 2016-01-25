@@ -1,4 +1,4 @@
-//! @file hfst-proc2.cc
+//! @file hfst-tokenize.cc
 //!
 //! @brief A demo of a replacement for hfst-proc using pmatch
 //!
@@ -375,7 +375,7 @@ int parse_options(int argc, char** argv)
 
 int main(int argc, char ** argv)
 {
-    hfst_set_program_name(argv[0], "0.1", "HfstProc2");
+    hfst_set_program_name(argv[0], "0.1", "HfstTokenize");
     hfst_setlocale();
     int retval = parse_options(argc, argv);
     if (retval != EXIT_CONTINUE) {

@@ -122,8 +122,8 @@ endif
 if WANT_PMATCH2FST
 MAYBE_PMATCH2FST=hfst-pmatch2fst$(EXEEXT)
 endif
-if WANT_PROC2
-MAYBE_PROC2=hfst-proc2$(EXEEXT)
+if WANT_TOKENIZE
+MAYBE_TOKENIZE=hfst-tokenize$(EXEEXT)
 endif
 if WANT_PROJECT
 MAYBE_PROJECT=hfst-project$(EXEEXT)
@@ -220,7 +220,7 @@ bin_PROGRAMS= \
 			 $(MAYBE_INVERT)                                            \
 			 $(MAYBE_LOOKUP) $(MAYBE_MINIMIZE) $(MAYBE_NAME)            \
 			 $(MAYBE_OPTIMIZED_LOOKUP) $(MAYBE_PMATCH)                  \
-			 $(MAYBE_PMATCH2FST) $(MAYBE_PROC2)                         \
+			 $(MAYBE_PMATCH2FST) $(MAYBE_TOKENIZE)                         \
 			 $(MAYBE_PROJECT) $(MAYBE_PRUNE_ALPHABET)                   \
 			 $(MAYBE_PUSH_WEIGHTS) $(MAYBE_REGEXP2FST)                  \
 			 $(MAYBE_REMOVE_EPSILONS) $(MAYBE_REPEAT) $(MAYBE_REVERSE)  \
@@ -280,7 +280,7 @@ hfst_optimized_lookup_SOURCES=hfst-optimized-lookup.cc
 hfst_pmatch_SOURCES=hfst-pmatch.cc $(HFST_COMMON_SRC)
 #hfst_preprocess_for_optimized_lookup_format_SOURCES=hfst-preprocess-for-optimized-lookup-format.cc
 #	$(HFST_COMMON_SRC)
-hfst_proc2_SOURCES=hfst-proc2.cc $(HFST_COMMON_SRC)	
+hfst_tokenize_SOURCES=hfst-tokenize.cc $(HFST_COMMON_SRC)	
 hfst_project_SOURCES=hfst-project.cc $(HFST_COMMON_SRC)
 hfst_prune_alphabet_SOURCES=hfst-prune-alphabet.cc $(HFST_COMMON_SRC)
 hfst_push_weights_SOURCES=hfst-push-weights.cc $(HFST_COMMON_SRC)
@@ -313,7 +313,9 @@ install-exec-hook:
 		$(LN_S) -f hfst-subtract$(EXEEXT) hfst-minus$(EXEEXT) && \
 		$(LN_S) -f hfst-calculate$(EXEEXT) hfst-sfstpl2fst$(EXEEXT) && \
 		$(LN_S) -f hfst-summarize$(EXEEXT) hfst-summarise$(EXEEXT) && \
-		$(LN_S) -f hfst-disjunct$(EXEEXT) hfst-union$(EXEEXT)
+		$(LN_S) -f hfst-disjunct$(EXEEXT) hfst-union$(EXEEXT) && \
+		$(LN_S) -f hfst-tokenize$(EXEEXT) hfst-proc2$(EXEEXT) && \
+		$(LN_S) -f hfst-tokenize$(EXEEXT) hfst-tokenise$(EXEEXT) &&
 #		$(LN_S) -f hfst-preprocess-for-optimized-lookup-format$(EXEEXT) hfst-preprocess-for-optimised-lookup-format$(EXEEXT) &&
 
 uninstall-local:
@@ -326,7 +328,9 @@ uninstall-local:
 		rm hfst-minus && \
 		rm hfst-sfstpl2fst && \
 		rm hfst-summarise && \
-		rm hfst-union
+		rm hfst-union && \
+		rm hfst-tokenise && \
+		rm hfst-proc2
 
 BUILT_SOURCES=$(hfst_lexc_BUILT) 
 
