@@ -523,17 +523,17 @@ void runTransducer (genericTransducer T)
             {
 #ifdef WINDOWS
           if (!pipe_output)
-              hfst_fprintf_console(stdout, "%s\t+?\n", str);
+              hfst_fprintf_console(stdout, "%s\t+?\n\n", str);
           else
 #endif
-            std::cout << str << "\t+?" << std::endl;
+              std::cout << str << "\t+?" << std::endl << std::endl;
 
 #ifdef WINDOWS
           if (!pipe_output)
-            hfst_fprintf_console(stdout, "\n");
+            hfst_fprintf_console(stdout, "\n\n");
           else
 #endif
-            std::cout << std::endl;
+              std::cout << std::endl << std::endl;
             }
           continue;
         }
@@ -1087,17 +1087,17 @@ void Transducer::printAnalyses(std::string prepend)
         {
 #ifdef WINDOWS
           if (!pipe_output)
-            hfst_fprintf_console(stdout, "%s\t+?\n", prepend.c_str());
+            hfst_fprintf_console(stdout, "%s\t+?\n\n", prepend.c_str());
           else
 #endif
-            std::cout << prepend << "\t+?" << std::endl;
+          std::cout << prepend << "\t+?" << std::endl << std::endl;
 
 #ifdef WINDOWS
           if (!pipe_output)
-            hfst_fprintf_console(stdout, "\n");
+            hfst_fprintf_console(stdout, "\n\n");
           else
 #endif
-            std::cout << std::endl;
+          std::cout << std::endl << std::endl;
           return;
         }
       int i = 0;
@@ -1143,17 +1143,17 @@ void TransducerUniq::printAnalyses(std::string prepend)
 
 #ifdef WINDOWS
       if (!pipe_mode)
-        hfst_fprintf_console(stdout, "%s\t+?\n", prepend.c_str());
+        hfst_fprintf_console(stdout, "%s\t+?\n\n", prepend.c_str());
       else
 #endif
-        std::cout << prepend << "\t+?" << std::endl;
+        std::cout << prepend << "\t+?" << std::endl << std::endl;
 
 #ifdef WINDOWS
       if (!pipe_mode)
-        hfst_fprintf_console("\n");
+        hfst_fprintf_console("\n\n");
       else
 #endif
-        std::cout << std::endl;
+        std::cout << std::endl << std::endl;
 
       return;
     }
@@ -1196,18 +1196,17 @@ void TransducerFdUniq::printAnalyses(std::string prepend)
     {
 #ifdef WINDOWS
   if (!pipe_mode)
-    hfst_fprintf_console(stdout, "%s\t+?\n", prepend.c_str());
+    hfst_fprintf_console(stdout, "%s\t+?\n\n", prepend.c_str());
   else
 #endif
-    std::cout << prepend << "\t+?" << std::endl;
+      std::cout << prepend << "\t+?" << std::endl << std::endl;
 
 #ifdef WINDOWS
   if (!pipe_mode)
-    hfst_fprintf_console(stdout, "\n");
+    hfst_fprintf_console(stdout, "\n\n");
   else
 #endif
-    std::cout << std::endl;
-
+      std::cout << std::endl << std::endl;
   return;
     }
   int i = 0;
@@ -1634,16 +1633,16 @@ void TransducerW::printAnalyses(std::string prepend)
     {
 #ifdef WINDOWS
       if (!pipe_output)
-        hfst_fprintf_console(stdout, "%s\t+?\n", prepend.c_str());
+        hfst_fprintf_console(stdout, "%s\t+?\n\n", prepend.c_str());
       else
 #endif
-        std::cout << prepend << "\t+?" << std::endl;
+          std::cout << prepend << "\t+?" << std::endl << std::endl;
 
 #ifdef WINDOWS
       if (!pipe_output)
-        hfst_fprintf_console(stdout, "\n");
+        hfst_fprintf_console(stdout, "\n\n");
       else
-        std::cout << std::endl;
+          std::cout << std::endl << std::endl;
 #endif
 
       return;
