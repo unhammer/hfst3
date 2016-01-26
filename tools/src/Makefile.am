@@ -315,7 +315,7 @@ install-exec-hook:
 		$(LN_S) -f hfst-summarize$(EXEEXT) hfst-summarise$(EXEEXT) && \
 		$(LN_S) -f hfst-disjunct$(EXEEXT) hfst-union$(EXEEXT) && \
 		$(LN_S) -f hfst-tokenize$(EXEEXT) hfst-proc2$(EXEEXT) && \
-		$(LN_S) -f hfst-tokenize$(EXEEXT) hfst-tokenise$(EXEEXT) &&
+		$(LN_S) -f hfst-tokenize$(EXEEXT) hfst-tokenise$(EXEEXT)
 #		$(LN_S) -f hfst-preprocess-for-optimized-lookup-format$(EXEEXT) hfst-preprocess-for-optimised-lookup-format$(EXEEXT) &&
 
 uninstall-local:
