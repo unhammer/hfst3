@@ -76,8 +76,6 @@ typedef std::vector<float> FloatVector;
 
 hfst::ImplementationType type = hfst::TROPICAL_OPENFST_TYPE;
 
-hfst::HfstTokenizer deftok; // default tokenizer
-
 void set_default_fst_type(hfst::ImplementationType t)
 {
         type = t;
@@ -1676,22 +1674,23 @@ def check_word(arg):
     return arg
 
 def fsa(arg):
+    deftok = HfstTokenizer()
+    retval = HfstBasicTransducer()
     if isinstance(arg, str):
-       return regex('{' + check_word(arg) + '}')
+       retval.disjunct(deftok.tokenize(check_word(arg)), 0)
     elif is_weighted_word(arg):
-       return regex('{' + check_word(arg[0]) + '}::' + str(arg[1]))
+       retval.disjunct(deftok.tokenize(check_word(arg[0])), arg[1])
     elif isinstance(arg, tuple) or isinstance(arg, list):
-       exp = '[0-0]' # empty automaton
        for word in arg:
            if is_weighted_word(word):
-              exp += ' | {' + check_word(word[0]) + '}::' + str(word[1])
+              retval.disjunct(deftok.tokenize(check_word(word[0])), word[1])
            elif isinstance(word, str):
-              exp += ' | {' + check_word(word) + '}'
+              retval.disjunct(deftok.tokenize(check_word(word)), 0)
            else:
               raise RuntimeError('Tuple/list element not a string or tuple of string and weight.')           
-       return regex(exp)
     else:
        raise RuntimeError('Not a string or tuple/list of strings.')
+    return HfstTransducer(retval, _libhfst.get_default_fst_type())
 
 def fst(arg):
     if isinstance(arg, dict):
@@ -1712,20 +1711,27 @@ def fst(arg):
     return fsa(arg)
 
 def tokenized_fst(arg, weight=0):
-    exp = '[ '
+    retval = HfstBasicTransducer()
+    state = 0 
     if isinstance(arg, list) or isinstance(arg, tuple):
        for token in arg:
            if isinstance(token, str):
-              exp += '"' + token + '" '
+              new_state = retval.add_state()
+              retval.add_transition(state, new_state, token, token, 0)
+              state = new_state
            elif isinstance(token, list) or isinstance(token, tuple):
               if len(token) == 2:
-                 exp += '"' + token[0] + '":"' + token[1] + '" '
+                 new_state = retval.add_state()
+                 retval.add_transition(state, new_state, token[0], token[1], 0)
+                 state = new_state
               elif len(token) == 1:
-                 exp += '"' + token + '" '
+                 new_state = retval.add_state()
+                 retval.add_transition(state, new_state, token, token, 0)
+                 state = new_state
               else:
                  raise RuntimeError('Symbol or symbol pair must be given.')
-       exp += ']'
-       return regex("[" + exp + "]::" + str(weight))
+       retval.set_final_weight(state, weight)
+       return HfstTransducer(retval, _libhfst.get_default_fst_type())
     else:
        raise RuntimeError('Argument must be a list or a tuple')
 
@@ -1735,6 +1741,10 @@ def empty_fst():
 def epsilon_fst(weight=0):
     return regex('[0]::' + str(weight))
 
-
+def concatenate(transducers):
+    retval = empty_fst()
+    for tr in transducers:
+      retval.concatenate(tr)
+    return retval.minimize()
 
 %}
