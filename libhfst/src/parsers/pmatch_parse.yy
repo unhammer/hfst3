@@ -172,7 +172,6 @@ EXPRESSION2 MERGE_LEFT_ARROW EXPRESSION3 { $$ = new PmatchBinaryOperation(Merge,
 SUBSTITUTE_LEFT LEFT_BRACKET EXPRESSION3 COMMA EXPRESSION3 COMMA EXPRESSION3 RIGHT_BRACKET {
     $$ = new PmatchTernaryOperation(Substitute, $3, $5, $7);
 } |
-EXPRESSION2 PAIR_SEPARATOR EXPRESSION3 { $$ = new PmatchBinaryOperation(CrossProduct, $1, $3); } |
 EXPRESSION2 PAIR_SEPARATOR_WO_RIGHT {
     $$ = new PmatchBinaryOperation(CrossProduct, $1, new PmatchQuestionMark); } |
 PAIR_SEPARATOR_WO_LEFT EXPRESSION2 {
@@ -351,6 +350,7 @@ TERM_COMPLEMENT EXPRESSION12 { $$ = new PmatchUnaryOperation(TermComplement, $2)
 
 EXPRESSION12: EXPRESSION13 { } |
 LEFT_BRACKET EXPRESSION2 RIGHT_BRACKET { $$ = $2; } |
+EXPRESSION12 PAIR_SEPARATOR EXPRESSION13 { $$ = new PmatchBinaryOperation(CrossProduct, $1, $3); } |
 LEFT_PARENTHESIS EXPRESSION2 RIGHT_PARENTHESIS { $$ = new PmatchUnaryOperation(Optionalize, $2); } |
 EXPRESSION12 WEIGHT { $$ = $1; $$->weight += $2; } |
 LEFT_BRACKET EXPRESSION2 RIGHT_BRACKET TAG_LEFT SYMBOL RIGHT_PARENTHESIS {
