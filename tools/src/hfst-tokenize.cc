@@ -105,7 +105,7 @@ void print_no_output(std::string const & input, std::ostream & outstream)
     } else if (output_format == xerox) {
         outstream << input << "\t" << input << "+?";
     } else if (output_format == cg) {
-        outstream << "\"<>\"" << std::endl << input << "\t\"" << input << "\" ?";
+	    outstream << "\"<" << input << ">\"" << std::endl << "\t\"" << input << "\" ?";
     }
 //    std::cerr << "from print_no_output\n";
     outstream << "\n\n";
@@ -118,7 +118,7 @@ void print_nonmatching_sequence(std::string const & str, std::ostream & outstrea
     } else if (output_format == xerox) {
         outstream << str << "\t" << str << "+?";
     } else if (output_format == cg) {
-        outstream << "\"<>\"" << std::endl << str << "\t\"" << str << "\" ?";
+        outstream << "\"<" << str << ">\"" << std::endl << "\t\"" << str << "\" ?";
     } else if (output_format == finnpos) {
         outstream << str << "\t_\t_\t_\t_";
     }
