@@ -167,7 +167,7 @@ void print_location_vector(LocationVector const & locations, std::ostream & outs
                 outstream << "\t" << loc_it->output;
             }
             if (print_weights) {
-                outstream << "\t" << loc_it->weight;
+                outstream << " <W:" << loc_it->weight << ">";
             }
             outstream << std::endl;
         }
