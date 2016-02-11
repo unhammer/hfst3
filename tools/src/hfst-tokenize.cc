@@ -150,35 +150,40 @@ void print_location_vector(LocationVector const & locations, std::ostream & outs
         if (print_weights) {
             outstream << "\t" << locations.at(0).weight;
         }
-        outstream << std::endl;
+        outstream << std::endl << std::endl;
     } else if (output_format == cg && locations.size() != 0) {
         // Print the cg cohort header
         outstream << "\"<" << locations.at(0).input << ">\"" << std::endl;
-        for (LocationVector::const_iterator loc_it = locations.begin();
-             loc_it != locations.end(); ++loc_it) {
-            // Assume tags are +-separated, the first '+' marks the
-            // end of lemma, and there are no unescaped '+' symbols
-            // TODO: handle escaped '+'? (cg-conv doesn't)
-            // TODO: let the tag separator be changeable? (cg-conv doesn't)
-            size_t i = 0, j = 0;
-            outstream << "\t\"";
-            if((j = loc_it->output.find("+", i)) != std::string::npos) {
-                outstream << loc_it->output.substr(i, j-i);
-                i = j+1;
+        if(locations.size() == 1 && locations.at(0).output.empty()) {
+            outstream << "\t\"" << locations.at(0).input << "\" ?" << std::endl;
+        }
+        else {
+            for (LocationVector::const_iterator loc_it = locations.begin();
+                 loc_it != locations.end(); ++loc_it) {
+                // Assume tags are +-separated, the first '+' marks the
+                // end of lemma, and there are no unescaped '+' symbols
+                // TODO: handle escaped '+'? (cg-conv doesn't)
+                // TODO: let the tag separator be changeable? (cg-conv doesn't)
+                size_t i = 0, j = 0;
+                outstream << "\t\"";
+                if((j = loc_it->output.find("+", i)) != std::string::npos) {
+                    outstream << loc_it->output.substr(i, j-i);
+                    i = j+1;
+                }
+                outstream << "\"";
+                while((j = loc_it->output.find("+", i)) != std::string::npos) {
+                    outstream << " " << loc_it->output.substr(i, j-i);
+                    i = j+1;
+                }
+                if(loc_it->output.substr(i).length() != 0) {
+                    outstream << " " << loc_it->output.substr(i);
+                }
+                if (print_weights) {
+                    // TODO: OK to hardcode "W"? (CG accepts any letter here.)
+                    outstream << " <W:" << loc_it->weight << ">";
+                }
+                outstream << std::endl;
             }
-            outstream << "\"";
-            while((j = loc_it->output.find("+", i)) != std::string::npos) {
-                outstream << " " << loc_it->output.substr(i, j-i);
-                i = j+1;
-            }
-            if(loc_it->output.substr(i).length() != 0) {
-                outstream << " " << loc_it->output.substr(i);
-            }
-            if (print_weights) {
-                // TODO: OK to hardcode "W"? (CG accepts any letter here.)
-                outstream << " <W:" << loc_it->weight << ">";
-            }
-            outstream << std::endl;
         }
     } else if (output_format == xerox) {
         for (LocationVector::const_iterator loc_it = locations.begin();
@@ -189,6 +194,7 @@ void print_location_vector(LocationVector const & locations, std::ostream & outs
             }
             outstream << std::endl;
         }
+        outstream << std::endl;
     } else if (output_format == finnpos) {
         std::set<std::string> tags;
         std::set<std::string> lemmas;
@@ -234,10 +240,9 @@ void print_location_vector(LocationVector const & locations, std::ostream & outs
             }
             outstream << accumulator.substr(0, accumulator.size() - 1);
         }
-        outstream << "\t_";
+        outstream << "\t_" << std::endl;
     }
 //    std::cerr << "from print_location_vector\n";
-    outstream << std::endl;
 }
 
 void match_and_print(hfst_ol::PmatchContainer & container,
