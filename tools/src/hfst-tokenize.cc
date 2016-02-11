@@ -156,17 +156,26 @@ void print_location_vector(LocationVector const & locations, std::ostream & outs
         outstream << "\"<" << locations.at(0).input << ">\"" << std::endl;
         for (LocationVector::const_iterator loc_it = locations.begin();
              loc_it != locations.end(); ++loc_it) {
-            // For the most common case, eg. analysis strings that begin with the original input,
-            // we try to do what cg tools expect and surround the original input with double quotes.
-            // Otherwise we omit the double quotes and assume the rule writer knows what he's doing.
-            if (loc_it->output.find(loc_it->input) == 0) {
-                // The nice case obtains
-                outstream << "\t\"" << loc_it->input << "\"" <<
-                    loc_it->output.substr(loc_it->input.size(), std::string::npos);
-            } else {
-                outstream << "\t" << loc_it->output;
+            // Assume tags are +-separated, the first '+' marks the
+            // end of lemma, and there are no unescaped '+' symbols
+            // TODO: handle escaped '+'? (cg-conv doesn't)
+            // TODO: let the tag separator be changeable? (cg-conv doesn't)
+            size_t i = 0, j = 0;
+            outstream << "\t\"";
+            if((j = loc_it->output.find("+", i)) != std::string::npos) {
+                outstream << loc_it->output.substr(i, j-i);
+                i = j+1;
+            }
+            outstream << "\"";
+            while((j = loc_it->output.find("+", i)) != std::string::npos) {
+                outstream << " " << loc_it->output.substr(i, j-i);
+                i = j+1;
+            }
+            if(loc_it->output.substr(i).length() != 0) {
+                outstream << " " << loc_it->output.substr(i);
             }
             if (print_weights) {
+                // TODO: OK to hardcode "W"? (CG accepts any letter here.)
                 outstream << " <W:" << loc_it->weight << ">";
             }
             outstream << std::endl;
