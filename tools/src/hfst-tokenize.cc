@@ -53,6 +53,7 @@ static bool blankline_separated = true;
 static bool print_all = false;
 static bool print_weights = false;
 static bool tokenize_multichar = false;
+static string prefix_unmatched;
 static double time_cutoff = 0.0;
 std::string tokenizer_filename;
 enum OutputFormat {
@@ -76,17 +77,18 @@ print_usage()
             "\n", program_name);
     print_common_program_options(message_out);
     fprintf(message_out,
-            "  -n  --newline          Newline as input separator (default is blank line)\n"
-            "  -a  --print-all        Print nonmatching text\n"
-            "  -w  --print-weight     Print weights\n"
-            "  --tokenize-multichar   Tokenize multicharacter symbols\n"
-            "                         (by default only one utf-8 character is tokenized at a time\n"
-            "                         regardless of what is present in the alphabet)\n"
-            "  -t, --time-cutoff=S    Limit search after having used S seconds per input\n"
-            "  --segment              Segmenting / tokenization mode (default)\n"
-            "  --xerox                Xerox output\n"
-            "  --cg                   cg output\n"
-            "  --finnpos              FinnPos output\n");
+            "  -n, --newline              Newline as input separator (default is blank line)\n"
+            "  -a, --print-all            Print nonmatching text\n"
+            "  -w, --print-weight         Print weights\n"
+            "  --tokenize-multichar       Tokenize multicharacter symbols\n"
+            "                             (by default only one utf-8 character is tokenized at a time\n"
+            "                             regardless of what is present in the alphabet)\n"
+            "  -u, --prefix-unmatched=P   With -a, prefix any line of unmatched text with P\n"
+            "  -t, --time-cutoff=S        Limit search after having used S seconds per input\n"
+            "      --segment              Segmenting / tokenization mode (default)\n"
+            "      --xerox                Xerox output\n"
+            "      --cg                   cg output\n"
+            "      --finnpos              FinnPos output\n");
     fprintf(message_out, 
             "Use standard streams for input and output (for now).\n"
             "\n"
@@ -111,9 +113,24 @@ void print_no_output(std::string const & input, std::ostream & outstream)
     outstream << "\n\n";
 }
 
+void print_escaping_newlines(std::string const & str, std::ostream & outstream)
+{
+    // TODO: inline?
+    size_t i = 0, j = 0;
+    while((j = str.find("\n", i)) != std::string::npos) {
+        outstream << str.substr(i, j-i) << "\\n";
+        i = j+1;
+    }
+    outstream << str.substr(i, j-i);
+}
+
 void print_nonmatching_sequence(std::string const & str, std::ostream & outstream)
 {
-    if (output_format == tokenize) {
+    if (!prefix_unmatched.empty()) {
+        outstream << prefix_unmatched;
+        print_escaping_newlines(str, outstream);
+        // TODO: should the other formats also escape unmatched newlines?
+    } else if (output_format == tokenize) {
         outstream << str;
     } else if (output_format == xerox) {
         outstream << str << "\t" << str << "+?";
@@ -284,6 +301,7 @@ int parse_options(int argc, char** argv)
                 {"print-all", no_argument, 0, 'a'},
                 {"print-weights", no_argument, 0, 'w'},
                 {"tokenize-multichar", no_argument, 0, 'm'},
+                {"prefix-unmatched", required_argument, 0, 'u'},
                 {"time-cutoff", required_argument, 0, 't'},
                 {"segment", no_argument, 0, 'z'},
                 {"xerox", no_argument, 0, 'x'},
@@ -292,7 +310,7 @@ int parse_options(int argc, char** argv)
                 {0,0,0,0}
             };
         int option_index = 0;
-        char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT "nawt:zxcf",
+        char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT "nawmu:t:zxcf",
                              long_options, &option_index);
         if (-1 == c)
         {
@@ -314,6 +332,9 @@ int parse_options(int argc, char** argv)
             break;
         case 'm':
             tokenize_multichar = true;
+            break;
+        case 'u':
+            prefix_unmatched = optarg;
             break;
         case 't':
             time_cutoff = atof(optarg);
