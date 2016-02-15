@@ -50,6 +50,7 @@ using std::pair;
 #include "inc/globals-unary.h"
 
 static bool blankline_separated = true;
+static bool keep_newlines = false;
 static bool print_all = false;
 static bool print_weights = false;
 static bool tokenize_multichar = false;
@@ -306,24 +307,34 @@ int process_input(hfst_ol::PmatchContainer & container,
     std::string input_text;
     char * line = NULL;
     size_t len = 0;
-    while (hfst_getline(&line, &len, inputfile) > 0) {
-        if (!blankline_separated) {
-            // newline separated
-            input_text = line;
-            match_and_print(container, outstream, input_text);
-        } else if (line[0] == '\n') {
-            match_and_print(container, outstream, input_text);
-            input_text.clear();
-        } else {
-            input_text.append(line);
+    if(blankline_separated) {
+        while (hfst_getline(&line, &len, inputfile) > 0) {
+            if (line[0] == '\n') {
+                match_and_print(container, outstream, input_text);
+                input_text.clear();
+            } else {
+                input_text.append(line);
+            }
+            free(line);
+            line = NULL;
         }
-        free(line);
-        line = NULL;
+        if (!input_text.empty()) {
+            match_and_print(container, outstream, input_text);
+        }
+    }
+    else {
+        // newline or non-separated
+        while (hfst_getline(&line, &len, inputfile) > 0) {
+            input_text = line;
+            if(keep_newlines) {
+                input_text += "\n";
+            }
+            match_and_print(container, outstream, input_text);
+            free(line);
+            line = NULL;
+        }
     }
 
-    if (blankline_separated && !input_text.empty()) {
-        match_and_print(container, outstream, input_text);
-    }
     return EXIT_SUCCESS;
 }
 
@@ -338,6 +349,7 @@ int parse_options(int argc, char** argv)
             {
                 HFST_GETOPT_COMMON_LONG,
                 {"newline", no_argument, 0, 'n'},
+                {"keep-newline", no_argument, 0, 'k'},
                 {"print-all", no_argument, 0, 'a'},
                 {"print-weights", no_argument, 0, 'w'},
                 {"tokenize-multichar", no_argument, 0, 'm'},
@@ -350,7 +362,7 @@ int parse_options(int argc, char** argv)
                 {0,0,0,0}
             };
         int option_index = 0;
-        char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT "nawmu:t:zxcf",
+        char c = getopt_long(argc, argv, HFST_GETOPT_COMMON_SHORT "nkawmu:t:zxcf",
                              long_options, &option_index);
         if (-1 == c)
         {
@@ -361,6 +373,10 @@ int parse_options(int argc, char** argv)
         switch (c)
         {
 #include "inc/getopt-cases-common.h"
+        case 'k':
+            keep_newlines = true;
+            blankline_separated = false;
+            break;
         case 'n':
             blankline_separated = false;
             break;
