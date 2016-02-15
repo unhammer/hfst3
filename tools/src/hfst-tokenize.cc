@@ -53,6 +53,9 @@ static bool blankline_separated = true;
 static bool print_all = false;
 static bool print_weights = false;
 static bool tokenize_multichar = false;
+static string tag_separator = "+"; // + and # are hardcoded in cg-conv at least
+static string subreading_separator = "#";
+static string wtag = "W"; // TODO: cg-conv has an argument --wtag, allow changing here as well?
 static string prefix_unmatched;
 static double time_cutoff = 0.0;
 std::string tokenizer_filename;
@@ -89,11 +92,11 @@ print_usage()
             "      --xerox                Xerox output\n"
             "      --cg                   cg output\n"
             "      --finnpos              FinnPos output\n");
-    fprintf(message_out, 
+    fprintf(message_out,
             "Use standard streams for input and output (for now).\n"
             "\n"
         );
-    
+
     print_report_bugs();
     fprintf(message_out, "\n");
     print_more_info();
@@ -143,6 +146,34 @@ void print_nonmatching_sequence(std::string const & str, std::ostream & outstrea
     outstream << "\n";
 }
 
+void print_cg_subreading(std::string const & indent,
+                         std::string const & str,
+                         hfst_ol::Weight const & weight,
+                         std::ostream & outstream)
+{
+    // Assume tags are +-separated, the first '+' marks the
+    // end of lemma, and there are no unescaped '+' symbols
+    // TODO: handle escaped '+'? (cg-conv doesn't)
+    size_t i = 0, j = 0;
+    outstream << indent << "\"";
+    if((j = str.find(tag_separator, i)) != std::string::npos) {
+        outstream << str.substr(i, j-i);
+        i = j+1;
+    }
+    outstream << "\"";
+    while((j = str.find(tag_separator, i)) != std::string::npos) {
+        outstream << " " << str.substr(i, j-i);
+        i = j+1;
+    }
+    if(str.substr(i).length() != 0) {
+        outstream << " " << str.substr(i);
+    }
+    if (print_weights) {
+        outstream << " <" << wtag << ":" << weight << ">";
+    }
+    outstream << std::endl;
+}
+
 void print_location_vector(LocationVector const & locations, std::ostream & outstream)
 {
     if (output_format == tokenize && locations.size() != 0) {
@@ -152,37 +183,32 @@ void print_location_vector(LocationVector const & locations, std::ostream & outs
         }
         outstream << std::endl << std::endl;
     } else if (output_format == cg && locations.size() != 0) {
-        // Print the cg cohort header
         outstream << "\"<" << locations.at(0).input << ">\"" << std::endl;
         if(locations.size() == 1 && locations.at(0).output.empty()) {
+            // Treat empty analyses as unknown-but-tokenised:
             outstream << "\t\"" << locations.at(0).input << "\" ?" << std::endl;
         }
         else {
             for (LocationVector::const_iterator loc_it = locations.begin();
                  loc_it != locations.end(); ++loc_it) {
-                // Assume tags are +-separated, the first '+' marks the
-                // end of lemma, and there are no unescaped '+' symbols
-                // TODO: handle escaped '+'? (cg-conv doesn't)
-                // TODO: let the tag separator be changeable? (cg-conv doesn't)
-                size_t i = 0, j = 0;
-                outstream << "\t\"";
-                if((j = loc_it->output.find("+", i)) != std::string::npos) {
-                    outstream << loc_it->output.substr(i, j-i);
-                    i = j+1;
+                if(loc_it->output.empty()) {
+                    continue;
                 }
-                outstream << "\"";
-                while((j = loc_it->output.find("+", i)) != std::string::npos) {
-                    outstream << " " << loc_it->output.substr(i, j-i);
-                    i = j+1;
+                string indent = "\t";
+                size_t sub_start = 0, sub_end = loc_it->output.length();
+                while((sub_start = loc_it->output.rfind(subreading_separator, sub_end-1)) != std::string::npos) {
+                    ++sub_start; // skip actual '#'-separator
+                    print_cg_subreading(indent,
+                                        loc_it->output.substr(sub_start, sub_end - sub_start),
+                                        loc_it->weight,
+                                        outstream);
+                    indent += "\t";
+                    sub_end = sub_start - 1;
                 }
-                if(loc_it->output.substr(i).length() != 0) {
-                    outstream << " " << loc_it->output.substr(i);
-                }
-                if (print_weights) {
-                    // TODO: OK to hardcode "W"? (CG accepts any letter here.)
-                    outstream << " <W:" << loc_it->weight << ">";
-                }
-                outstream << std::endl;
+                print_cg_subreading(indent,
+                                    loc_it->output.substr(0, sub_end),
+                                    loc_it->weight,
+                                    outstream);
             }
         }
     } else if (output_format == xerox) {
@@ -272,7 +298,7 @@ void match_and_print(hfst_ol::PmatchContainer & container,
         outstream << std::endl;
     }
 }
-        
+
 
 int process_input(hfst_ol::PmatchContainer & container,
                   std::ostream & outstream)
@@ -294,7 +320,7 @@ int process_input(hfst_ol::PmatchContainer & container,
         free(line);
         line = NULL;
     }
-    
+
     if (blankline_separated && !input_text.empty()) {
         match_and_print(container, outstream, input_text);
     }
@@ -373,8 +399,8 @@ int parse_options(int argc, char** argv)
 #include "inc/getopt-cases-error.h"
         }
 
-        
-        
+
+
     }
 
 //            if (!inputNamed)
@@ -382,7 +408,7 @@ int parse_options(int argc, char** argv)
 //            inputfile = stdin;
 //            inputfilename = hfst_strdup("<stdin>");
 //        }
-        
+
         // no more options, we should now be at the input filename
         if ( (optind + 1) < argc)
         {
@@ -404,7 +430,7 @@ int parse_options(int argc, char** argv)
 #include "inc/check-params-common.h"
 
 
-    
+
     return EXIT_FAILURE;
 }
 
